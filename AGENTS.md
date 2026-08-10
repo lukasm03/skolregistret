@@ -56,12 +56,16 @@ entry there, not writing new components.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
   are I/O; testing them means mocking fetch or shipping a fixture export file.
   The pure logic around them is covered instead.
-- **`AppShell` accepts a `crumbs` prop it never renders**, and all five call
-  sites build one. See the TODO in `src/components/layout/AppShell.tsx`.
+- **The årskurs filter chips match nothing**, because the API supplies no
+  grade spans. Kept deliberately: the logic is correct and starts working when
+  the data arrives. Don't "fix" it by deleting the filter.
 
 ## Testing
 
 `bun test`. Tests sit next to the code as `*.test.ts`. Fixtures are plain
 literals in the test file — there is no factory layer and no network access.
-Prefer pinning a surprising behaviour with a named test over silently
-"fixing" it; there are two such tests already (see the README's Known quirks).
+When you meet a surprising behaviour, decide explicitly: fix it and leave a
+regression test, or keep it and pin it with a named test saying why. Both
+patterns are in the tree — see `parse.test.ts` for the first and
+`api-normalize.test.ts` for the second. What you must not do is leave it
+undocumented.

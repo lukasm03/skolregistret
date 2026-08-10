@@ -12,13 +12,6 @@ export const site = {
   /** Läsår the views prefer when a metric reports several. */
   period: "2025/26",
 
-  /** The geography the current build is scoped to. */
-  scope: {
-    kommun: "Stockholm",
-    /** Also the filter sent to the API. */
-    kommunkod: "0180",
-  },
-
   /** Shown wherever no kommun is selected — the school list covers riket. */
   riket: "Hela riket",
   /** Label of the "no kommun" option in the kommun dropdown. */

@@ -155,7 +155,6 @@ export function HuvudmanView({
   return (
     <AppShell
       section="/huvudman"
-      crumbs={[{ label: "Huvudmän" }, { label: kommun ?? site.riket }]}
       searchAction={PATH}
       searchPlaceholder={site.search.huvudman}
       searchValue={query.q}

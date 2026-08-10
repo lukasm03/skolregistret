@@ -2,21 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { site } from "@/config/site";
 
-interface Crumb {
-  label: string;
-  href?: string;
-}
-
 interface Props {
   /** Which top-level section is active — matches `site.nav[].match`. */
   section: string;
-  /**
-   * TODO: accepted and type-checked, but currently never rendered — all five
-   * call sites build breadcrumbs that are then dropped on the floor. Either
-   * render them or remove the prop and the five call sites; left as-is for now
-   * because rendering them would change the UI.
-   */
-  crumbs: Crumb[];
   searchPlaceholder: string;
   /** Where the search form submits when there is no `onSearchChange`. */
   searchAction: string;

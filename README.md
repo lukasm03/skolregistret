@@ -126,27 +126,19 @@ Things that look like bugs but are not:
 
 ## Known quirks
 
-Open items, each pinned by a test or a TODO so they stay visible:
+There are no open TODOs in the code. What remains is a known limitation and a
+deliberate trade-off, both pinned by tests:
 
-- **The årskurs filter currently matches nothing.** The API supplies no grade
-  spans, so `normalizeApiSchool` sets them empty and `selectSchools` filters
-  every unit out. Pinned in `src/lib/school-select.test.ts`.
-- **`spansOverlap("")` parses as förskoleklass**, because `Number("")` is `0`
-  and "F" is level 0. Unreachable today — the one caller guards on the empty
-  string. Pinned in `src/lib/skolverket/parse.test.ts`.
+- **The årskurs chips never match anything.** The API supplies no grade spans,
+  so `normalizeApiSchool` leaves them empty and `selectSchools` filters every
+  unit out — selecting a chip empties the list. The chips are kept on purpose:
+  the filtering logic is correct and starts working the moment the API
+  supplies spans, so there is nothing to fix here but the data. Pinned in
+  `src/lib/school-select.test.ts`.
 - **Huvudmän are joined to units by name alone.** The API offers no other
   shared key, so two organisations sharing a name collapse into one row and
   the second organisationsnummer is lost. Deliberate, and consistent between
   the list and the detail page. Pinned in `src/lib/api-normalize.test.ts`.
-- **`AppShell` never renders the `crumbs` prop** although all five call sites
-  build breadcrumbs for it. See the TODO in `src/components/layout/AppShell.tsx`.
-- **TODO — `src/config/site.ts` contradicts itself on scope.** `scope.kommun`
-  says `"Stockholm"` while `riket` says `"Hela riket"` and the list genuinely
-  covers the whole country. In practice `scope.kommun` survives in exactly one
-  place — a fallback label at `src/app/skolor/[kod]/page.tsx:81` for a unit
-  with no kommun — and `scope.kommunkod` is not read anywhere at all, despite
-  its comment claiming it is "the filter sent to the API". Leftover from when
-  the build was scoped to one kommun; decide whether to delete it or honour it.
 
 ## Testing
 

@@ -74,10 +74,6 @@ export function SchoolsView({
   return (
     <AppShell
       section="/skolor"
-      crumbs={[
-        { label: form?.label ?? site.allaSkolformer },
-        { label: kommun ?? site.riket },
-      ]}
       searchAction={PATH}
       searchPlaceholder={site.search.skolor}
       searchValue={query.q}

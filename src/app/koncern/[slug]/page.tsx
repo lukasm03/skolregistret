@@ -77,7 +77,6 @@ export default async function KoncernPage({
   return (
     <AppShell
       section="/huvudman"
-      crumbs={[{ label: "Huvudmän", href: "/huvudman" }, { label: group.namn }]}
       searchAction="/huvudman"
       searchPlaceholder={site.search.huvudman}
     >

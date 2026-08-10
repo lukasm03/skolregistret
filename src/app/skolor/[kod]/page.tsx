@@ -78,7 +78,6 @@ export default async function SkolaPage({
   const school = await getSkola(kod);
   if (!school) notFound();
 
-  const kommun = school.kommun ?? site.scope.kommun;
   const huvudmanSlug = slugify(school.huvudman);
 
   const kommunStats = school.kommunkod
@@ -234,7 +233,6 @@ export default async function SkolaPage({
   return (
     <AppShell
       section="/skolor"
-      crumbs={[{ label: kommun, href: backHref }, { label: school.namn }]}
       searchAction="/skolor"
       searchPlaceholder={site.search.skolor}
     >

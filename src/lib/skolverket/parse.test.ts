@@ -47,14 +47,22 @@ describe("spansOverlap", () => {
   });
 
   /**
-   * Pinning a sharp edge rather than endorsing it: `Number("")` is 0 and "F"
-   * is level 0, so an empty span parses as förskoleklass instead of as "no
-   * grades". Not reachable today — the only caller
-   * (`src/lib/school-select.ts`) guards with `span ? … : false` — but anyone
-   * calling this directly with a unit's raw span would get a false match.
+   * Regression: `Number("")` is 0 and "F" is also level 0, so an empty span
+   * used to parse as förskoleklass and match the "F" chip. It now yields no
+   * levels at all. Callers no longer have to guard, though
+   * `src/lib/school-select.ts` still does — cheaper than expanding a string
+   * to discover it is empty.
    */
-  test("KNOWN EDGE: an empty span parses as F, so it must be guarded by callers", () => {
-    expect(spansOverlap("", "F")).toBe(true);
+  test("an empty span matches nothing — not even F", () => {
+    expect(spansOverlap("", "F")).toBe(false);
     expect(spansOverlap("", "1–9")).toBe(false);
+    expect(spansOverlap("F", "")).toBe(false);
+  });
+
+  test("whitespace-only and ragged spans are treated the same way", () => {
+    expect(spansOverlap("   ", "F")).toBe(false);
+    // A trailing separator leaves an empty part, which must not become F.
+    expect(spansOverlap("1–3,", "F")).toBe(false);
+    expect(spansOverlap("1–3,", "1–3")).toBe(true);
   });
 });

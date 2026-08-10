@@ -53,7 +53,6 @@ export default async function HuvudmanDetailPage({
   return (
     <AppShell
       section="/huvudman"
-      crumbs={[{ label: "Huvudmän", href: "/huvudman" }, { label: h.namn }]}
       searchAction="/huvudman"
       searchPlaceholder={site.search.huvudman}
     >

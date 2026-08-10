@@ -4,7 +4,19 @@
  * filter against one means expanding the string back into levels.
  */
 
-const GRADE_ORDER = (g: string): number => (g.toUpperCase() === "F" ? 0 : Number(g));
+/**
+ * A grade token as a sortable level; förskoleklass is 0, årskurs n is n, and
+ * anything unreadable is NaN so the caller skips it.
+ *
+ * The empty check is load-bearing: `Number("")` is 0, which is also F's level,
+ * so without it an empty or whitespace-only span would parse as
+ * förskoleklass and match the "F" chip.
+ */
+const GRADE_ORDER = (g: string): number => {
+  const s = g.trim();
+  if (!s) return NaN;
+  return s.toUpperCase() === "F" ? 0 : Number(s);
+};
 
 /** True when two grade spans share at least one årskurs. */
 export function spansOverlap(a: string, b: string): boolean {
