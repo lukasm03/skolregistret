@@ -40,7 +40,7 @@ import {
   type ProgramNyckeltalKey,
   type SkolaProgram,
   type Vårdnadshavarenkät,
-} from "@/lib/skolregister-api";
+} from "@/lib/skolregister";
 
 interface NyckeltalRow {
   key: keyof Nyckeltal;

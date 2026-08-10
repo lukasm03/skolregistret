@@ -14,8 +14,8 @@ import {
 import { site } from "@/config/site";
 import { groupKoncern } from "@/lib/api-normalize";
 import { DASH, num, plural, slugify } from "@/lib/format";
-import { listHuvudman } from "@/lib/skolregister-api";
-import type { HuvudmanRad } from "@/lib/skolregister-api";
+import { listHuvudman } from "@/lib/skolregister";
+import type { HuvudmanRad } from "@/lib/skolregister";
 
 const dotterbolagColumns: Column<HuvudmanRad>[] = [
   { key: "namn", header: "Bolag", strong: true, truncate: true, cell: (d) => d.namn },

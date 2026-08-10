@@ -21,7 +21,7 @@ import { site } from "@/config/site";
 import { dedupeHuvudmanRows, normalizeApiSchool } from "@/lib/api-normalize";
 import { DASH, num, plural, slugify } from "@/lib/format";
 import { href } from "@/lib/query";
-import { listHuvudman, listSkolor } from "@/lib/skolregister-api";
+import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**
  * Statically generated for every huvudman the register currently has, the

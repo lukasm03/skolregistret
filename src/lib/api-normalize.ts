@@ -1,7 +1,7 @@
 import { skolformer } from "@/config/skolformer";
 import { slugify } from "@/lib/format";
 import type { ListSchool } from "@/lib/school-fields";
-import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister-api";
+import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
 import type {
   HuvudmanTyp,
   MetricValue,

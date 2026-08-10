@@ -1,6 +1,6 @@
 import { SchoolsView } from "@/components/views/SchoolsView";
 import { slugify } from "@/lib/format";
-import { listHuvudman, listSkolor } from "@/lib/skolregister-api";
+import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**
  * The list filters in the browser, so the page's job is to hand it the

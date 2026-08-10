@@ -1,5 +1,5 @@
 import { HuvudmanView } from "@/components/views/HuvudmanView";
-import { listHuvudman, listSkolor } from "@/lib/skolregister-api";
+import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**
  * As with the skolenhet list: the data goes over once, and the view
