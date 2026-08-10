@@ -25,10 +25,7 @@ export type HuvudmanAggregate = {
 };
 
 /** Elevtal summed over the units that are running. */
-function sumStudents(
-  units: ListSchool[],
-  form?: SkolformCode,
-): number {
+function sumStudents(units: ListSchool[], form?: SkolformCode): number {
   return units.reduce((sum, s) => sum + (studentsOf(s, form) ?? 0), 0);
 }
 
@@ -68,9 +65,7 @@ function aggregateHuvudman(
 ): HuvudmanAggregate {
   const units = all.filter(
     (s) =>
-      s.huvudman === h.name &&
-      s.status === "Aktiv" &&
-      (!form || s.forms.includes(form)),
+      s.huvudman === h.name && s.status === "Aktiv" && (!form || s.forms.includes(form)),
   );
   const elever = sumStudents(units, form);
   const def = form ? skolform(form) : undefined;
@@ -172,8 +167,7 @@ export function selectHuvudman(
     const q = query.q.toLowerCase();
     filtered = filtered.filter(
       (r) =>
-        r.huvudman.name.toLowerCase().includes(q) ||
-        (r.huvudman.org ?? "").includes(q),
+        r.huvudman.name.toLowerCase().includes(q) || (r.huvudman.org ?? "").includes(q),
     );
   }
 

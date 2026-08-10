@@ -84,9 +84,7 @@ export function HuvudmanFilters({
         <Toggle
           label="Endast koncernbolag"
           on={query.koncernOnly}
-          onToggle={() =>
-            onChange({ koncern: query.koncernOnly ? null : "1" })
-          }
+          onToggle={() => onChange({ koncern: query.koncernOnly ? null : "1" })}
         />
       </FilterGroup>
 

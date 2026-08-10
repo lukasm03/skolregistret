@@ -25,9 +25,7 @@ const skolformCodeFromLabel = (label: string): SkolformCode | undefined =>
   skolformer.find((form) => form.label === label)?.code;
 
 const toMetricValue = (value: number | null): MetricValue | null =>
-  value == null
-    ? null
-    : { raw: String(value), value, missing: null };
+  value == null ? null : { raw: String(value), value, missing: null };
 
 export function normalizeApiSchool(school: SkolorRad): ListSchool {
   const forms: SkolformCode[] = [];

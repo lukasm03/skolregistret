@@ -1,11 +1,7 @@
 import type { Column } from "@/components/ui/DataTable";
 import { skolform } from "@/config/skolformer";
 import { DASH, num } from "@/lib/format";
-import {
-  schoolSortValue,
-  studentsOf,
-  type ListSchool,
-} from "@/lib/school-fields";
+import { schoolSortValue, studentsOf, type ListSchool } from "@/lib/school-fields";
 import type { SkolformCode } from "@/lib/types";
 
 /**
@@ -60,9 +56,8 @@ export const schoolColumns = {
     muted: true,
     truncate: true,
     cell: (s) =>
-      [...s.forms.map((f) => skolform(f)?.short ?? f), ...s.otherForms].join(
-        " · ",
-      ) || DASH,
+      [...s.forms.map((f) => skolform(f)?.short ?? f), ...s.otherForms].join(" · ") ||
+      DASH,
   }),
   elever: (form?: SkolformCode, width = 78): Column<ListSchool> => ({
     key: "elever",

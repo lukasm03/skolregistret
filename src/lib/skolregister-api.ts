@@ -172,7 +172,9 @@ let registerFileCache: Promise<RegisterFile> | null = null;
 /** Reads and parses `SKOLREGISTER_DATA_FILE` once per process, caching the result. */
 function readRegisterFile(path: string): Promise<RegisterFile> {
   if (!registerFileCache) {
-    registerFileCache = readFile(path, "utf8").then((text) => JSON.parse(text) as RegisterFile);
+    registerFileCache = readFile(path, "utf8").then(
+      (text) => JSON.parse(text) as RegisterFile,
+    );
   }
   return registerFileCache;
 }
@@ -230,9 +232,7 @@ export async function getKommunNyckeltalStats(
 ): Promise<KommunNyckeltalStat[]> {
   const skolor = await listSkolor();
   const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
-  const detaljer = await Promise.all(
-    kommunSkolor.map((s) => getSkola(s.skolenhetskod)),
-  );
+  const detaljer = await Promise.all(kommunSkolor.map((s) => getSkola(s.skolenhetskod)));
 
   const keys = Object.keys(NYCKELTAL_BÄTTRE_RIKTNING) as (keyof Nyckeltal)[];
   return keys.map((key) => {
@@ -330,7 +330,10 @@ export async function getBeräknatRiksGenomsnitt(): Promise<BeräknatRiksGenomsn
 
       const nyckeltalSummor = new Map<
         Skolform,
-        { sum: Partial<Record<keyof Nyckeltal, number>>; n: Partial<Record<keyof Nyckeltal, number>> }
+        {
+          sum: Partial<Record<keyof Nyckeltal, number>>;
+          n: Partial<Record<keyof Nyckeltal, number>>;
+        }
       >();
       const addNyckeltal = (skolform: Skolform, key: keyof Nyckeltal, tal: number) => {
         let bucket = nyckeltalSummor.get(skolform);
@@ -344,7 +347,10 @@ export async function getBeräknatRiksGenomsnitt(): Promise<BeräknatRiksGenomsn
 
       const programSummor = new Map<
         string,
-        { sum: Partial<Record<ProgramNyckeltalKey, number>>; n: Partial<Record<ProgramNyckeltalKey, number>> }
+        {
+          sum: Partial<Record<ProgramNyckeltalKey, number>>;
+          n: Partial<Record<ProgramNyckeltalKey, number>>;
+        }
       >();
       const addProgram = (kod: string, key: ProgramNyckeltalKey, tal: number) => {
         let bucket = programSummor.get(kod);
@@ -382,7 +388,8 @@ export async function getBeräknatRiksGenomsnitt(): Promise<BeräknatRiksGenomsn
         }
 
         for (const p of d.program) {
-          if (p.antalElever.status === "finns") addProgram(p.kod, "antalElever", p.antalElever.tal);
+          if (p.antalElever.status === "finns")
+            addProgram(p.kod, "antalElever", p.antalElever.tal);
           for (const key of PROGRAM_NYCKELTAL_KEYS) {
             const v = p.nyckeltal[key];
             if (v.status === "finns") addProgram(p.kod, key, v.tal);
@@ -391,7 +398,10 @@ export async function getBeräknatRiksGenomsnitt(): Promise<BeräknatRiksGenomsn
       }
 
       const medelvärde = <K extends string>(
-        summor: Map<string, { sum: Partial<Record<K, number>>; n: Partial<Record<K, number>> }>,
+        summor: Map<
+          string,
+          { sum: Partial<Record<K, number>>; n: Partial<Record<K, number>> }
+        >,
       ): Map<string, Partial<Record<K, number>>> => {
         const result = new Map<string, Partial<Record<K, number>>>();
         for (const [nyckel, bucket] of summor) {
@@ -405,7 +415,10 @@ export async function getBeräknatRiksGenomsnitt(): Promise<BeräknatRiksGenomsn
       };
 
       return {
-        perSkolform: medelvärde(nyckeltalSummor) as Map<Skolform, Partial<Record<keyof Nyckeltal, number>>>,
+        perSkolform: medelvärde(nyckeltalSummor) as Map<
+          Skolform,
+          Partial<Record<keyof Nyckeltal, number>>
+        >,
         perProgram: medelvärde(programSummor),
       };
     })();
@@ -696,10 +709,14 @@ function averageEnkäter(enkäter: Skolenkät[]): Map<string, EnkätGrupp> {
  * by `enkätGruppKey` — a straight average across skolformer or årskurser
  * wouldn't mean anything.
  */
-export async function getKommunEnkätGenomsnitt(kommunkod: string): Promise<Map<string, EnkätGrupp>> {
+export async function getKommunEnkätGenomsnitt(
+  kommunkod: string,
+): Promise<Map<string, EnkätGrupp>> {
   const skolor = await listSkolor();
   const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
-  const enkäter = await Promise.all(kommunSkolor.map((s) => getSkolenkät(s.skolenhetskod)));
+  const enkäter = await Promise.all(
+    kommunSkolor.map((s) => getSkolenkät(s.skolenhetskod)),
+  );
   return averageEnkäter(enkäter);
 }
 

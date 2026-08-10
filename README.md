@@ -14,10 +14,10 @@ bun run build
 
 | Route              | What it shows                                                            |
 | ------------------ | ------------------------------------------------------------------------ |
-| `/skolor`          | Filterable list of skolenheter                                            |
-| `/skolor/[kod]`    | One unit: nyckeltal vs kommunmedian, närmaste enheter, registeruppgifter  |
-| `/huvudman`        | List of huvudmän, aggregated from the units                               |
-| `/huvudman/[slug]` | One huvudman: koncernstruktur, årsredovisningar, enheter                  |
+| `/skolor`          | Filterable list of skolenheter                                           |
+| `/skolor/[kod]`    | One unit: nyckeltal vs kommunmedian, närmaste enheter, registeruppgifter |
+| `/huvudman`        | List of huvudmän, aggregated from the units                              |
+| `/huvudman/[slug]` | One huvudman: koncernstruktur, årsredovisningar, enheter                 |
 
 All list state lives in the URL (`?skolform=`, `?typ=`, `?arskurs=`, `?sort=`,
 `?page=` …), so every view is server-rendered, shareable and back-button
@@ -78,18 +78,18 @@ showing empty ones.
 
 ## Where to change things
 
-| I want to…                              | Edit                                            |
-| --------------------------------------- | ----------------------------------------------- |
-| Change kommun, läsår, labels             | `src/config/site.ts`                            |
-| Add a skolform or a measure              | `src/config/skolformer.ts`                      |
-| Point at a real API                      | `SCHOOL_API_URL`, `src/lib/data-source.ts`      |
-| Change how the API payload is read       | `src/lib/skolverket/`                           |
-| Change the seed data                     | `src/data/sample-units.ts`                      |
-| Change Bolagsverket facts                | `src/data/bolagsdata.ts`                        |
-| Restyle anything (colors, type scale)    | `@theme` block in `src/app/globals.css`         |
-| Change filtering / aggregation rules     | `src/lib/loaders/`                              |
-| Add a column to a skolenhet table        | `src/components/tables/schoolColumns.tsx`       |
-| Change number/date formatting            | `src/lib/format.ts`                             |
+| I want to…                            | Edit                                       |
+| ------------------------------------- | ------------------------------------------ |
+| Change kommun, läsår, labels          | `src/config/site.ts`                       |
+| Add a skolform or a measure           | `src/config/skolformer.ts`                 |
+| Point at a real API                   | `SCHOOL_API_URL`, `src/lib/data-source.ts` |
+| Change how the API payload is read    | `src/lib/skolverket/`                      |
+| Change the seed data                  | `src/data/sample-units.ts`                 |
+| Change Bolagsverket facts             | `src/data/bolagsdata.ts`                   |
+| Restyle anything (colors, type scale) | `@theme` block in `src/app/globals.css`    |
+| Change filtering / aggregation rules  | `src/lib/loaders/`                         |
+| Add a column to a skolenhet table     | `src/components/tables/schoolColumns.tsx`  |
+| Change number/date formatting         | `src/lib/format.ts`                        |
 
 ### Layers
 

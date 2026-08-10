@@ -50,10 +50,7 @@ export function HuvudmanView({
     () => normalizeApiHuvudmanList(huvudman),
     [huvudman],
   );
-  const normalizedSchools = useMemo(
-    () => schools.map(normalizeApiSchool),
-    [schools],
-  );
+  const normalizedSchools = useMemo(() => schools.map(normalizeApiSchool), [schools]);
 
   const list = useMemo(
     () => selectHuvudman(normalizedHuvudman, normalizedSchools, query),
@@ -66,9 +63,7 @@ export function HuvudmanView({
   const from = total ? (page - 1) * query.perPage + 1 : 0;
   const to = Math.min(page * query.perPage, total);
 
-  const kommun = query.kommun
-    ? (kommunName(query.kommun) ?? query.kommun)
-    : undefined;
+  const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
   // The React Compiler declines to optimize this one because the conditional
   // `primary` column spread reads as a dependency it cannot prove stable. The
@@ -141,8 +136,7 @@ export function HuvudmanView({
               width: 128,
               align: "right" as const,
               mono: true,
-              cell: (r: HuvudmanAggregate) =>
-                metricNumber(r.metric, primary.unit),
+              cell: (r: HuvudmanAggregate) => metricNumber(r.metric, primary.unit),
               sortValue: (r: HuvudmanAggregate) => huvudmanSortValue(r, "metric"),
               descFirst: primary.higherIsBetter !== false,
             },
@@ -177,10 +171,7 @@ export function HuvudmanView({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ListToolbar
-            count={plural(total, "huvudman", "huvudmän")}
-            scope={scope}
-          />
+          <ListToolbar count={plural(total, "huvudman", "huvudmän")} scope={scope} />
 
           <div className="min-h-[712px]">
             <DataGrid
@@ -196,9 +187,7 @@ export function HuvudmanView({
               emptyMessage="Inga huvudmän matchar filtret."
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}
-              onSortChange={(s) =>
-                patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })
-              }
+              onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
               pageIndex={page - 1}
               pageSize={query.perPage}
               onPageChange={(i) => patch({ page: i + 1 })}
@@ -211,8 +200,8 @@ export function HuvudmanView({
             </span>
             <div className="flex-1" />
             <span className="text-sm text-ink-subtle">
-              Andel av {kommun ? "kommunens" : "rikets"}{" "}
-              {num(list.kommunElever)} elever i urvalet
+              Andel av {kommun ? "kommunens" : "rikets"} {num(list.kommunElever)} elever i
+              urvalet
             </span>
             <Pagination
               page={page}

@@ -118,9 +118,7 @@ export function SchoolFilters({
               label={t}
               count={counts[t]}
               checked={query.typ.includes(t)}
-              onToggle={() =>
-                onChange({ typ: toggleInList(query.typ, t, true) })
-              }
+              onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
             />
           ))}
         </div>
@@ -133,9 +131,7 @@ export function SchoolFilters({
               <Chip
                 key={a}
                 active={query.arskurs.includes(a)}
-                onToggle={() =>
-                  onChange({ arskurs: toggleInList(query.arskurs, a) })
-                }
+                onToggle={() => onChange({ arskurs: toggleInList(query.arskurs, a) })}
               >
                 {a}
               </Chip>
@@ -157,9 +153,7 @@ export function SchoolFilters({
               label: p.name,
               count: p.count,
             }))}
-            onToggle={(name) =>
-              onChange({ program: toggleInList(query.program, name) })
-            }
+            onToggle={(name) => onChange({ program: toggleInList(query.program, name) })}
           />
         </FilterGroup>
       )}
@@ -174,9 +168,7 @@ export function SchoolFilters({
               label={status}
               count={count}
               checked={query.status.includes(status)}
-              onToggle={() =>
-                onChange({ status: toggleStatus(query.status, status) })
-              }
+              onToggle={() => onChange({ status: toggleStatus(query.status, status) })}
             />
           ))}
         </div>

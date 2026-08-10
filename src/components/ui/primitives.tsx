@@ -115,9 +115,7 @@ export function RailSection({
 }
 
 export function Note({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-xs leading-[1.55] text-ink-muted">{children}</p>
-  );
+  return <p className="text-xs leading-[1.55] text-ink-muted">{children}</p>;
 }
 
 export function EmptyBox({ children }: { children: ReactNode }) {
@@ -128,13 +126,7 @@ export function EmptyBox({ children }: { children: ReactNode }) {
   );
 }
 
-export function ButtonLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
+export function ButtonLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
@@ -145,13 +137,7 @@ export function ButtonLink({
   );
 }
 
-export function BackLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
+export function BackLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link href={href} className="text-sm text-accent hover:underline">
       ‹ {children}

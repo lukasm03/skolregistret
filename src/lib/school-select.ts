@@ -1,11 +1,6 @@
 import { kommunName } from "@/data/kommuner";
 import type { SchoolQuery } from "./query";
-import {
-  gradeSpanOf,
-  sortSchools,
-  studentsOf,
-  type ListSchool,
-} from "./school-fields";
+import { gradeSpanOf, sortSchools, studentsOf, type ListSchool } from "./school-fields";
 import { spansOverlap } from "./skolverket/parse";
 import {
   SKOLSTATUS_ORDER,
@@ -60,8 +55,7 @@ export function selectSchools<T extends ListSchool>(
     status: (s: T) => query.status.includes(s.status),
     huvudman: (s: T) => !huvudmanName || s.huvudman === huvudmanName,
     kommun: (s: T) => !query.kommun || s.kommunkod === query.kommun,
-    q: (s: T) =>
-      !query.q || s.name.toLowerCase().includes(query.q.toLowerCase()),
+    q: (s: T) => !query.q || s.name.toLowerCase().includes(query.q.toLowerCase()),
     skolform: (s: T) => !form || s.forms.includes(form),
     arskurs: (s: T) => {
       if (!query.arskurs.length) return true;
@@ -78,8 +72,7 @@ export function selectSchools<T extends ListSchool>(
     },
     typ: (s: T) => query.typ.includes(s.typ),
     program: (s: T) =>
-      !query.program.length ||
-      query.program.some((p) => s.programmes.includes(p)),
+      !query.program.length || query.program.some((p) => s.programmes.includes(p)),
   };
 
   /** Apply every test but one, so that filter's own counts stay meaningful. */

@@ -6,12 +6,7 @@ export type HuvudmanTyp = "Kommunal" | "Fristående";
  * instead of being silently counted as running.
  */
 export type SkolStatus =
-  | "Aktiv"
-  | "Vilande"
-  | "Planerad"
-  | "Upphörd"
-  | "Avvecklad"
-  | "Okänd";
+  "Aktiv" | "Vilande" | "Planerad" | "Upphörd" | "Avvecklad" | "Okänd";
 
 /** The order the status filter lists them in — running first, gone last. */
 export const SKOLSTATUS_ORDER: SkolStatus[] = [

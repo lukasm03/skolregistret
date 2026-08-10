@@ -35,11 +35,7 @@ export function ListFooter({ children }: { children: ReactNode }) {
  * where numbers are skipped. Always the same number of slots, so the footer does
  * not reflow as you page through — 440 pages will not fit on one row.
  */
-function pageWindow(
-  page: number,
-  totalPages: number,
-  radius = 2,
-): (number | "gap")[] {
+function pageWindow(page: number, totalPages: number, radius = 2): (number | "gap")[] {
   const keep = new Set<number>([1, totalPages]);
   for (let p = page - radius; p <= page + radius; p++) {
     if (p >= 1 && p <= totalPages) keep.add(p);
@@ -95,11 +91,7 @@ export function Pagination({
             …
           </span>
         ) : p === page ? (
-          <span
-            key={p}
-            aria-current="page"
-            className={`${box} bg-ink text-white`}
-          >
+          <span key={p} aria-current="page" className={`${box} bg-ink text-white`}>
             {p}
           </span>
         ) : (
@@ -209,9 +201,7 @@ export function PerPageControl({
                   setOpen(false);
                 }}
                 className={`flex h-[27px] w-full items-center whitespace-nowrap px-2.5 text-left text-sm hover:bg-surface-subtle ${
-                  option === perPage
-                    ? "font-medium text-ink"
-                    : "text-ink-muted"
+                  option === perPage ? "font-medium text-ink" : "text-ink-muted"
                 }`}
               >
                 {option} per sida

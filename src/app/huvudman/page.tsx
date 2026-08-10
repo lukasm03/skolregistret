@@ -14,7 +14,5 @@ import { listHuvudman, listSkolor } from "@/lib/skolregister-api";
 export default async function HuvudmanListPage() {
   const [huvudman, schools] = await Promise.all([listHuvudman(), listSkolor()]);
 
-  return (
-    <HuvudmanView huvudman={huvudman} schools={schools} initialParams={{}} />
-  );
+  return <HuvudmanView huvudman={huvudman} schools={schools} initialParams={{}} />;
 }

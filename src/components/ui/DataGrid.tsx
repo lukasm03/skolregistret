@@ -104,10 +104,7 @@ export function DataGrid<T extends RowData>({
   );
 
   const sorting = useMemo<SortingState>(() => [sort], [sort]);
-  const pagination = useMemo(
-    () => ({ pageIndex, pageSize }),
-    [pageIndex, pageSize],
-  );
+  const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
 
   const table = useTable({
     features,
@@ -124,13 +121,11 @@ export function DataGrid<T extends RowData>({
     // table do it too would fight the URL.
     autoResetPageIndex: false,
     onSortingChange: (updater) => {
-      const next =
-        typeof updater === "function" ? updater(sorting) : updater;
+      const next = typeof updater === "function" ? updater(sorting) : updater;
       if (next[0]) onSortChange(next[0]);
     },
     onPaginationChange: (updater) => {
-      const next =
-        typeof updater === "function" ? updater(pagination) : updater;
+      const next = typeof updater === "function" ? updater(pagination) : updater;
       onPageChange(next.pageIndex);
     },
   });

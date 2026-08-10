@@ -39,14 +39,9 @@ export function SchoolsView({
 }) {
   const [params, patch] = useQueryParams(initialParams);
   const query = useMemo(() => parseSchoolQuery(params), [params]);
-  const normalized = useMemo(
-    () => schools.map(normalizeApiSchool),
-    [schools],
-  );
+  const normalized = useMemo(() => schools.map(normalizeApiSchool), [schools]);
   const form = query.skolform ? skolform(query.skolform) : undefined;
-  const huvudmanName = query.huvudman
-    ? huvudmanNames[query.huvudman]
-    : undefined;
+  const huvudmanName = query.huvudman ? huvudmanNames[query.huvudman] : undefined;
 
   const selection = useMemo(
     () => selectSchools(normalized, query, huvudmanName),
@@ -59,9 +54,7 @@ export function SchoolsView({
   const from = total ? (page - 1) * query.perPage + 1 : 0;
   const to = Math.min(page * query.perPage, total);
 
-  const kommun = query.kommun
-    ? (kommunName(query.kommun) ?? query.kommun)
-    : undefined;
+  const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
   const columns = useMemo(
     () => [
@@ -122,9 +115,7 @@ export function SchoolsView({
               emptyMessage="Inga skolenheter matchar filtret."
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}
-              onSortChange={(s) =>
-                patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })
-              }
+              onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
               pageIndex={page - 1}
               pageSize={query.perPage}
               onPageChange={(i) => patch({ page: i + 1 })}

@@ -66,9 +66,7 @@ export function DataTable<T>({
     <table className="w-full table-fixed border-collapse">
       <thead>
         <tr className="bg-surface-head">
-          {selectable && (
-            <th className="h-[30px] w-[30px] border-b border-line px-2" />
-          )}
+          {selectable && <th className="h-[30px] w-[30px] border-b border-line px-2" />}
           {columns.map((col) => (
             <th
               key={col.key}
@@ -102,9 +100,7 @@ export function DataTable<T>({
             key={rowKey(row)}
             style={{ height: rowHeight }}
             className={`border-b border-line-row ${
-              rowHref
-                ? "hover:bg-row-hover focus-within:bg-row-hover"
-                : ""
+              rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
             }`}
           >
             {selectable && (

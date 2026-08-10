@@ -23,10 +23,6 @@ export default async function SkolorPage() {
   );
 
   return (
-    <SchoolsView
-      schools={schools}
-      initialParams={{}}
-      huvudmanNames={huvudmanNames}
-    />
+    <SchoolsView schools={schools} initialParams={{}} huvudmanNames={huvudmanNames} />
   );
 }

@@ -47,9 +47,7 @@ export function CheckboxControl({
       <span
         aria-hidden
         className={`flex size-[13px] flex-none items-center justify-center rounded-xs text-[9px] leading-none ${
-          checked
-            ? "bg-accent text-white"
-            : "border border-line-control bg-surface"
+          checked ? "bg-accent text-white" : "border border-line-control bg-surface"
         }`}
       >
         {checked ? "✓" : ""}

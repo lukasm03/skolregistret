@@ -40,21 +40,15 @@ export default async function HuvudmanDetailPage({
 }) {
   const { slug } = await params;
   const [huvudmanRows, skolor] = await Promise.all([listHuvudman(), listSkolor()]);
-  const h = dedupeHuvudmanRows(huvudmanRows).find(
-    (row) => slugify(row.namn) === slug,
-  );
+  const h = dedupeHuvudmanRows(huvudmanRows).find((row) => slugify(row.namn) === slug);
   if (!h) notFound();
 
-  const units = skolor
-    .filter((s) => s.huvudman === h.namn)
-    .map(normalizeApiSchool);
+  const units = skolor.filter((s) => s.huvudman === h.namn).map(normalizeApiSchool);
 
   const isKommunal = h.typ === "Kommunal";
   const kedja = h.koncern?.kedja ?? [];
   // A `koncern` block with no name has been seen despite the declared type.
-  const koncernSlug = h.koncern?.koncernNamn
-    ? slugify(h.koncern.koncernNamn)
-    : null;
+  const koncernSlug = h.koncern?.koncernNamn ? slugify(h.koncern.koncernNamn) : null;
 
   return (
     <AppShell
@@ -120,9 +114,7 @@ export default async function HuvudmanDetailPage({
                 <span className="text-micro font-semibold tracking-[0.08em] text-ink-subtle uppercase">
                   Bolag i koncernen
                 </span>
-                <span className="font-mono text-md">
-                  {num(h.koncern.antalFöretag)}
-                </span>
+                <span className="font-mono text-md">{num(h.koncern.antalFöretag)}</span>
               </div>
             </div>
           )}
@@ -130,11 +122,7 @@ export default async function HuvudmanDetailPage({
 
         <StatGrid columns={4}>
           <Stat label="Skolenheter" value={num(h.antalEnheter)} />
-          <Stat
-            label="Elever"
-            value={num(h.antalElever)}
-            note="summa av avrundade tal"
-          />
+          <Stat label="Elever" value={num(h.antalElever)} note="summa av avrundade tal" />
           <Stat
             label="Kommuner"
             value={num(h.kommuner.length)}
@@ -167,10 +155,7 @@ export default async function HuvudmanDetailPage({
                       className="flex items-center gap-1.5 text-sm text-ink"
                     >
                       {i > 0 && (
-                        <span
-                          aria-hidden
-                          className="font-mono text-mono text-ink-ghost"
-                        >
+                        <span aria-hidden className="font-mono text-mono text-ink-ghost">
                           └
                         </span>
                       )}
@@ -241,21 +226,14 @@ export default async function HuvudmanDetailPage({
             </RailSection>
 
             <RailSection title="Källor">
-              <FactList
-                items={[
-                  ["Enheter, elever, koncern", "Skolregistret"],
-                ]}
-              />
+              <FactList items={[["Enheter, elever, koncern", "Skolregistret"]]} />
               <Note>
-                Elevtalen är avrundade per enhet, så summor drar iväg några
-                tiotal.
+                Elevtalen är avrundade per enhet, så summor drar iväg några tiotal.
               </Note>
             </RailSection>
 
             <div className="mt-auto flex flex-col gap-2">
-              <ButtonLink
-                href={href("/skolor", {}, { huvudman: slug })}
-              >
+              <ButtonLink href={href("/skolor", {}, { huvudman: slug })}>
                 Visa enheterna i träfflistan
               </ButtonLink>
               <p className="text-center font-mono text-micro text-ink-faint">

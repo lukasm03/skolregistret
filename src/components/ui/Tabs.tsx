@@ -13,13 +13,7 @@ interface TabDef {
  * only ever needs one of these per section, so there is no case yet for
  * sharing selection across components via the query string.
  */
-export function Tabs({
-  tabs,
-  defaultTab,
-}: {
-  tabs: TabDef[];
-  defaultTab?: string;
-}) {
+export function Tabs({ tabs, defaultTab }: { tabs: TabDef[]; defaultTab?: string }) {
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id);
   const current = tabs.find((t) => t.id === active) ?? tabs[0];
 

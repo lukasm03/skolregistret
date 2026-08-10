@@ -69,9 +69,7 @@ export function AppShell({
         <header className="flex h-[52px] items-center gap-[18px] border-b border-line-soft bg-surface-subtle px-[18px]">
           <Link href="/skolor" className="flex items-center gap-[9px]">
             <span className="size-[18px] rounded-xs bg-accent" />
-            <span className="text-lg font-semibold tracking-[-0.01em]">
-              {site.brand}
-            </span>
+            <span className="text-lg font-semibold tracking-[-0.01em]">{site.brand}</span>
           </Link>
 
           <span className="h-5 w-px bg-line-soft" />

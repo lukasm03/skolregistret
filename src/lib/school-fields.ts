@@ -43,10 +43,7 @@ export interface ListSchool {
   programmes: string[];
 }
 
-export function studentsOf(
-  school: ListSchool,
-  form?: SkolformCode,
-): number | null {
+export function studentsOf(school: ListSchool, form?: SkolformCode): number | null {
   if (!form) return school.students;
   return school.stats[form]?.students?.value ?? null;
 }
@@ -72,8 +69,7 @@ export function metricNumberOf(
   return metricValue(school, form, key)?.value ?? null;
 }
 
-const byName = (a: ListSchool, b: ListSchool) =>
-  a.name.localeCompare(b.name, "sv");
+const byName = (a: ListSchool, b: ListSchool) => a.name.localeCompare(b.name, "sv");
 
 /**
  * What a list column sorts on, by column key. This is the single definition:

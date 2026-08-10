@@ -68,9 +68,9 @@ export default async function KoncernPage({
 
   const antalEnheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
   const antalElever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
-  const kommuner = [
-    ...new Set(group.dotterbolag.flatMap((d) => d.kommuner)),
-  ].sort((a, b) => a.localeCompare(b, "sv"));
+  const kommuner = [...new Set(group.dotterbolag.flatMap((d) => d.kommuner))].sort(
+    (a, b) => a.localeCompare(b, "sv"),
+  );
   const skolformer = [...new Set(group.dotterbolag.flatMap((d) => d.skolformer))];
   const restForetag = group.antalFöretag - group.dotterbolag.length;
 
@@ -96,7 +96,11 @@ export default async function KoncernPage({
               </span>
               <Dot />
               <span className="text-base text-ink-muted">
-                {plural(group.dotterbolag.length, "huvudman i registret", "huvudmän i registret")}
+                {plural(
+                  group.dotterbolag.length,
+                  "huvudman i registret",
+                  "huvudmän i registret",
+                )}
               </span>
             </div>
           </div>
@@ -106,14 +110,14 @@ export default async function KoncernPage({
           <Stat
             label="Huvudmän i registret"
             value={num(group.dotterbolag.length)}
-            note={restForetag > 0 ? `av ${num(group.antalFöretag)} bolag i koncernen` : undefined}
+            note={
+              restForetag > 0
+                ? `av ${num(group.antalFöretag)} bolag i koncernen`
+                : undefined
+            }
           />
           <Stat label="Skolenheter" value={num(antalEnheter)} />
-          <Stat
-            label="Elever"
-            value={num(antalElever)}
-            note="summa av avrundade tal"
-          />
+          <Stat label="Elever" value={num(antalElever)} note="summa av avrundade tal" />
           <Stat
             label="Kommuner"
             value={num(kommuner.length)}

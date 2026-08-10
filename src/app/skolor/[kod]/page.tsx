@@ -119,7 +119,9 @@ function programElevCount(v: NyckeltalVärde): string {
 function sumProgramElever(program: SkolaProgram[]): number | null {
   const values = program
     .map((p) => p.antalElever)
-    .filter((v): v is Extract<NyckeltalVärde, { status: "finns" }> => v.status === "finns")
+    .filter(
+      (v): v is Extract<NyckeltalVärde, { status: "finns" }> => v.status === "finns",
+    )
     .map((v) => v.tal);
   return values.length ? values.reduce((sum, v) => sum + v, 0) : null;
 }
@@ -171,7 +173,10 @@ function programGenomsnittRow(
   beräknatProgram: Map<string, Partial<Record<ProgramNyckeltalKey, number>>>,
 ): ProgramRow | null {
   const riksText = (key: ProgramNyckeltalKey) =>
-    programRiksText(riksByKod.get(p.kod)?.nyckeltal[key], beräknatProgram.get(p.kod)?.[key]);
+    programRiksText(
+      riksByKod.get(p.kod)?.nyckeltal[key],
+      beräknatProgram.get(p.kod)?.[key],
+    );
   const antalElever = riksText("antalElever");
   const lägstaAntagningspoäng = riksText("lägstaAntagningspoäng");
   const genomsnittligAntagningspoäng = riksText("genomsnittligAntagningspoäng");
@@ -211,7 +216,9 @@ const programColumns: Column<ProgramRow>[] = [
     key: "namn",
     header: "Program",
     cell: (r) => (
-      <span className={r.muted ? "pl-4 text-sm text-ink-muted" : undefined}>{r.namn}</span>
+      <span className={r.muted ? "pl-4 text-sm text-ink-muted" : undefined}>
+        {r.namn}
+      </span>
     ),
     truncate: true,
   },
@@ -302,7 +309,11 @@ function enkätRow(
 }
 
 /** `null` when the grupp has no schools to average, so the caller can drop the row entirely. */
-function enkätGenomsnittRow(key: string, grupp: string, g: EnkätGrupp | undefined): EnkätRow | null {
+function enkätGenomsnittRow(
+  key: string,
+  grupp: string,
+  g: EnkätGrupp | undefined,
+): EnkätRow | null {
   if (!g || Object.values(g.genomsnitt).every((v) => v == null)) return null;
   const val = (k: keyof EnkätGrupp["genomsnitt"]) =>
     g.genomsnitt[k] != null ? dec(g.genomsnitt[k]!) : DASH;
@@ -329,11 +340,19 @@ const enkätColumns: Column<EnkätRow>[] = [
     key: "grupp",
     header: "Enkät",
     cell: (r) => (
-      <span className={r.muted ? "pl-4 text-sm text-ink-muted" : undefined}>{r.grupp}</span>
+      <span className={r.muted ? "pl-4 text-sm text-ink-muted" : undefined}>
+        {r.grupp}
+      </span>
     ),
     truncate: true,
   },
-  { key: "läsår", header: "Läsår", width: 82, mono: true, cell: (r) => enkätCell(r.läsår, r.muted) },
+  {
+    key: "läsår",
+    header: "Läsår",
+    width: 82,
+    mono: true,
+    cell: (r) => enkätCell(r.läsår, r.muted),
+  },
   {
     key: "antalSvar",
     header: "Antal svar",
@@ -402,7 +421,13 @@ function storlek(bytes: number | null): string {
 }
 
 const dokumentColumns: Column<DokumentRow>[] = [
-  { key: "skolform", header: "Skolform", width: 160, muted: true, cell: (r) => r.skolform },
+  {
+    key: "skolform",
+    header: "Skolform",
+    width: 160,
+    muted: true,
+    cell: (r) => r.skolform,
+  },
   { key: "typ", header: "Typ", width: 220, cell: (r) => r.typ, truncate: true },
   {
     key: "titel",
@@ -419,7 +444,15 @@ const dokumentColumns: Column<DokumentRow>[] = [
     ),
     truncate: true,
   },
-  { key: "storlek", header: "Storlek", width: 88, align: "right", mono: true, muted: true, cell: (r) => r.storlek },
+  {
+    key: "storlek",
+    header: "Storlek",
+    width: 88,
+    align: "right",
+    mono: true,
+    muted: true,
+    cell: (r) => r.storlek,
+  },
 ];
 
 interface NyckeltalDisplayRow {
@@ -473,7 +506,11 @@ function nyckeltalDisplayRows(rows: NyckeltalRow[]): NyckeltalDisplayRow[] {
 }
 
 function nyckeltalValueCell(value: string, muted: boolean | undefined) {
-  return muted ? <span className="text-ink-muted">{value}</span> : <span className="font-medium">{value}</span>;
+  return muted ? (
+    <span className="text-ink-muted">{value}</span>
+  ) : (
+    <span className="font-medium">{value}</span>
+  );
 }
 
 const nyckeltalColumns: Column<NyckeltalDisplayRow>[] = [
@@ -489,7 +526,14 @@ const nyckeltalColumns: Column<NyckeltalDisplayRow>[] = [
       </span>
     ),
   },
-  { key: "läsår", header: "Läsår", width: 82, mono: true, muted: true, cell: (r) => r.läsår },
+  {
+    key: "läsår",
+    header: "Läsår",
+    width: 82,
+    mono: true,
+    muted: true,
+    cell: (r) => r.läsår,
+  },
   {
     key: "value",
     header: "Värde",
@@ -558,13 +602,18 @@ export default async function SkolaPage({
   ]);
   const övrigaRiks = primärSkolform === "gr" ? grRiks : primärRiks;
   const beräknatGr = beräknatRiks.perSkolform.get("gr");
-  const beräknatÖvriga = primärSkolform ? beräknatRiks.perSkolform.get(primärSkolform) : undefined;
+  const beräknatÖvriga = primärSkolform
+    ? beräknatRiks.perSkolform.get(primärSkolform)
+    : undefined;
   const riksTal = (
     officiell: NyckeltalVärde | undefined,
     beräknat: number | undefined,
   ): number | undefined => (officiell?.status === "finns" ? officiell.tal : beräknat);
   const riksNyckeltal: Partial<Record<keyof Nyckeltal, number>> = {
-    meritvärdeÅrskurs9: riksTal(grRiks?.nyckeltal.meritvärdeÅrskurs9, beräknatGr?.meritvärdeÅrskurs9),
+    meritvärdeÅrskurs9: riksTal(
+      grRiks?.nyckeltal.meritvärdeÅrskurs9,
+      beräknatGr?.meritvärdeÅrskurs9,
+    ),
     andelGodkändaÅrskurs9: riksTal(
       grRiks?.nyckeltal.andelGodkändaÅrskurs9,
       beräknatGr?.andelGodkändaÅrskurs9,
@@ -573,7 +622,10 @@ export default async function SkolaPage({
       övrigaRiks?.nyckeltal.andelBehörigaLärare,
       beräknatÖvriga?.andelBehörigaLärare,
     ),
-    eleverPerLärare: riksTal(övrigaRiks?.nyckeltal.eleverPerLärare, beräknatÖvriga?.eleverPerLärare),
+    eleverPerLärare: riksTal(
+      övrigaRiks?.nyckeltal.eleverPerLärare,
+      beräknatÖvriga?.eleverPerLärare,
+    ),
   };
 
   const programRiks = await Promise.all(
@@ -582,7 +634,9 @@ export default async function SkolaPage({
   const riksByProgramKod = new Map(
     school.program
       .map((p, i) => [p.kod, programRiks[i]] as const)
-      .filter((entry): entry is [string, NationelltProgramGenomsnitt] => entry[1] != null),
+      .filter(
+        (entry): entry is [string, NationelltProgramGenomsnitt] => entry[1] != null,
+      ),
   );
 
   const hasProgramStats = school.program.length > 0;
@@ -593,29 +647,50 @@ export default async function SkolaPage({
     ])
     .filter((r): r is ProgramRow => r != null);
 
-  const [skolenkät, dokumentgrupper, kommunEnkätGrupper, riksEnkätGrupper] = await Promise.all([
-    getSkolenkät(school.skolenhetskod),
-    getSkolinspektionDokument(school.skolenhetskod),
-    school.kommunkod
-      ? getKommunEnkätGenomsnitt(school.kommunkod)
-      : Promise.resolve(new Map<string, EnkätGrupp>()),
-    getRiksEnkätGenomsnitt(),
-  ]);
+  const [skolenkät, dokumentgrupper, kommunEnkätGrupper, riksEnkätGrupper] =
+    await Promise.all([
+      getSkolenkät(school.skolenhetskod),
+      getSkolinspektionDokument(school.skolenhetskod),
+      school.kommunkod
+        ? getKommunEnkätGenomsnitt(school.kommunkod)
+        : Promise.resolve(new Map<string, EnkätGrupp>()),
+      getRiksEnkätGenomsnitt(),
+    ]);
   const enkätRows = [
     ...skolenkät.vårdnadshavare.flatMap((e, i) => {
       const gruppKey = enkätGruppKey(e.skolform);
       return [
         enkätRow(`v-${i}`, `Vårdnadshavare · ${e.skolform}`, e),
-        enkätGenomsnittRow(`v-${i}-kommun`, "Kommunsnitt", kommunEnkätGrupper.get(gruppKey)),
-        enkätGenomsnittRow(`v-${i}-riks`, "Riksgenomsnitt", riksEnkätGrupper.get(gruppKey)),
+        enkätGenomsnittRow(
+          `v-${i}-kommun`,
+          "Kommunsnitt",
+          kommunEnkätGrupper.get(gruppKey),
+        ),
+        enkätGenomsnittRow(
+          `v-${i}-riks`,
+          "Riksgenomsnitt",
+          riksEnkätGrupper.get(gruppKey),
+        ),
       ];
     }),
     ...skolenkät.elever.flatMap((e, i) => {
       const gruppKey = enkätGruppKey(e.skolform, e.årskurs);
       return [
-        enkätRow(`e-${i}`, `Elev · ${e.skolform}${e.årskurs ? ` åk ${e.årskurs}` : ""}`, e),
-        enkätGenomsnittRow(`e-${i}-kommun`, "Kommunsnitt", kommunEnkätGrupper.get(gruppKey)),
-        enkätGenomsnittRow(`e-${i}-riks`, "Riksgenomsnitt", riksEnkätGrupper.get(gruppKey)),
+        enkätRow(
+          `e-${i}`,
+          `Elev · ${e.skolform}${e.årskurs ? ` åk ${e.årskurs}` : ""}`,
+          e,
+        ),
+        enkätGenomsnittRow(
+          `e-${i}-kommun`,
+          "Kommunsnitt",
+          kommunEnkätGrupper.get(gruppKey),
+        ),
+        enkätGenomsnittRow(
+          `e-${i}-riks`,
+          "Riksgenomsnitt",
+          riksEnkätGrupper.get(gruppKey),
+        ),
       ];
     }),
   ].filter((r): r is EnkätRow => r != null);
@@ -649,16 +724,15 @@ export default async function SkolaPage({
     ? allRows.filter((r) => !GRADE9_KEYS.includes(r.key))
     : allRows;
   const headline = allRows
-    .filter((r) => (hideGrade9Rows ? !GRADE9_KEYS.includes(r.key) : r.key !== "meritvärdeÅrskurs9"))
+    .filter((r) =>
+      hideGrade9Rows ? !GRADE9_KEYS.includes(r.key) : r.key !== "meritvärdeÅrskurs9",
+    )
     .slice(0, 2);
 
   return (
     <AppShell
       section="/skolor"
-      crumbs={[
-        { label: kommun, href: backHref },
-        { label: school.namn },
-      ]}
+      crumbs={[{ label: kommun, href: backHref }, { label: school.namn }]}
       searchAction="/skolor"
       searchPlaceholder={site.search.skolor}
     >
@@ -706,7 +780,12 @@ export default async function SkolaPage({
             }
           />
           {headline.map((r) => (
-            <Stat key={r.key} label={r.label} value={r.value} note={r.läsår !== DASH ? `läsår ${r.läsår}` : (r.note ?? undefined)} />
+            <Stat
+              key={r.key}
+              label={r.label}
+              value={r.value}
+              note={r.läsår !== DASH ? `läsår ${r.läsår}` : (r.note ?? undefined)}
+            />
           ))}
           <Stat
             label="Huvudmannatyp"
@@ -754,7 +833,11 @@ export default async function SkolaPage({
                         id: "enkat",
                         label: "Enkät",
                         content: (
-                          <DataTable columns={enkätColumns} rows={enkätRows} rowKey={(r) => r.key} />
+                          <DataTable
+                            columns={enkätColumns}
+                            rows={enkätRows}
+                            rowKey={(r) => r.key}
+                          />
                         ),
                       },
                     ]
@@ -765,7 +848,11 @@ export default async function SkolaPage({
                         id: "dokument",
                         label: "Dokument",
                         content: (
-                          <DataTable columns={dokumentColumns} rows={dokumentRows} rowKey={(r) => r.key} />
+                          <DataTable
+                            columns={dokumentColumns}
+                            rows={dokumentRows}
+                            rowKey={(r) => r.key}
+                          />
                         ),
                       },
                     ]
@@ -786,14 +873,29 @@ export default async function SkolaPage({
             <RailSection title="Registeruppgifter" divided={false}>
               <FactList
                 items={[
-                  ["Skolenhetskod", <span key="k" className="font-mono text-sm">{school.skolenhetskod}</span>],
+                  [
+                    "Skolenhetskod",
+                    <span key="k" className="font-mono text-sm">
+                      {school.skolenhetskod}
+                    </span>,
+                  ],
                   ["Kommun", school.kommun ?? DASH],
-                  ["Kommunkod", <span key="kk" className="font-mono text-sm">{school.kommunkod ?? DASH}</span>],
+                  [
+                    "Kommunkod",
+                    <span key="kk" className="font-mono text-sm">
+                      {school.kommunkod ?? DASH}
+                    </span>,
+                  ],
                   ["Skolformer", school.skolformer.join(", ") || DASH],
                   ["Huvudmannatyp", school.huvudmannatyp],
                   ["Status i registret", school.status],
                   ["Rektor", school.rektor ?? DASH],
-                  ["Startdatum", <span key="s" className="font-mono text-sm">{school.startdatum ?? DASH}</span>],
+                  [
+                    "Startdatum",
+                    <span key="s" className="font-mono text-sm">
+                      {school.startdatum ?? DASH}
+                    </span>,
+                  ],
                 ]}
               />
             </RailSection>
@@ -804,12 +906,19 @@ export default async function SkolaPage({
                   [
                     "Besöksadress",
                     school.besöksadress ? (
-                      <span key="a" className="block text-right">{school.besöksadress}</span>
+                      <span key="a" className="block text-right">
+                        {school.besöksadress}
+                      </span>
                     ) : (
                       DASH
                     ),
                   ],
-                  ["Telefon", <span key="t" className="font-mono text-sm">{school.telefon ?? DASH}</span>],
+                  [
+                    "Telefon",
+                    <span key="t" className="font-mono text-sm">
+                      {school.telefon ?? DASH}
+                    </span>,
+                  ],
                   [
                     "Webbplats",
                     school.webbplats ? (
@@ -829,9 +938,7 @@ export default async function SkolaPage({
             </RailSection>
 
             <div className="mt-auto flex flex-col gap-2">
-              <ButtonLink href={`/huvudman/${huvudmanSlug}`}>
-                Visa huvudmannen
-              </ButtonLink>
+              <ButtonLink href={`/huvudman/${huvudmanSlug}`}>Visa huvudmannen</ButtonLink>
               {byggd && (
                 <p className="text-center font-mono text-micro text-ink-faint">
                   {`Data hämtat ${byggd.slice(0, 10)}`}

@@ -1,8 +1,4 @@
-import {
-  baseHuvudmanSorts,
-  baseSchoolSorts,
-  site,
-} from "@/config/site";
+import { baseHuvudmanSorts, baseSchoolSorts, site } from "@/config/site";
 import { skolform, type SkolformDef } from "@/config/skolformer";
 import { normalizeKommunkod } from "@/data/kommuner";
 import {
@@ -134,9 +130,7 @@ export interface SchoolQuery {
 function parseStatus(params: RawParams): SkolStatus[] {
   const raw = one(params.status);
   if (raw === undefined) {
-    return one(params.planerad) === "1"
-      ? [...SKOLSTATUS_ORDER]
-      : [...DEFAULT_STATUS];
+    return one(params.planerad) === "1" ? [...SKOLSTATUS_ORDER] : [...DEFAULT_STATUS];
   }
   return list(raw).filter(isSkolStatus);
 }
@@ -148,16 +142,13 @@ function parseStatus(params: RawParams): SkolStatus[] {
 function parseTyp(params: RawParams): HuvudmanTyp[] {
   const raw = one(params.typ);
   if (raw === undefined) return ALL_TYPER;
-  return list(raw).filter((t): t is HuvudmanTyp =>
-    (ALL_TYPER as string[]).includes(t),
-  );
+  return list(raw).filter((t): t is HuvudmanTyp => (ALL_TYPER as string[]).includes(t));
 }
 
 export function parseSchoolQuery(params: RawParams): SchoolQuery {
   const typ = parseTyp(params);
   const rawForm = one(params.skolform)?.toUpperCase();
-  const form =
-    rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined;
+  const form = rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined;
   const def = form ? skolform(form) : undefined;
   const perPage = int(params.perPage);
   const sort = resolveSchoolSort(one(params.sort), def);
@@ -169,9 +160,7 @@ export function parseSchoolQuery(params: RawParams): SchoolQuery {
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
     typ,
     skolform: form,
-    arskurs: list(params.arskurs).filter((a) =>
-      gradeFilterFor(def).includes(a),
-    ),
+    arskurs: list(params.arskurs).filter((a) => gradeFilterFor(def).includes(a)),
     // Programme names are free text from the register, not a fixed enum, so
     // unlike arskurs there is nothing to validate against here.
     program: form === "GY" ? list(params.program) : [],
@@ -230,8 +219,7 @@ export function parseHuvudmanQuery(params: RawParams): HuvudmanQuery {
     q: one(params.q)?.trim() ?? "",
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
     typ,
-    skolform:
-      rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
+    skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
     koncernOnly: one(params.koncern) === "1",
     sort: sort.key,
     desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,

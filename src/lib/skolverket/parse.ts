@@ -4,8 +4,7 @@
  * filter against one means expanding the string back into levels.
  */
 
-const GRADE_ORDER = (g: string): number =>
-  g.toUpperCase() === "F" ? 0 : Number(g);
+const GRADE_ORDER = (g: string): number => (g.toUpperCase() === "F" ? 0 : Number(g));
 
 /** True when two grade spans share at least one årskurs. */
 export function spansOverlap(a: string, b: string): boolean {
