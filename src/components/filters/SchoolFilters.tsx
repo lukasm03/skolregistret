@@ -9,7 +9,7 @@ import {
   type SchoolQuery,
 } from "@/lib/query";
 import type { KommunOption, ProgramOption } from "@/lib/school-select";
-import type { Patch } from "@/lib/use-query-params";
+import type { Patch } from "@/hooks/use-query-params";
 import type { HuvudmanTyp, SkolformCode, SkolStatus } from "@/lib/types";
 import {
   ActiveFilter,

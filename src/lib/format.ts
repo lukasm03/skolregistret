@@ -47,6 +47,14 @@ export function metricNumber(n: number | null, unit: MetricUnit): string {
   return unit === "percent" ? pct(n) : dec(n);
 }
 
+/** A byte count rendered compactly: "512 B", "128 kB", "2,4 MB". */
+export function bytes(n: number | null): string {
+  if (n == null) return DASH;
+  if (n < 1024) return `${n} B`;
+  const kb = n / 1024;
+  return kb < 1024 ? `${Math.round(kb)} kB` : `${dec(kb / 1024)} MB`;
+}
+
 /** "1 skolenhet" / "12 skolenheter". */
 export function plural(n: number, one: string, many: string): string {
   return `${num(n)} ${n === 1 ? one : many}`;

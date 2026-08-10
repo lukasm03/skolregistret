@@ -5,7 +5,7 @@ import { skolformer } from "@/config/skolformer";
 import { toggleInList, type HuvudmanQuery } from "@/lib/query";
 import type { KommunOption } from "@/lib/school-select";
 import type { HuvudmanTyp, SkolformCode } from "@/lib/types";
-import type { Patch } from "@/lib/use-query-params";
+import type { Patch } from "@/hooks/use-query-params";
 import {
   CheckboxControl,
   FilterGroup,

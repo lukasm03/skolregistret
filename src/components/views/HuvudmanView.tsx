@@ -23,7 +23,7 @@ import {
 } from "@/lib/huvudman-select";
 import { parseHuvudmanQuery, searchString, type RawParams } from "@/lib/query";
 import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
-import { useQueryParams } from "@/lib/use-query-params";
+import { useQueryParams } from "@/hooks/use-query-params";
 
 const PATH = "/huvudman";
 

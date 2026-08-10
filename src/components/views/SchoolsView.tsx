@@ -18,7 +18,7 @@ import { kommunLong, plural } from "@/lib/format";
 import { parseSchoolQuery, searchString, type RawParams } from "@/lib/query";
 import { selectSchools } from "@/lib/school-select";
 import type { SkolorRad } from "@/lib/skolregister";
-import { useQueryParams } from "@/lib/use-query-params";
+import { useQueryParams } from "@/hooks/use-query-params";
 import { kommunName } from "@/data/kommuner";
 
 const PATH = "/skolor";

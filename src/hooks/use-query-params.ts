@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { paramsFromSearch, patchParams, searchString, type RawParams } from "./query";
+import { paramsFromSearch, patchParams, searchString, type RawParams } from "@/lib/query";
 
 /** A set of params to change. `null` removes one; `""` keeps it empty. */
 export type Patch = Record<string, string | number | null | undefined>;
