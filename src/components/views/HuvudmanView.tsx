@@ -70,6 +70,11 @@ export function HuvudmanView({
     ? (kommunName(query.kommun) ?? query.kommun)
     : undefined;
 
+  // The React Compiler declines to optimize this one because the conditional
+  // `primary` column spread reads as a dependency it cannot prove stable. The
+  // memo is still correct — the component just misses compiler optimization.
+  // Disabled rather than restructured: rewriting it would change working
+  // render behaviour for no user-visible gain.
   const columns = useMemo<Column<HuvudmanAggregate>[]>(
     () => [
       {
@@ -144,6 +149,7 @@ export function HuvudmanView({
           ]
         : []),
     ],
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     [primary],
   );
 
