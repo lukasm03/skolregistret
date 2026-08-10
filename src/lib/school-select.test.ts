@@ -15,6 +15,7 @@ const school = (over: Partial<ListSchool> = {}): ListSchool => ({
   otherForms: [],
   stats: {},
   students: 300,
+  years: [],
   gradeSpan: "",
   programmes: [],
   ...over,
@@ -206,18 +207,88 @@ describe("gymnasieprogram chips", () => {
 });
 
 /**
- * The API supplies no grade spans (see api-normalize), so `gradeSpanOf` is
- * always "" and the guard in selectSchools drops every unit. Pinned so the
- * behaviour is visible rather than looking like a filtering bug.
+ * The chips are spans ("1–3"); the register reports individual years with "0"
+ * for förskoleklass. The filter expands the chips and asks for an overlap.
  */
-describe("årskurs filtering against spanless API data", () => {
-  test("selecting an årskurs currently matches nothing", () => {
-    const rows = [school({ gradeSpan: "", stats: {} })];
-    expect(selectSchools(rows, query({ arskurs: "F" })).sorted).toHaveLength(0);
+describe("årskurs filtering", () => {
+  const rows = [
+    school({ kod: "lag", years: ["0", "1", "2", "3"] }),
+    school({ kod: "hog", years: ["7", "8", "9"] }),
+    school({ kod: "hela", years: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] }),
+    school({ kod: "gy", forms: ["GY"], years: [] }),
+  ];
+
+  test("selecting nothing keeps every unit, including the yearless one", () => {
+    expect(selectSchools(rows, query()).sorted).toHaveLength(4);
   });
 
-  test("but it matches when a span is actually present", () => {
-    const rows = [school({ kod: "x", gradeSpan: "F–9" })];
-    expect(kods(selectSchools(rows, query({ arskurs: "F" })).sorted)).toEqual(["x"]);
+  test("a chip matches any unit that overlaps it, not only an exact span", () => {
+    expect(kods(selectSchools(rows, query({ arskurs: "1–3" })).sorted).sort()).toEqual([
+      "hela",
+      "lag",
+    ]);
+  });
+
+  test("förskoleklass is matched by the F chip, not by year 1", () => {
+    expect(kods(selectSchools(rows, query({ arskurs: "F" })).sorted).sort()).toEqual([
+      "hela",
+      "lag",
+    ]);
+  });
+
+  test("several chips union rather than intersect", () => {
+    expect(kods(selectSchools(rows, query({ arskurs: "F,7–9" })).sorted).sort()).toEqual([
+      "hela",
+      "hog",
+      "lag",
+    ]);
+  });
+
+  test("a chip nothing covers gives an empty list", () => {
+    expect(
+      selectSchools(rows, query({ arskurs: "4–6" })).sorted.map((r) => r.kod),
+    ).toEqual(["hela"]);
+  });
+
+  /**
+   * Skolverket reports no years for gymnasieskola, so a year filter excludes
+   * every gymnasium. Not reachable from the UI — gy has no årskurs chips (see
+   * `gradeFilter` in src/config/skolformer.ts) — but a hand-written URL can
+   * ask for it, so the behaviour is pinned.
+   */
+  test("a unit with no reported years is excluded once any chip is picked", () => {
+    const out = selectSchools(rows, query({ arskurs: "F,1–3,4–6,7–9" }));
+    expect(kods(out.sorted)).not.toContain("gy");
+  });
+
+  test("years are read per skolform when one is selected", () => {
+    const mixed = [
+      school({
+        kod: "both",
+        forms: ["GR", "GY"],
+        years: ["1", "2", "3"],
+        stats: {
+          GR: { years: ["1", "2", "3"], gradeSpan: "1–3", students: null, metrics: {} },
+          GY: { years: [], gradeSpan: "", students: null, metrics: {} },
+        },
+      }),
+    ];
+    expect(
+      selectSchools(mixed, query({ skolform: "GR", arskurs: "1–3" })).sorted,
+    ).toHaveLength(1);
+  });
+
+  /**
+   * The safety net for the gymnasium case: `parseSchoolQuery` validates chips
+   * against the selected skolform's own `gradeFilter`, and gymnasieskola
+   * declares none. A hand-written `?skolform=GY&arskurs=1–3` therefore drops
+   * the årskurs param entirely instead of quietly emptying the list.
+   */
+  test("an årskurs param is discarded for a skolform that has no chips", () => {
+    expect(query({ skolform: "GY", arskurs: "1–3" }).arskurs).toEqual([]);
+
+    const gymnasier = [school({ kod: "gy", forms: ["GY"], years: [] })];
+    const out = selectSchools(gymnasier, query({ skolform: "GY", arskurs: "1–3" }));
+    expect(kods(out.sorted)).toEqual(["gy"]);
   });
 });

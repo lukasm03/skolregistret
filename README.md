@@ -123,18 +123,25 @@ Things that look like bugs but are not:
 - **Gymnasieskola has no national average endpoint**, only per-programme ones.
   `getBeräknatRiksGenomsnitt` computes a fallback from every unit's own
   reported values.
+- **Årskurser are strings, and `"0"` is förskoleklass** — not a year zero.
+  Render it as "F"; `formatYears` does. The register reports years only for
+  förskoleklass, grundskola and anpassad grundskola, so **empty means "not
+  reported", never "no årskurser"** — show a dash rather than "0 årskurser".
+- **A unit's years may have gaps.** `formatYears` writes them as separate runs
+  (`"F, 4–6"`) rather than flattening to a misleading `"F–6"`.
 
 ## Known quirks
 
 There are no open TODOs in the code. What remains is a known limitation and a
 deliberate trade-off, both pinned by tests:
 
-- **The årskurs chips never match anything.** The API supplies no grade spans,
-  so `normalizeApiSchool` leaves them empty and `selectSchools` filters every
-  unit out — selecting a chip empties the list. The chips are kept on purpose:
-  the filtering logic is correct and starts working the moment the API
-  supplies spans, so there is nothing to fix here but the data. Pinned in
-  `src/lib/school-select.test.ts`.
+- **Specialskola and sameskola årskurs chips match nothing.** The register
+  reports years only for `fsk`, `gr` and `gran` — the union is exhaustive — so
+  those two forms can never receive any, yet both still declare chips in
+  `src/config/skolformer.ts`. Picking a chip with either form selected is
+  guaranteed to return an empty list. Gymnasieskola is safe from this only
+  because it declares no chips, and `parseSchoolQuery` then discards the
+  param. Pinned in `src/lib/api-normalize.test.ts`.
 - **Huvudmän are joined to units by name alone.** The API offers no other
   shared key, so two organisations sharing a name collapse into one row and
   the second organisationsnummer is lost. Deliberate, and consistent between

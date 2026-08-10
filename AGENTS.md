@@ -56,9 +56,10 @@ entry there, not writing new components.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
   are I/O; testing them means mocking fetch or shipping a fixture export file.
   The pure logic around them is covered instead.
-- **The årskurs filter chips match nothing**, because the API supplies no
-  grade spans. Kept deliberately: the logic is correct and starts working when
-  the data arrives. Don't "fix" it by deleting the filter.
+- **Specialskola and sameskola declare årskurs chips they can never match.**
+  The register reports years only for `fsk`/`gr`/`gran`, so those two forms
+  always have an empty year list. Either drop their `gradeFilter` or accept
+  the dead chips — don't "fix" it by loosening the overlap test.
 
 ## Testing
 

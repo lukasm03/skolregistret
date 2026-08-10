@@ -20,6 +20,7 @@ const school = (over: Partial<ListSchool> = {}): ListSchool => ({
   otherForms: [],
   stats: {},
   students: 300,
+  years: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
   gradeSpan: "F–9",
   programmes: [],
   ...over,
@@ -30,12 +31,15 @@ const withStats = (over: Partial<ListSchool>, gr = {}, gy = {}): ListSchool =>
     forms: ["GR", "GY"],
     stats: {
       GR: {
+        years: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
         gradeSpan: "F–9",
         students: { raw: "200", value: 200, missing: null },
         metrics: {},
         ...gr,
       },
+      // Skolverket reports no årskurser for gymnasieskola.
       GY: {
+        years: [],
         gradeSpan: "",
         students: { raw: "100", value: 100, missing: null },
         metrics: {},

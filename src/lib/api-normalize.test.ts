@@ -19,6 +19,11 @@ const skola = (over: Partial<SkolorRad> = {}): SkolorRad => ({
   skolformer: ["Grundskola"],
   gymnasieprogram: [],
   antalElever: 300,
+  årskurser: ["0", "1", "2", "3"],
+  årskurserPerSkolform: [
+    { kod: "fsk", skolform: "Förskoleklass", årskurser: ["0"] },
+    { kod: "gr", skolform: "Grundskola", årskurser: ["1", "2", "3"] },
+  ],
   ...over,
 });
 
@@ -64,14 +69,92 @@ describe("normalizeApiSchool", () => {
     expect(s.stats.GR?.students).toBeNull();
   });
 
+  test("carries the flat year union through as-is", () => {
+    expect(normalizeApiSchool(skola()).years).toEqual(["0", "1", "2", "3"]);
+  });
+
+  test("derives a display span from the years", () => {
+    expect(normalizeApiSchool(skola()).gradeSpan).toBe("F–3");
+  });
+
   /**
-   * The API carries no grade spans. `selectSchools` guards on the empty string
-   * before calling `spansOverlap`, so today an årskurs filter matches nothing
-   * — see the note in the README.
+   * The register keys years by Skolverket's skolformsnyckel (fsk/gr/gran),
+   * which is a different vocabulary from the app's SkolformCode.
    */
-  test("grade spans come back empty, because the API reports none", () => {
-    expect(normalizeApiSchool(skola()).gradeSpan).toBe("");
-    expect(normalizeApiSchool(skola()).stats.GR?.gradeSpan).toBe("");
+  test("re-keys per-skolform years onto the app's own skolform codes", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Förskoleklass", "Grundskola", "Anpassad grundskola"],
+        årskurser: ["0", "1", "2", "3"],
+        årskurserPerSkolform: [
+          { kod: "fsk", skolform: "Förskoleklass", årskurser: ["0"] },
+          { kod: "gr", skolform: "Grundskola", årskurser: ["1", "2", "3"] },
+          { kod: "gran", skolform: "Anpassad grundskola", årskurser: ["1", "2", "3"] },
+        ],
+      }),
+    );
+    expect(s.stats.FKLASS?.years).toEqual(["0"]);
+    expect(s.stats.GR?.years).toEqual(["1", "2", "3"]);
+    expect(s.stats.GRS?.years).toEqual(["1", "2", "3"]);
+    expect(s.stats.FKLASS?.gradeSpan).toBe("F");
+    expect(s.stats.GR?.gradeSpan).toBe("1–3");
+  });
+
+  /**
+   * Skolverket publishes no years for gymnasieskola, so gy units arrive with
+   * empty arrays. That is "not reported", not "teaches no years".
+   */
+  test("a gymnasium keeps empty years and an empty span", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Gymnasieskola"],
+        årskurser: [],
+        årskurserPerSkolform: [],
+      }),
+    );
+    expect(s.years).toEqual([]);
+    expect(s.gradeSpan).toBe("");
+    expect(s.stats.GY?.years).toEqual([]);
+    expect(s.stats.GY?.gradeSpan).toBe("");
+  });
+
+  test("a form the register reports no years for still gets an empty array", () => {
+    // Runs grundskola and fritidshem; only grundskola has years.
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Grundskola", "Fritidshem"],
+        årskurser: ["1", "2"],
+        årskurserPerSkolform: [
+          { kod: "gr", skolform: "Grundskola", årskurser: ["1", "2"] },
+        ],
+      }),
+    );
+    expect(s.stats.GR?.years).toEqual(["1", "2"]);
+    expect(s.stats.FTH?.years).toEqual([]);
+  });
+
+  /**
+   * The register's årskurs vocabulary is exhaustively fsk | gr | gran, so
+   * specialskola and sameskola can never receive years — even though both
+   * declare årskurs chips in src/config/skolformer.ts. Selecting either form
+   * together with a chip is therefore guaranteed to return nothing. Pinned
+   * because it is deducible from the API contract, not from sample data.
+   */
+  test("specialskola and sameskola can never receive years", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Specialskola", "Sameskola"],
+        årskurser: [],
+        årskurserPerSkolform: [],
+      }),
+    );
+    expect(s.stats.SP?.years).toEqual([]);
+    expect(s.stats.SAM?.years).toEqual([]);
+  });
+
+  test("non-contiguous coverage keeps its gap in the span", () => {
+    const s = normalizeApiSchool(skola({ årskurser: ["0", "4", "5", "6"] }));
+    expect(s.gradeSpan).toBe("F, 4–6");
   });
 
   test("survives rows the declared type says are impossible", () => {

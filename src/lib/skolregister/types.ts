@@ -19,6 +19,33 @@ export interface SkolorRad {
   /** Only populated for gymnasieskola units; an empty array otherwise. */
   gymnasieprogram: string[];
   antalElever: number | null;
+  /**
+   * Every årskurs the unit covers, as the register spells them: strings, not
+   * numbers, where `"0"` is förskoleklass rather than a year zero. Already
+   * sorted numerically ascending and deduped, so it can be used as-is.
+   *
+   * This is the flat union of `årskurserPerSkolform[].årskurser` — filter on
+   * this one, and reach for the breakdown only to show which skolform a year
+   * belongs to.
+   *
+   * Always present, but **empty for every skolform Skolverket publishes no
+   * years for**: gymnasieskola, anpassad gymnasieskola, förskola, fritidshem
+   * and vuxenutbildning. Empty means "not reported", *not* "no årskurser" —
+   * never render it as "0 årskurser".
+   */
+  årskurser: string[];
+  /** The same years split by skolform. Empty whenever `årskurser` is. */
+  årskurserPerSkolform: SkolformsÅrskurser[];
+}
+
+/** Skolverket's own skolformsnyckel, for the three forms that report årskurser. */
+export type ÅrskursSkolformKod = "fsk" | "gr" | "gran";
+
+export interface SkolformsÅrskurser {
+  kod: ÅrskursSkolformKod;
+  /** The register's display name, e.g. "Anpassad grundskola". */
+  skolform: string;
+  årskurser: string[];
 }
 
 export interface HuvudmanRad {

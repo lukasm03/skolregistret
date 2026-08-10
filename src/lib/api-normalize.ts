@@ -1,7 +1,8 @@
 import { skolformer } from "@/config/skolformer";
 import { slugify } from "@/lib/format";
 import type { ListSchool } from "@/lib/school-fields";
-import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
+import type { HuvudmanRad, SkolorRad, ÅrskursSkolformKod } from "@/lib/skolregister";
+import { formatYears } from "@/lib/skolverket/parse";
 import type {
   HuvudmanTyp,
   MetricValue,
@@ -24,6 +25,17 @@ import type {
 const skolformCodeFromLabel = (label: string): SkolformCode | undefined =>
   skolformer.find((form) => form.label === label)?.code;
 
+/**
+ * The register keys årskurser by Skolverket's own skolformsnyckel, which is a
+ * different vocabulary from this app's `SkolformCode`. Only these three forms
+ * report years at all.
+ */
+const ÅRSKURS_KOD_TILL_SKOLFORM: Record<ÅrskursSkolformKod, SkolformCode> = {
+  fsk: "FKLASS",
+  gr: "GR",
+  gran: "GRS",
+};
+
 const toMetricValue = (value: number | null): MetricValue | null =>
   value == null ? null : { raw: String(value), value, missing: null };
 
@@ -36,14 +48,27 @@ export function normalizeApiSchool(school: SkolorRad): ListSchool {
     else otherForms.push(rawForm);
   }
 
+  // Years arrive keyed by Skolverket's skolformsnyckel; re-key them onto the
+  // app's own codes so `stats[form]` can carry them. A form the register
+  // reports no years for keeps an empty array — "not reported", not "none".
+  const yearsByForm = new Map<SkolformCode, string[]>();
+  for (const entry of school.årskurserPerSkolform ?? []) {
+    const code = ÅRSKURS_KOD_TILL_SKOLFORM[entry.kod];
+    if (code) yearsByForm.set(code, entry.årskurser ?? []);
+  }
+
   const stats: Partial<Record<SkolformCode, SchoolFormStats>> = {};
   for (const form of forms) {
+    const years = yearsByForm.get(form) ?? [];
     stats[form] = {
-      gradeSpan: "",
+      years,
+      gradeSpan: formatYears(years),
       students: toMetricValue(school.antalElever),
       metrics: {},
     };
   }
+
+  const years = school.årskurser ?? [];
 
   return {
     kod: school.skolenhetskod,
@@ -59,7 +84,8 @@ export function normalizeApiSchool(school: SkolorRad): ListSchool {
     otherForms,
     stats,
     students: school.antalElever,
-    gradeSpan: "",
+    years,
+    gradeSpan: formatYears(years),
     programmes: school.gymnasieprogram ?? [],
   };
 }

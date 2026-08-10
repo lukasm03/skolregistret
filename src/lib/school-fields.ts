@@ -37,7 +37,13 @@ export interface ListSchool {
   stats: Partial<Record<SkolformCode, SchoolFormStats>>;
   /** Sum over the forms that count their own pupils; null when none report. */
   students: number | null;
-  /** Årskurser across all forms, e.g. "F–9". */
+  /**
+   * Every årskurs the unit covers, across all forms — the union the register
+   * reports. `"0"` is förskoleklass. Empty means Skolverket reports no years
+   * for this unit, not that it teaches none.
+   */
+  years: string[];
+  /** `years` as a display span, e.g. "F–9". Empty when `years` is. */
   gradeSpan: string;
   /** Programme names offered, deduped — what the programme filter reads. */
   programmes: string[];
@@ -50,6 +56,16 @@ export function studentsOf(school: ListSchool, form?: SkolformCode): number | nu
 
 export function gradeSpanOf(school: ListSchool, form?: SkolformCode): string {
   return (form ? school.stats[form]?.gradeSpan : school.gradeSpan) || "";
+}
+
+/**
+ * Årskurser the unit covers, narrowed to one skolform when given. Empty means
+ * the register reports no years — for the unit-wide view that is a
+ * gymnasieskola or similar, and for a form it may simply be a form the unit
+ * does not run.
+ */
+export function yearsOf(school: ListSchool, form?: SkolformCode): string[] {
+  return (form ? school.stats[form]?.years : school.years) ?? [];
 }
 
 function metricValue(

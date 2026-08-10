@@ -1,7 +1,7 @@
 import { kommunName } from "@/data/kommuner";
 import type { SchoolQuery } from "./query";
-import { gradeSpanOf, sortSchools, studentsOf, type ListSchool } from "./school-fields";
-import { spansOverlap } from "./skolverket/parse";
+import { sortSchools, studentsOf, yearsOf, type ListSchool } from "./school-fields";
+import { expandSpan, yearsOverlap } from "./skolverket/parse";
 import {
   SKOLSTATUS_ORDER,
   type HuvudmanTyp,
@@ -51,17 +51,20 @@ export function selectSchools<T extends ListSchool>(
 ): SchoolSelection<T> {
   const form = query.skolform;
 
+  // The chips are spans ("1–3"); the register reports individual years. Expand
+  // once here rather than per row.
+  const valdaÅrskurser = query.arskurs.flatMap(expandSpan);
+
   const tests = {
     status: (s: T) => query.status.includes(s.status),
     huvudman: (s: T) => !huvudmanName || s.huvudman === huvudmanName,
     kommun: (s: T) => !query.kommun || s.kommunkod === query.kommun,
     q: (s: T) => !query.q || s.name.toLowerCase().includes(query.q.toLowerCase()),
     skolform: (s: T) => !form || s.forms.includes(form),
-    arskurs: (s: T) => {
-      if (!query.arskurs.length) return true;
-      const span = gradeSpanOf(s, form);
-      return span ? query.arskurs.some((a) => spansOverlap(span, a)) : false;
-    },
+    // Overlap, not containment: picking "4–6" keeps a unit running F–9. A unit
+    // the register reports no years for matches nothing — see `yearsOverlap`.
+    arskurs: (s: T) =>
+      !valdaÅrskurser.length || yearsOverlap(yearsOf(s, form), valdaÅrskurser),
     elever: (s: T) => {
       if (query.minElever == null && query.maxElever == null) return true;
       const n = studentsOf(s, form);

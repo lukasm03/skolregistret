@@ -1,68 +1,124 @@
 import { describe, expect, test } from "bun:test";
-import { spansOverlap } from "./parse";
+import { expandSpan, formatYears, yearsOverlap } from "./parse";
 
 /**
- * The årskurs filter compares a unit's display span ("F–9", "F, 4–6") against
- * a chip ("4–6"), so both sides go through the same expansion. "F" is level 0.
+ * The filter chips are spans ("1–3"); the register reports individual years
+ * ("1", "2", "3") with "0" for förskoleklass. `expandSpan` is what lets the
+ * two be compared.
  */
-describe("spansOverlap", () => {
-  test("a range contains the grades between its ends", () => {
-    expect(spansOverlap("F–9", "4–6")).toBe(true);
-    expect(spansOverlap("1–3", "3–5")).toBe(true);
+describe("expandSpan", () => {
+  test("expands a range into every year it covers", () => {
+    expect(expandSpan("1–3")).toEqual(["1", "2", "3"]);
+    expect(expandSpan("7–9")).toEqual(["7", "8", "9"]);
   });
 
-  test("adjacent but disjoint ranges do not overlap", () => {
-    expect(spansOverlap("1–3", "4–6")).toBe(false);
-    expect(spansOverlap("7–9", "F")).toBe(false);
+  test("F is year 0, not a letter", () => {
+    expect(expandSpan("F")).toEqual(["0"]);
+    expect(expandSpan("F–3")).toEqual(["0", "1", "2", "3"]);
+    expect(expandSpan("f")).toEqual(["0"]);
   });
 
-  test("F is its own level, below 1", () => {
-    expect(spansOverlap("F–9", "F")).toBe(true);
-    expect(spansOverlap("1–9", "F")).toBe(false);
-    expect(spansOverlap("F", "F")).toBe(true);
+  test("a single year expands to itself", () => {
+    expect(expandSpan("5")).toEqual(["5"]);
   });
 
-  test("comma-separated parts are all considered", () => {
-    expect(spansOverlap("F, 4–6", "4–6")).toBe(true);
-    expect(spansOverlap("F, 4–6", "1–3")).toBe(false);
-    expect(spansOverlap("F, 7–9", "F")).toBe(true);
+  test("comma-separated parts are all expanded", () => {
+    expect(expandSpan("F, 4–6")).toEqual(["0", "4", "5", "6"]);
   });
 
-  test("accepts a hyphen as well as an en dash", () => {
-    expect(spansOverlap("1-3", "2–2")).toBe(true);
+  test("accepts a plain hyphen as well as an en dash", () => {
+    expect(expandSpan("1-3")).toEqual(["1", "2", "3"]);
   });
 
-  test("a single grade is treated as a one-wide range", () => {
-    expect(spansOverlap("5", "4–6")).toBe(true);
-    expect(spansOverlap("5", "1–3")).toBe(false);
+  test("returns strings, matching how the register writes years", () => {
+    expect(expandSpan("1–2")).toEqual(["1", "2"]);
+    expect(expandSpan("1–2").every((y) => typeof y === "string")).toBe(true);
   });
 
-  test("is symmetric", () => {
-    expect(spansOverlap("F–3", "3–6")).toBe(spansOverlap("3–6", "F–3"));
-  });
-
-  test("an unparseable span matches nothing instead of throwing", () => {
-    expect(spansOverlap("okänd", "F–9")).toBe(false);
-    expect(spansOverlap("okänd", "F")).toBe(false);
+  test("does not assume the range stops at 9", () => {
+    expect(expandSpan("9–11")).toEqual(["9", "10", "11"]);
   });
 
   /**
-   * Regression: `Number("")` is 0 and "F" is also level 0, so an empty span
-   * used to parse as förskoleklass and match the "F" chip. It now yields no
-   * levels at all. Callers no longer have to guard, though
-   * `src/lib/school-select.ts` still does — cheaper than expanding a string
-   * to discover it is empty.
+   * `Number("")` is 0, which is also förskoleklass, so an empty token must be
+   * rejected explicitly or a ragged span would grow a phantom F.
    */
-  test("an empty span matches nothing — not even F", () => {
-    expect(spansOverlap("", "F")).toBe(false);
-    expect(spansOverlap("", "1–9")).toBe(false);
-    expect(spansOverlap("F", "")).toBe(false);
+  test("unreadable and empty parts are skipped, never read as F", () => {
+    expect(expandSpan("")).toEqual([]);
+    expect(expandSpan("   ")).toEqual([]);
+    expect(expandSpan("okänd")).toEqual([]);
+    expect(expandSpan("1–3,")).toEqual(["1", "2", "3"]);
+  });
+});
+
+describe("yearsOverlap", () => {
+  test("true when the lists share at least one year", () => {
+    expect(yearsOverlap(["1", "2", "3"], ["3", "4"])).toBe(true);
   });
 
-  test("whitespace-only and ragged spans are treated the same way", () => {
-    expect(spansOverlap("   ", "F")).toBe(false);
-    // A trailing separator leaves an empty part, which must not become F.
-    expect(spansOverlap("1–3,", "F")).toBe(false);
-    expect(spansOverlap("1–3,", "1–3")).toBe(true);
+  test("false when they are disjoint", () => {
+    expect(yearsOverlap(["1", "2", "3"], ["4", "5"])).toBe(false);
+  });
+
+  test("förskoleklass only matches förskoleklass", () => {
+    expect(yearsOverlap(["0"], ["0"])).toBe(true);
+    expect(yearsOverlap(["0"], ["1"])).toBe(false);
+    expect(yearsOverlap(["1", "2"], ["0"])).toBe(false);
+  });
+
+  /**
+   * The gymnasieskola case. Skolverket reports no years for gy, so its units
+   * arrive with an empty list and match no year filter at all.
+   */
+  test("a unit with no reported years matches nothing", () => {
+    expect(yearsOverlap([], ["1", "2"])).toBe(false);
+    expect(yearsOverlap([], [])).toBe(false);
+  });
+
+  test("selecting nothing is handled by the caller, not here", () => {
+    expect(yearsOverlap(["1"], [])).toBe(false);
+  });
+
+  test("is symmetric", () => {
+    expect(yearsOverlap(["1", "2"], ["2", "3"])).toBe(
+      yearsOverlap(["2", "3"], ["1", "2"]),
+    );
+  });
+});
+
+describe("formatYears", () => {
+  test("a contiguous run becomes a single span", () => {
+    expect(formatYears(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])).toBe("F–9");
+    expect(formatYears(["1", "2", "3"])).toBe("1–3");
+  });
+
+  test("a single year is not written as a range", () => {
+    expect(formatYears(["0"])).toBe("F");
+    expect(formatYears(["5"])).toBe("5");
+  });
+
+  /** Gaps stay visible — "F, 4–6" must not be flattened to a false "F–6". */
+  test("non-contiguous years keep their gaps", () => {
+    expect(formatYears(["0", "4", "5", "6"])).toBe("F, 4–6");
+    expect(formatYears(["1", "2", "7", "8", "9"])).toBe("1–2, 7–9");
+    expect(formatYears(["1", "3", "5"])).toBe("1, 3, 5");
+  });
+
+  test("empty years give an empty string, not '0 årskurser'", () => {
+    expect(formatYears([])).toBe("");
+  });
+
+  test("sorts numerically, so 10 follows 9 rather than 1", () => {
+    expect(formatYears(["10", "9"])).toBe("9–10");
+  });
+
+  test("tolerates duplicates and unreadable entries", () => {
+    expect(formatYears(["1", "1", "2"])).toBe("1–2");
+    expect(formatYears(["1", "okänd", "2"])).toBe("1–2");
+  });
+
+  test("round-trips with expandSpan for a contiguous span", () => {
+    expect(formatYears(expandSpan("F–9"))).toBe("F–9");
+    expect(formatYears(expandSpan("4–6"))).toBe("4–6");
   });
 });

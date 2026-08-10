@@ -70,7 +70,14 @@ export interface MetricValue {
 
 /** Everything the register reports about one skolform at one unit. */
 export interface SchoolFormStats {
-  /** Årskurser offered, e.g. "F–9". Empty for forms without årskurser. */
+  /**
+   * Årskurser this form covers, as the register writes them — `"0"` is
+   * förskoleklass. Empty when Skolverket reports no years for the form
+   * (gymnasieskola, fritidshem, vuxenutbildning …), which means "not
+   * reported" rather than "none".
+   */
+  years: string[];
+  /** `years` as a display span, e.g. "F–9". Empty when `years` is. */
   gradeSpan: string;
   students: MetricValue | null;
   /** Keyed by the API's own field name inside `statistics[form]`. */

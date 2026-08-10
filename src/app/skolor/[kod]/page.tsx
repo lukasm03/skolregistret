@@ -35,6 +35,7 @@ import {
   type ProgramRow,
 } from "@/components/tables/programColumns";
 import { DASH, bytes, num, slugify } from "@/lib/format";
+import { formatYears } from "@/lib/skolverket/parse";
 import {
   enkätGruppKey,
   getBeräknatRiksGenomsnitt,
@@ -387,6 +388,9 @@ export default async function SkolaPage({
                     </span>,
                   ],
                   ["Skolformer", school.skolformer.join(", ") || DASH],
+                  // An empty list means Skolverket reports no årskurser for
+                  // this unit's skolformer — a dash, never "0 årskurser".
+                  ["Årskurser", formatYears(school.årskurser) || DASH],
                   ["Huvudmannatyp", school.huvudmannatyp],
                   ["Status i registret", school.status],
                   ["Rektor", school.rektor ?? DASH],

@@ -16,6 +16,7 @@ const school = (over: Partial<ListSchool> = {}): ListSchool => ({
   otherForms: [],
   stats: {},
   students: 100,
+  years: [],
   gradeSpan: "",
   programmes: [],
   ...over,
