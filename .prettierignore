@@ -5,3 +5,7 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 bun.lock
+
+# Collector output. koncern.ts writes the lookup minified; formatting it would
+# make every `bun run koncern` rewrite fight `bun run format`.
+data/
