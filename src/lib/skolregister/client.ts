@@ -8,6 +8,7 @@
  * `"use client"` module.
  */
 
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import type { RegisterFile, Sida } from "./types";
 
@@ -76,9 +77,34 @@ export async function fetchJsonOr404<T>(path: string): Promise<T | null> {
   return res.json();
 }
 
+/** What `bun run export` writes, relative to the repo root every script runs from. */
+const STANDARDEXPORT = "data/skolregister-export.json";
+
+let registerFilePathCache: string | null | undefined;
+
+/**
+ * The register export to read, or `null` to go via the API instead.
+ *
+ * `SKOLREGISTER_DATA_FILE` wins when set — it can point anywhere. Otherwise we
+ * use the export in the repo, but only once `bun run export` has actually
+ * written it: without that check a fresh clone would fail every page rather
+ * than fall back to the API.
+ *
+ * Resolved once per process. `generateStaticParams` calls this for thousands of
+ * pages during `next build`, and the answer cannot change mid-build.
+ */
+export function registerFilePath(): string | null {
+  if (registerFilePathCache === undefined) {
+    const explicit = process.env.SKOLREGISTER_DATA_FILE;
+    registerFilePathCache =
+      explicit ?? (existsSync(STANDARDEXPORT) ? STANDARDEXPORT : null);
+  }
+  return registerFilePathCache;
+}
+
 let registerFileCache: Promise<RegisterFile> | null = null;
 
-/** Reads and parses `SKOLREGISTER_DATA_FILE` once per process, caching the result. */
+/** Reads and parses the register export once per process, caching the result. */
 export function readRegisterFile(path: string): Promise<RegisterFile> {
   if (!registerFileCache) {
     registerFileCache = readFile(path, "utf8").then(

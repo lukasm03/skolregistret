@@ -20,7 +20,23 @@ bun run check      # typecheck + lint + test
 bun run format     # prettier
 ```
 
-`bun run build` is the strongest check, but it needs data — see the README.
+`bun run build` is the strongest check. It needs `data/skolregister-export.json`
+— run `bun run export` once if it isn't there.
+
+## Two halves, one repo
+
+The collector (`skolverket.ts`, `bolagsverket.ts`, `koncern.ts`, `export.ts`,
+`server.ts`) sits at the root beside the Next app. They meet at exactly one
+place: `export.ts` writes `data/skolregister-export.json`, and
+`registerFilePath()` in `src/lib/skolregister/client.ts` finds it. There is no
+import edge between them, and there must not be — `bolagsverket.ts` reads an API
+secret from the environment, so anything under `src/` importing it would ship
+that path to the browser. Data crosses on disk, not through modules.
+
+One `tsconfig.json` covers both. It targets ES2022 and sets
+`allowImportingTsExtensions` because the collector imports as `./skolverket.ts`.
+`noUncheckedIndexedAccess` was on in the collector's old standalone config and is
+off here; turning it on repo-wide is worth doing, but as its own pass.
 
 ## Language
 
@@ -42,6 +58,8 @@ messages are in English; domain nouns stay Swedish.
 | `src/config/`            | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
 | `src/components/tables/` | Column definitions. Route files should not declare columns.                                                 |
 | `src/lib/skolregister/`  | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                  |
+| `data/`                  | Collector output. Only `koncern-lookup.json` is committed; the rest is rebuildable and ignored.             |
+| root `*.ts`              | The collector. Swedish throughout, 4-space, and never imported from `src/`.                                 |
 
 `src/config/skolformer.ts` is the registry that makes the app work for more
 than grundskolan — filter chips, columns, stat tiles, sort options and the
@@ -67,6 +85,14 @@ you add a form.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
   are I/O; testing them means mocking fetch or shipping a fixture export file.
   The pure logic around them is covered instead.
+- **The collector has no tests either**, for the same reason — it is almost
+  entirely network I/O against two live APIs. The exceptions are worth knowing:
+  `läsFakta`, `tolkaKoncern`, `läsDotterföretag` and `tolkaÅrsredovisning` in
+  `bolagsverket.ts`/`koncern.ts` are pure text parsers and testable offline.
+- **The collector arrived 4-space and semicolon-free** and was reformatted to
+  the repo's Prettier config on the way in — it had no git history to bury, so
+  its first commit here was the free moment to do it. `bun run format` covers
+  it like everything else now.
 
 ## Testing
 

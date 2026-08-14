@@ -1,13 +1,20 @@
 /**
- * One function per skolregister endpoint. Each one checks
- * `SKOLREGISTER_DATA_FILE` first and serves from the local export when it is
- * set, falling back to HTTP otherwise — see `.env.example`.
+ * One function per skolregister endpoint. Each one asks `registerFilePath()`
+ * first and serves from the local export when there is one — normally the
+ * `bun run export` output in `data/` — falling back to HTTP otherwise. See
+ * `.env.example`.
  *
  * Anything that aggregates *across* these results (kommun averages,
  * riksgenomsnitt, enkätsnitt) belongs in `statistics.ts`, not here.
  */
 
-import { fetchAllPages, fetchJson, fetchJsonOr404, readRegisterFile } from "./client";
+import {
+  fetchAllPages,
+  fetchJson,
+  fetchJsonOr404,
+  readRegisterFile,
+  registerFilePath,
+} from "./client";
 import type {
   HuvudmanRad,
   NationelltGenomsnitt,
@@ -22,23 +29,23 @@ import type {
 } from "./types";
 
 export async function listSkolor(): Promise<SkolorRad[]> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) return (await readRegisterFile(path)).skolor;
   return fetchAllPages<SkolorRad>("/api/skolor");
 }
 
 export async function listHuvudman(): Promise<HuvudmanRad[]> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) return (await readRegisterFile(path)).huvudmän;
   return fetchAllPages<HuvudmanRad>("/api/huvudman");
 }
 
 /**
  * The register export's own build date (`RegisterFile.byggd`) — `null` in
- * live-API mode (no `SKOLREGISTER_DATA_FILE`), which has no such field.
+ * live-API mode (no export file), which has no such field.
  */
 export async function getRegisterByggd(): Promise<string | null> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (!path) return null;
   return (await readRegisterFile(path)).byggd;
 }
@@ -85,7 +92,7 @@ async function getSkolaFromFile(path: string, kod: string): Promise<SkolaDetalj 
 }
 
 export function getSkola(kod: string): Promise<SkolaDetalj | null> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) return getSkolaFromFile(path, kod);
   return fetchJsonOr404<SkolaDetalj>(`/api/skolor/${encodeURIComponent(kod)}`);
 }
@@ -98,7 +105,7 @@ export function getSkola(kod: string): Promise<SkolaDetalj | null> {
 export async function getNationelltGenomsnitt(
   skolform: NationelltGenomsnittSkolform,
 ): Promise<NationelltGenomsnitt | null> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) {
     const { nationelltGenomsnitt } = await readRegisterFile(path);
     return nationelltGenomsnitt?.find((g) => g.skolform === skolform) ?? null;
@@ -115,7 +122,7 @@ export async function getNationelltGenomsnitt(
 export async function getNationelltProgramGenomsnitt(
   programkod: string,
 ): Promise<NationelltProgramGenomsnitt | null> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) {
     const { nationelltProgramGenomsnitt } = await readRegisterFile(path);
     return nationelltProgramGenomsnitt?.find((g) => g.programkod === programkod) ?? null;
@@ -131,7 +138,7 @@ export async function getNationelltProgramGenomsnitt(
  * `elever` arrays rather than a 404.
  */
 export async function getSkolenkät(kod: string): Promise<Skolenkät> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) {
     const { skolenkäterOchDokument } = await readRegisterFile(path);
     const entry = skolenkäterOchDokument?.find((e) => e.skolenhetskod === kod);
@@ -150,7 +157,7 @@ export async function getSkolinspektionDokument(
   kod: string,
   skolform?: Skolform,
 ): Promise<SkolinspektionDokumentgrupp[]> {
-  const path = process.env.SKOLREGISTER_DATA_FILE;
+  const path = registerFilePath();
   if (path) {
     const { skolenkäterOchDokument } = await readRegisterFile(path);
     const entry = skolenkäterOchDokument?.find((e) => e.skolenhetskod === kod);

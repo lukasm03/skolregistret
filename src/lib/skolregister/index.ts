@@ -7,9 +7,9 @@
  * in `types.ts` — nothing outside this directory should assume that shape.
  * `src/lib/api-normalize.ts` translates it into the app's own view models.
  *
- * Every read can be served from a local register export file (the "exportera
- * register" / "mitt register" download) instead of HTTP when
- * `SKOLREGISTER_DATA_FILE` is set — see `.env.example`.
+ * Every read is served from the register export in `data/` when it exists —
+ * `bun run export` builds it — and falls back to HTTP otherwise.
+ * `SKOLREGISTER_DATA_FILE` overrides the path; see `.env.example`.
  *
  * Layout:
  * - `types.ts`      the API's shapes, and nothing else

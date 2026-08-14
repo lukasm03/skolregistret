@@ -5,45 +5,69 @@ A browser for the Swedish school register: **skolenheter** (school units) and
 filtering, sorting and detail views that compare each unit against its kommun
 and against riket.
 
+Two halves in one repo: the **collector** that harvests Skolverket's and
+Bolagsverket's open APIs into one JSON file, and the **app** that renders it.
+
 Next.js 16 (App Router) · React 19 · Tailwind v4 · TypeScript · Bun.
 
 ---
 
 ## Getting started
 
-> **This app does not contain its own API.** There are no route handlers
-> anywhere in `src/app`. It reads either a separate API server or a local
-> register export file. Pick one before you start, or every list will be empty.
-
 ```bash
 bun install
-cp .env.example .env.local     # then edit it — see below
+bun run export     # collects the register into data/skolregister-export.json
 bun dev
 ```
 
-`.env.example` documents both options in full. In short:
+That is the whole setup — no configuration. The app reads
+`data/skolregister-export.json` whenever it exists, so `bun run export` is what
+puts data on the screen. Skip it and every list is empty.
 
-| Variable                 | What it does                                                                                                                                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SKOLREGISTER_DATA_FILE` | Absolute path to a register export JSON. **Easiest path — works offline.** When set, it takes priority over the API for every read.                                            |
-| `NEXT_PUBLIC_APP_URL`    | Base URL of the API server. Defaults to `http://localhost:3000`, which is also where this app serves — so the default only works if a separate API happens to be on that port. |
-
-With an older export file, some sections (nationella genomsnitt, enkäter,
-dokument, per-unit detail) are simply absent and render as _saknas_ rather than
-failing.
+`bun run export` is slow: ~17 000 Skolverket calls plus per-school enkät,
+dokument and detalj fetches across 7 466 units. It needs no API key. Copy
+`.env.example` to `.env.local` only if you want to override the data path or run
+the Bolagsverket half.
 
 ## Commands
 
 | Command                           |                                                                                                             |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `bun dev`                         | Development server                                                                                          |
+| `bun run export`                  | **Collect the register** into `data/skolregister-export.json`. Slow; no key needed.                         |
 | `bun run build`                   | Production build. Prerenders **every** skolenhet, huvudman and koncern, so it needs data and takes a while. |
+| `bun run build:data`              | `export` then `build` — fresh data, then the site                                                           |
 | `bun start`                       | Serve the build                                                                                             |
+| `bun run koncern`                 | Build the koncern register — see [docs/datainsamling.md](docs/datainsamling.md). Hours; needs a key.        |
+| `bun run api`                     | The collector's own HTTP API (`server.ts`), an alternative to the export file                               |
 | `bun run check`                   | **typecheck + lint + test** — run this before committing                                                    |
-| `bun run typecheck`               | `tsc --noEmit`                                                                                              |
+| `bun run typecheck`               | `tsc --noEmit` — one config, covering the collector too                                                     |
 | `bun run lint` / `lint:fix`       | ESLint (flat config; Next 16 removed `next lint`)                                                           |
 | `bun run format` / `format:check` | Prettier                                                                                                    |
-| `bun test` / `test:watch`         | 148 tests over the pure logic                                                                               |
+| `bun test` / `test:watch`         | 179 tests over the pure logic                                                                               |
+
+## The data
+
+| Path                            |                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `skolverket.ts`                 | Skolregister, skoldetaljer, huvudmän, riksgenomsnitt, enkäter, dokument |
+| `bolagsverket.ts`               | Whether a huvudman belongs to a koncern, read out of its annual report  |
+| `koncern.ts`                    | Builds the koncern register over time. Module _and_ CLI                 |
+| `export.ts`                     | Writes the whole register to one JSON file                              |
+| `server.ts`                     | HTTP API over the three above                                           |
+| `data/koncern-lookup.json`      | The built koncern lookup table. **Committed** — `export.ts` reads it    |
+| `data/skolregister-export.json` | The register the app renders. Git-ignored: 81 MB, and rebuildable       |
+
+[docs/datainsamling.md](docs/datainsamling.md) is the full reference for the
+collector — every function, every return shape, and how the koncern mapping
+works. It is in Swedish, like the domain.
+
+The collector is **server-side only**. `bolagsverket.ts` holds an API secret;
+nothing under `src/` may import these modules, or it would ship to the browser.
+
+With an older export file, some sections (nationella genomsnitt, enkäter,
+dokument, per-unit detail) are simply absent and render as _saknas_ rather than
+failing.
 
 ## Routes
 

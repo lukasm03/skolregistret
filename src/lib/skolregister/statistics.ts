@@ -8,7 +8,7 @@
  * every detail page would make all of them slow.
  */
 
-import { readRegisterFile } from "./client";
+import { readRegisterFile, registerFilePath } from "./client";
 import { getSkola, getSkolenkät, listSkolor } from "./resources";
 import { GRUNDSKOLA_NYCKELTAL, primärStatistikskolform } from "./skolform";
 import {
@@ -313,7 +313,7 @@ let riksEnkätCache: Promise<Map<string, EnkätGrupp>> | null = null;
 export async function getRiksEnkätGenomsnitt(): Promise<Map<string, EnkätGrupp>> {
   if (!riksEnkätCache) {
     riksEnkätCache = (async () => {
-      const path = process.env.SKOLREGISTER_DATA_FILE;
+      const path = registerFilePath();
       if (path) {
         const { skolenkäterOchDokument } = await readRegisterFile(path);
         return averageEnkäter((skolenkäterOchDokument ?? []).map((e) => e.enkät));
