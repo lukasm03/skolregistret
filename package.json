@@ -1,11 +1,15 @@
 {
-  "name": "skolregistret-app",
+  "name": "skolregistret",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:data": "bun run export && bun run build",
     "start": "next start",
+    "export": "bun run export.ts data/skolregister-export.json",
+    "koncern": "bun run koncern.ts",
+    "api": "bun run server.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

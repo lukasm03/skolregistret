@@ -13,6 +13,14 @@
 # testing
 /coverage
 
+# collector output. data/koncern-lookup.json is NOT ignored — it is the built
+# artefact export.ts reads, and it is small enough to keep in the repo.
+/data/skolregister-export.json
+/data/koncern-lager.json
+/data/arsredovisningar/
+/skolregister-*.json
+/mitt-register.json
+
 # next.js
 /.next/
 /out/
@@ -24,8 +32,9 @@
 .DS_Store
 *.pem
 
-# agent tooling session caches
+# agent tooling session caches and local-only settings
 /.impeccable/
+/.claude/settings.local.json
 
 # debug
 npm-debug.log*
