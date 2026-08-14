@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import {
-  gradeSpanOf,
   metricNumberOf,
   schoolSortValue,
   sortSchools,
@@ -71,18 +70,6 @@ describe("studentsOf", () => {
 
   test("null, not 0, when the unit reports nothing", () => {
     expect(studentsOf(school({ students: null }))).toBeNull();
-  });
-});
-
-describe("gradeSpanOf", () => {
-  test("falls back to an empty string rather than undefined", () => {
-    expect(gradeSpanOf(school({ gradeSpan: "" }))).toBe("");
-    expect(gradeSpanOf(withStats({}), "GY")).toBe("");
-    expect(gradeSpanOf(withStats({}), "VUX")).toBe("");
-  });
-
-  test("prefers the form's span when a form is given", () => {
-    expect(gradeSpanOf(withStats({ gradeSpan: "F–9" }), "GR")).toBe("F–9");
   });
 });
 

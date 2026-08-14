@@ -129,23 +129,29 @@ Things that look like bugs but are not:
   reported", never "no årskurser"** — show a dash rather than "0 årskurser".
 - **A unit's years may have gaps.** `formatYears` writes them as separate runs
   (`"F, 4–6"`) rather than flattening to a misleading `"F–6"`.
+- **Årskurs chips exist only per skolform**, and only where the register
+  reports years for that form. Gymnasieskola, specialskola and sameskola
+  declare none, and with "alla skolformer" selected there are none either —
+  `gradeFilterFor` returns an empty list without a skolform, so a hand-written
+  `?arskurs=` is dropped rather than filtering invisibly. Förskoleklass years
+  are keyed under `fsk` → `FKLASS`, never under `GR`, so filtering on them is
+  the Förskoleklass skolform's job and grundskolan has no "F" chip.
 
 ## Known quirks
 
-There are no open TODOs in the code. What remains is a known limitation and a
-deliberate trade-off, both pinned by tests:
+There are no open TODOs in the code. What remains is two deliberate departures
+from the register, both pinned by tests in `src/lib/api-normalize.test.ts`:
 
-- **Specialskola and sameskola årskurs chips match nothing.** The register
-  reports years only for `fsk`, `gr` and `gran` — the union is exhaustive — so
-  those two forms can never receive any, yet both still declare chips in
-  `src/config/skolformer.ts`. Picking a chip with either form selected is
-  guaranteed to return an empty list. Gymnasieskola is safe from this only
-  because it declares no chips, and `parseSchoolQuery` then discards the
-  param. Pinned in `src/lib/api-normalize.test.ts`.
 - **Huvudmän are joined to units by name alone.** The API offers no other
   shared key, so two organisations sharing a name collapse into one row and
   the second organisationsnummer is lost. Deliberate, and consistent between
-  the list and the detail page. Pinned in `src/lib/api-normalize.test.ts`.
+  the list and the detail page.
+- **A skolform is recovered from its årskurser.** `skolformer` and
+  `årskurserPerSkolform` are maintained separately in hand-entered public data
+  and do disagree. When a unit reports years for a form its `skolformer` omits,
+  the years win and the form is added — the alternative leaves the unit
+  unfindable under a form it demonstrably teaches. An empty year list is "not
+  reported" and recovers nothing.
 
 ## Testing
 

@@ -48,8 +48,9 @@ export function SchoolFilters({
   // Unchecking the last remaining type drops the param, which means "all"
   // again — the list never ends up empty because of the type filter alone.
   // Årskurser only makes sense once a specific skolform narrows which grades
-  // exist; "alla skolformer" mixes grade spans that aren't comparable.
-  const grades = form ? gradeFilterFor(form) : [];
+  // exist; "alla skolformer" mixes grade spans that aren't comparable, and
+  // `gradeFilterFor` returns nothing without a form for exactly that reason.
+  const grades = gradeFilterFor(form);
 
   // Switching skolform drops the filters that only made sense for the old
   // one: its årskurs chips and its metric sort.

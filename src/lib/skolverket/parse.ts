@@ -58,11 +58,17 @@ export function expandSpan(span: string): string[] {
  * Skolverket reports years only for förskoleklass, grundskola and anpassad
  * grundskola. The filter chips are scoped per skolform to keep that out of
  * reach from the UI — see `gradeFilter` in `src/config/skolformer.ts`.
+ *
+ * Both sides go through `level` rather than being compared as strings, so
+ * that matching agrees with display: `formatYears` already parses tokens
+ * numerically, and a register that wrote `"01"` or `"F"` where it usually
+ * writes `"1"` or `"0"` would otherwise render fine on the detail page while
+ * silently matching no chip in the list.
  */
 export function yearsOverlap(a: string[], b: string[]): boolean {
   if (!a.length || !b.length) return false;
-  const set = new Set(b);
-  return a.some((year) => set.has(year));
+  const wanted = new Set(b.map(level).filter((n) => Number.isFinite(n)));
+  return a.map(level).some((n) => Number.isFinite(n) && wanted.has(n));
 }
 
 /**
@@ -72,9 +78,13 @@ export function yearsOverlap(a: string[], b: string[]): boolean {
  *
  * Empty years give an empty string: the register reports no years for this
  * unit, which is not the same as it having none.
+ *
+ * Nullish is accepted for the same reason: `SkolaDetalj` reaches the detail
+ * page as an unvalidated cast over JSON, from the live API or from an export
+ * file old enough to predate the field, so a caller cannot promise an array.
  */
-export function formatYears(years: string[]): string {
-  const nums = [...new Set(years.map(level))]
+export function formatYears(years: string[] | null | undefined): string {
+  const nums = [...new Set((years ?? []).map(level))]
     .filter((n) => Number.isFinite(n))
     .sort((a, b) => a - b);
   if (!nums.length) return "";

@@ -16,7 +16,10 @@ const skola = (over: Partial<SkolorRad> = {}): SkolorRad => ({
   huvudmannatyp: "Kommunal",
   kommun: "Stockholm",
   kommunkod: "0180",
-  skolformer: ["Grundskola"],
+  // Consistent with årskurserPerSkolform below on purpose: a fixture that
+  // reports fsk years without declaring Förskoleklass would put every test
+  // through the skolform recovery path by accident.
+  skolformer: ["Förskoleklass", "Grundskola"],
   gymnasieprogram: [],
   antalElever: 300,
   årskurser: ["0", "1", "2", "3"],
@@ -52,7 +55,10 @@ describe("normalizeApiSchool", () => {
   });
 
   test("splits skolformer into known codes and unrecognised labels", () => {
-    const s = normalizeApiSchool(skola({ skolformer: ["Grundskola", "Kulturskola"] }));
+    // No years reported, so nothing is recovered on top of the labels.
+    const s = normalizeApiSchool(
+      skola({ skolformer: ["Grundskola", "Kulturskola"], årskurserPerSkolform: [] }),
+    );
     expect(s.forms).toEqual(["GR"]);
     // Unknown forms are kept and shown, just never compared against metrics.
     expect(s.otherForms).toEqual(["Kulturskola"]);
@@ -98,6 +104,70 @@ describe("normalizeApiSchool", () => {
     expect(s.stats.GRS?.years).toEqual(["1", "2", "3"]);
     expect(s.stats.FKLASS?.gradeSpan).toBe("F");
     expect(s.stats.GR?.gradeSpan).toBe("1–3");
+
+    // Year "0" stays under FKLASS and never leaks into GR, which is why
+    // grundskolan offers no "F" chip — see gradeFilter in
+    // src/config/skolformer.ts and the matching test in query.test.ts.
+    expect(s.stats.GR?.years).not.toContain("0");
+  });
+
+  /**
+   * `skolformer` and `årskurserPerSkolform` are maintained separately in
+   * hand-entered public data, so they disagree: a unit reports years for a
+   * form its skolformer list omits. Reported years are taken as evidence the
+   * unit runs the form — dropping them would leave it unfindable under a form
+   * it demonstrably teaches, and the years unreachable behind the skolform
+   * filter. The recovered form is a full member: it filters, counts and
+   * displays like a declared one.
+   */
+  test("a skolform is recovered from its years when skolformer omits it", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Grundskola"],
+        årskurser: ["1", "2", "3"],
+        årskurserPerSkolform: [
+          { kod: "gr", skolform: "Grundskola", årskurser: ["1", "2", "3"] },
+          { kod: "gran", skolform: "Anpassad grundskola", årskurser: ["1", "2", "3"] },
+        ],
+      }),
+    );
+    expect(s.forms).toEqual(["GR", "GRS"]);
+    expect(s.stats.GRS?.years).toEqual(["1", "2", "3"]);
+    expect(s.stats.GRS?.gradeSpan).toBe("1–3");
+  });
+
+  test("declared skolformer keep their order, recovered ones follow", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Grundskola", "Förskoleklass"],
+        årskurser: ["0", "1"],
+        årskurserPerSkolform: [
+          { kod: "gran", skolform: "Anpassad grundskola", årskurser: ["1"] },
+          { kod: "fsk", skolform: "Förskoleklass", årskurser: ["0"] },
+        ],
+      }),
+    );
+    expect(s.forms).toEqual(["GR", "FKLASS", "GRS"]);
+  });
+
+  /**
+   * An empty årskurs list means "not reported", not "runs no years", so it is
+   * evidence of nothing and must not conjure a skolform the unit never
+   * declared — otherwise every gy unit would sprout forms from empty entries.
+   */
+  test("an empty year list recovers no skolform", () => {
+    const s = normalizeApiSchool(
+      skola({
+        skolformer: ["Grundskola"],
+        årskurser: ["1", "2", "3"],
+        årskurserPerSkolform: [
+          { kod: "gr", skolform: "Grundskola", årskurser: ["1", "2", "3"] },
+          { kod: "gran", skolform: "Anpassad grundskola", årskurser: [] },
+        ],
+      }),
+    );
+    expect(s.forms).toEqual(["GR"]);
+    expect(s.stats.GRS).toBeUndefined();
   });
 
   /**
@@ -135,10 +205,11 @@ describe("normalizeApiSchool", () => {
 
   /**
    * The register's årskurs vocabulary is exhaustively fsk | gr | gran, so
-   * specialskola and sameskola can never receive years — even though both
-   * declare årskurs chips in src/config/skolformer.ts. Selecting either form
-   * together with a chip is therefore guaranteed to return nothing. Pinned
-   * because it is deducible from the API contract, not from sample data.
+   * specialskola and sameskola can never receive years. Their årskurs chips
+   * were removed from src/config/skolformer.ts for that reason — any chip
+   * offered there would have been dead, matching nothing. This test pins the
+   * constraint so the chips are not added back. Deducible from the API
+   * contract, not from sample data.
    */
   test("specialskola and sameskola can never receive years", () => {
     const s = normalizeApiSchool(
@@ -160,10 +231,22 @@ describe("normalizeApiSchool", () => {
   test("survives rows the declared type says are impossible", () => {
     // Seen in the wild: a unit with no name. Sorting needs a string.
     const s = normalizeApiSchool(
-      skola({ namn: undefined as never, skolformer: undefined as never }),
+      skola({
+        namn: undefined as never,
+        skolformer: undefined as never,
+        årskurserPerSkolform: undefined as never,
+      }),
     );
     expect(s.name).toBe("");
     expect(s.forms).toEqual([]);
+  });
+
+  test("a missing skolformer list is rebuilt from the reported years", () => {
+    // The recovery path is the only thing standing between this unit and
+    // being unfindable by skolform at all.
+    const s = normalizeApiSchool(skola({ skolformer: undefined as never }));
+    expect(s.forms).toEqual(["FKLASS", "GR"]);
+    expect(s.otherForms).toEqual([]);
   });
 });
 

@@ -57,6 +57,17 @@ export function normalizeApiSchool(school: SkolorRad): ListSchool {
     if (code) yearsByForm.set(code, entry.årskurser ?? []);
   }
 
+  // The two fields describing which forms a unit runs are maintained
+  // separately, and this is hand-entered public data: a unit can report
+  // årskurser for a skolform its `skolformer` list omits. Reported years are
+  // evidence the unit runs that form, so recover it rather than dropping the
+  // years — otherwise the unit is unfindable under a form it demonstrably
+  // teaches. An empty array is "not reported" and evidence of nothing, so it
+  // recovers nothing. Declared forms stay first; recovered ones follow.
+  for (const [form, formYears] of yearsByForm) {
+    if (formYears.length && !forms.includes(form)) forms.push(form);
+  }
+
   const stats: Partial<Record<SkolformCode, SchoolFormStats>> = {};
   for (const form of forms) {
     const years = yearsByForm.get(form) ?? [];

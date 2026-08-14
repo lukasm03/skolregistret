@@ -74,7 +74,10 @@ export const skolformer: SkolformDef[] = [
     code: "GR",
     label: "Grundskola",
     short: "Grundskola",
-    gradeFilter: ["F", "1–3", "4–6", "7–9"],
+    // No "F" chip: the register keys förskoleklass years under `fsk`, which
+    // normalises to FKLASS, never to GR — so an F chip here would match
+    // nothing. Pinned in query.test.ts and api-normalize.test.ts.
+    gradeFilter: ["1–3", "4–6", "7–9"],
     headline: ["merit", "behoriga"],
     metrics: [
       {
@@ -155,7 +158,7 @@ export const skolformer: SkolformDef[] = [
     code: "SP",
     label: "Specialskola",
     short: "Specialskola",
-    gradeFilter: ["1–3", "4–6", "7–9"],
+    gradeFilter: [],
     headline: ["behoriga", "elevPerLarare"],
     metrics: [...staffMetrics],
   },
@@ -163,7 +166,7 @@ export const skolformer: SkolformDef[] = [
     code: "SAM",
     label: "Sameskola",
     short: "Sameskola",
-    gradeFilter: ["1–3", "4–6"],
+    gradeFilter: [],
     headline: ["behoriga", "elevPerLarare"],
     metrics: [...staffMetrics],
   },

@@ -117,8 +117,28 @@ describe("parseSchoolQuery skolform-scoped params", () => {
   });
 
   test("årskurs values not valid for the form are dropped", () => {
-    // "F" is in the default chip set; a nonsense value never is.
-    expect(parseSchoolQuery({ arskurs: "F,tolv" }).arskurs).toEqual(["F"]);
+    expect(parseSchoolQuery({ skolform: "GR", arskurs: "1–3,tolv" }).arskurs).toEqual([
+      "1–3",
+    ]);
+  });
+
+  test("årskurs is dropped entirely when no skolform is selected", () => {
+    // "alla skolformer" renders no årskurs chips, so a hand-written or shared
+    // ?arskurs= must not survive parsing either — otherwise it silently hides
+    // every unit the register reports no years for (gymnasieskola, förskola,
+    // fritidshem, vuxenutbildning) with no chip on screen to clear.
+    expect(parseSchoolQuery({ arskurs: "1–3" }).arskurs).toEqual([]);
+  });
+
+  test("grundskola offers no F chip, so ?arskurs=F is dropped for it", () => {
+    // The register keys förskoleklass years under `fsk` → FKLASS, so
+    // stats.GR.years can never contain "0" (pinned in api-normalize.test.ts).
+    // An F chip on grundskolan would therefore empty the list for every unit,
+    // including one running F–9. Filtering on förskoleklass is the FKLASS
+    // skolform's job. Do not add "F" back to GR's gradeFilter.
+    expect(parseSchoolQuery({ skolform: "GR", arskurs: "F,1–3" }).arskurs).toEqual([
+      "1–3",
+    ]);
   });
 });
 

@@ -48,6 +48,17 @@ than grundskolan — filter chips, columns, stat tiles, sort options and the
 detail comparison are all generated from it. Adding a skolform means adding an
 entry there, not writing new components.
 
+**Every `gradeFilter` chip must be backed by data the register actually
+reports for that form.** Years arrive keyed by skolformsnyckel — `fsk`, `gr`,
+`gran` — and `normalizeApiSchool` re-keys them onto `stats[form].years`, which
+is what the filter compares against. A chip for a form or a year that never
+lands there is dead: it empties the list while looking like a working control.
+That is why gymnasieskola, specialskola and sameskola declare no chips, and
+why grundskolan has no `"F"` chip — förskoleklass years belong to `FKLASS`.
+`parseSchoolQuery` drops any `?arskurs=` value the selected form doesn't
+declare, so the parser and the chips stay in agreement; keep it that way when
+you add a form.
+
 ## Deliberately left as-is
 
 - **`src/components/filters/controls.tsx` (373 lines, 11 exports)** and
@@ -56,15 +67,15 @@ entry there, not writing new components.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
   are I/O; testing them means mocking fetch or shipping a fixture export file.
   The pure logic around them is covered instead.
-- **Specialskola and sameskola declare årskurs chips they can never match.**
-  The register reports years only for `fsk`/`gr`/`gran`, so those two forms
-  always have an empty year list. Either drop their `gradeFilter` or accept
-  the dead chips — don't "fix" it by loosening the overlap test.
 
 ## Testing
 
 `bun test`. Tests sit next to the code as `*.test.ts`. Fixtures are plain
 literals in the test file — there is no factory layer and no network access.
+Keep a shared fixture internally consistent with itself: `api-normalize.ts`
+reconciles fields the register maintains separately, so a `skola()` whose
+`skolformer` disagrees with its `årskurserPerSkolform` puts every test in the
+file through the recovery path without saying so. Opt into that path per test.
 When you meet a surprising behaviour, decide explicitly: fix it and leave a
 regression test, or keep it and pin it with a named test saying why. Both
 patterns are in the tree — see `parse.test.ts` for the first and

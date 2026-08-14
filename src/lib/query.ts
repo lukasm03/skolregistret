@@ -32,9 +32,6 @@ const int = (v: string | string[] | undefined): number | undefined => {
 
 const ALL_TYPER: HuvudmanTyp[] = ["Kommunal", "Fristående"];
 
-/** Årskurs chips shown when no single skolform is selected. */
-const DEFAULT_GRADE_FILTER = ["F", "1–3", "4–6", "7–9"];
-
 interface SortOption {
   /** Also the id of the table column this sorts. */
   key: string;
@@ -88,9 +85,14 @@ function resolveSchoolSort(
   );
 }
 
-/** Årskurs chips valid for the selected skolform. */
+/**
+ * Årskurs chips valid for the selected skolform. Empty without one: "alla
+ * skolformer" mixes grade spans that aren't comparable, so the UI renders no
+ * chips there — and parsing has to agree, or `?arskurs=` from a shared link
+ * stays active with no chip on screen to clear it.
+ */
 export function gradeFilterFor(form: SkolformDef | undefined): string[] {
-  return form ? form.gradeFilter : DEFAULT_GRADE_FILTER;
+  return form ? form.gradeFilter : [];
 }
 
 export interface SchoolQuery {

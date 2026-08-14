@@ -207,58 +207,71 @@ describe("gymnasieprogram chips", () => {
 });
 
 /**
- * The chips are spans ("1–3"); the register reports individual years with "0"
- * for förskoleklass. The filter expands the chips and asks for an overlap.
+ * The chips are spans ("1–3"); the register reports individual years. Chips
+ * exist only per skolform, so every case here selects one — an `?arskurs=`
+ * without a skolform is dropped by the parser (pinned in query.test.ts).
+ *
+ * Note the fixtures: a unit running F–9 has "0" in its unit-wide `years` but
+ * not in `stats.GR.years`, because the register keys förskoleklass under
+ * `fsk` → FKLASS. That is the whole reason grundskolan has no F chip.
  */
 describe("årskurs filtering", () => {
+  const grStats = (years: string[]) => ({
+    GR: { years, gradeSpan: "", students: null, metrics: {} },
+  });
   const rows = [
-    school({ kod: "lag", years: ["0", "1", "2", "3"] }),
-    school({ kod: "hog", years: ["7", "8", "9"] }),
-    school({ kod: "hela", years: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] }),
+    school({ kod: "lag", years: ["0", "1", "2", "3"], stats: grStats(["1", "2", "3"]) }),
+    school({ kod: "hog", years: ["7", "8", "9"], stats: grStats(["7", "8", "9"]) }),
+    school({
+      kod: "hela",
+      years: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+      stats: grStats(["1", "2", "3", "4", "5", "6", "7", "8", "9"]),
+    }),
+    school({ kod: "ingen", years: [], stats: grStats([]) }),
     school({ kod: "gy", forms: ["GY"], years: [] }),
   ];
 
-  test("selecting nothing keeps every unit, including the yearless one", () => {
-    expect(selectSchools(rows, query()).sorted).toHaveLength(4);
+  test("selecting nothing keeps every unit, including the yearless ones", () => {
+    expect(selectSchools(rows, query()).sorted).toHaveLength(5);
   });
 
   test("a chip matches any unit that overlaps it, not only an exact span", () => {
-    expect(kods(selectSchools(rows, query({ arskurs: "1–3" })).sorted).sort()).toEqual([
-      "hela",
-      "lag",
-    ]);
-  });
-
-  test("förskoleklass is matched by the F chip, not by year 1", () => {
-    expect(kods(selectSchools(rows, query({ arskurs: "F" })).sorted).sort()).toEqual([
-      "hela",
-      "lag",
-    ]);
+    const out = selectSchools(rows, query({ skolform: "GR", arskurs: "1–3" }));
+    expect(kods(out.sorted).sort()).toEqual(["hela", "lag"]);
   });
 
   test("several chips union rather than intersect", () => {
-    expect(kods(selectSchools(rows, query({ arskurs: "F,7–9" })).sorted).sort()).toEqual([
-      "hela",
-      "hog",
-      "lag",
-    ]);
+    const out = selectSchools(rows, query({ skolform: "GR", arskurs: "1–3,7–9" }));
+    expect(kods(out.sorted).sort()).toEqual(["hela", "hog", "lag"]);
   });
 
-  test("a chip nothing covers gives an empty list", () => {
-    expect(
-      selectSchools(rows, query({ arskurs: "4–6" })).sorted.map((r) => r.kod),
-    ).toEqual(["hela"]);
+  test("a chip only one unit covers narrows to it", () => {
+    const out = selectSchools(rows, query({ skolform: "GR", arskurs: "4–6" }));
+    expect(kods(out.sorted)).toEqual(["hela"]);
   });
 
   /**
-   * Skolverket reports no years for gymnasieskola, so a year filter excludes
-   * every gymnasium. Not reachable from the UI — gy has no årskurs chips (see
-   * `gradeFilter` in src/config/skolformer.ts) — but a hand-written URL can
-   * ask for it, so the behaviour is pinned.
+   * Grundskolan declares no "F" chip, so a hand-written `?arskurs=F` drops the
+   * param rather than emptying the list: `stats.GR.years` never contains "0",
+   * so an F chip would match nothing, not even a unit running F–9. Filtering
+   * on förskoleklass is the FKLASS skolform's job. Do not add the chip back.
+   */
+  test("an F chip on grundskolan is dropped rather than matching nothing", () => {
+    expect(query({ skolform: "GR", arskurs: "F" }).arskurs).toEqual([]);
+
+    const out = selectSchools(rows, query({ skolform: "GR", arskurs: "F" }));
+    expect(kods(out.sorted).sort()).toEqual(["hela", "hog", "ingen", "lag"]);
+  });
+
+  /**
+   * Skolverket reports years only for förskoleklass, grundskola and anpassad
+   * grundskola, and even there a unit may be missing from the årskurs data.
+   * Such a unit matches no chip — the honest answer to "does it teach year 5",
+   * but it does mean picking any chip drops it silently.
    */
   test("a unit with no reported years is excluded once any chip is picked", () => {
-    const out = selectSchools(rows, query({ arskurs: "F,1–3,4–6,7–9" }));
-    expect(kods(out.sorted)).not.toContain("gy");
+    const out = selectSchools(rows, query({ skolform: "GR", arskurs: "1–3,4–6,7–9" }));
+    expect(kods(out.sorted)).not.toContain("ingen");
   });
 
   test("years are read per skolform when one is selected", () => {

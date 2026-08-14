@@ -84,6 +84,24 @@ describe("yearsOverlap", () => {
       yearsOverlap(["2", "3"], ["1", "2"]),
     );
   });
+
+  /**
+   * Matching is normalised the same way display is: `formatYears` parses
+   * tokens through `level`, so a raw string comparison here would render a
+   * non-canonical year correctly on the detail page while silently matching
+   * no chip in the list. Defensive — the register writes "1" and "0" today.
+   */
+  test("a non-canonical year token still matches its chip", () => {
+    expect(yearsOverlap(["01", " 2 "], ["1"])).toBe(true);
+    expect(yearsOverlap(["F"], ["0"])).toBe(true);
+    expect(yearsOverlap(["0"], ["F"])).toBe(true);
+  });
+
+  test("unreadable tokens match nothing rather than colliding", () => {
+    // `Number("")` is 0, which is förskoleklass — `level` returns NaN instead.
+    expect(yearsOverlap([""], ["0"])).toBe(false);
+    expect(yearsOverlap(["tolv"], ["12"])).toBe(false);
+  });
 });
 
 describe("formatYears", () => {
@@ -106,6 +124,17 @@ describe("formatYears", () => {
 
   test("empty years give an empty string, not '0 årskurser'", () => {
     expect(formatYears([])).toBe("");
+  });
+
+  /**
+   * The detail page renders `school.årskurser` straight from JSON that is cast
+   * to `SkolaDetalj` without validation — from the live API, or from an export
+   * file old enough to predate the field. A missing field must render a dash,
+   * not throw and take the whole page down with a 500.
+   */
+  test("a missing field is an empty string, not a crash", () => {
+    expect(formatYears(undefined)).toBe("");
+    expect(formatYears(null)).toBe("");
   });
 
   test("sorts numerically, so 10 follows 9 rather than 1", () => {

@@ -54,10 +54,6 @@ export function studentsOf(school: ListSchool, form?: SkolformCode): number | nu
   return school.stats[form]?.students?.value ?? null;
 }
 
-export function gradeSpanOf(school: ListSchool, form?: SkolformCode): string {
-  return (form ? school.stats[form]?.gradeSpan : school.gradeSpan) || "";
-}
-
 /**
  * Årskurser the unit covers, narrowed to one skolform when given. Empty means
  * the register reports no years — for the unit-wide view that is a
