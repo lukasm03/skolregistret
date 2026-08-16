@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { SchoolFilters } from "@/components/filters/SchoolFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
@@ -12,7 +12,7 @@ import {
   PerPageControl,
 } from "@/components/list/ListChrome";
 import { schoolColumns } from "@/components/tables/schoolColumns";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
 import { activeSchoolFilters, clearAllPatch } from "@/lib/active-filters";
@@ -46,9 +46,20 @@ export function SchoolsView({
   const form = query.skolform ? skolform(query.skolform) : undefined;
   const huvudmanName = query.huvudman ? huvudmanNames[query.huvudman] : undefined;
 
+  /*
+   * Selecting runs over the whole register — every keystroke in the search
+   * field filters, counts and sorts thousands of rows. Deferring it lets
+   * React keep the previous table on screen and stay responsive to the next
+   * keystroke instead of blocking on this one; the field itself reads the
+   * immediate query, so typing never lags. `stale` is true while the visible
+   * table belongs to an older query, and fades it slightly to say so.
+   */
+  const deferredQuery = useDeferredValue(query);
+  const stale = deferredQuery !== query;
+
   const selection = useMemo(
-    () => selectSchools(normalized, query, huvudmanName),
-    [normalized, query, huvudmanName],
+    () => selectSchools(normalized, deferredQuery, huvudmanName),
+    [normalized, deferredQuery, huvudmanName],
   );
 
   const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
@@ -125,7 +136,20 @@ export function SchoolsView({
             />
           </ListToolbar>
 
-          <div className="min-h-[712px]">
+          {/*
+            Reserve the height this page will occupy, so the footer does not
+            jump as you page or filter. A full page of rows reserves a full
+            page; a filter that leaves three rows reserves three, rather than
+            the fixed 712px that used to leave most of a screen blank under
+            them.
+          */}
+          <div
+            style={{
+              minHeight:
+                HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
+            }}
+            className={`transition-opacity ${stale ? "opacity-60" : ""}`}
+          >
             <DataGrid
               rows={selection.sorted}
               rowKey={(s) => s.kod}

@@ -32,6 +32,10 @@ import {
  * nothing to sort or page.
  */
 
+/** Row and header heights, exported so a page can reserve its own space. */
+export const ROW_HEIGHT = 34;
+export const HEADER_HEIGHT = 30;
+
 interface GridColumnMeta {
   align?: "left" | "right";
   width?: number;
@@ -89,7 +93,7 @@ export function DataGrid<T extends RowData>({
   rowKey,
   rowHref,
   rowLabel,
-  rowHeight = 34,
+  rowHeight = ROW_HEIGHT,
   emptyMessage = "Inga träffar.",
   label = "Tabell",
   sort,
@@ -166,7 +170,12 @@ export function DataGrid<T extends RowData>({
                     sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined
                   }
                   style={meta?.width ? { width: meta.width } : undefined}
-                  className={`${headerClass} ${right ? "text-right" : "text-left"}`}
+                  // The column the table is ordered by is worth finding at a
+                  // glance. A tint on the header does it without fighting the
+                  // row hover, which a tinted column of cells would.
+                  className={`${headerClass} ${right ? "text-right" : "text-left"} ${
+                    sorted ? "bg-surface-segment" : ""
+                  }`}
                 >
                   {header.column.getCanSort() ? (
                     <button
@@ -177,7 +186,10 @@ export function DataGrid<T extends RowData>({
                       } ${sorted ? "text-ink" : ""}`}
                     >
                       <table.FlexRender header={header} />
-                      <span aria-hidden className="text-[9px] text-ink-faint">
+                      <span
+                        aria-hidden
+                        className={`text-[10px] ${sorted ? "text-ink" : "text-ink-faint"}`}
+                      >
                         {sorted === "desc" ? "▾" : sorted ? "▴" : "⇅"}
                       </span>
                     </button>

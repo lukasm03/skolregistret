@@ -218,4 +218,18 @@
     outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
+
+  /* Motion here is small — a tab's colour, a loading pulse, a pending fade —
+     but "small" is not the test. Anything that moves without being asked
+     stops for a reader who has asked it to. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { HuvudmanFilters } from "@/components/filters/HuvudmanFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
@@ -11,7 +11,7 @@ import {
   Pagination,
   PerPageControl,
 } from "@/components/list/ListChrome";
-import { DataGrid } from "@/components/ui/DataGrid";
+import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import type { Column } from "@/components/ui/DataTable";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
@@ -55,9 +55,14 @@ export function HuvudmanView({
   );
   const normalizedSchools = useMemo(() => schools.map(normalizeApiSchool), [schools]);
 
+  // Aggregating every huvudman over every unit is the expensive step here —
+  // see `SchoolsView` for why it runs against a deferred query.
+  const deferredQuery = useDeferredValue(query);
+  const stale = deferredQuery !== query;
+
   const list = useMemo(
-    () => selectHuvudman(normalizedHuvudman, normalizedSchools, query),
-    [normalizedHuvudman, normalizedSchools, query],
+    () => selectHuvudman(normalizedHuvudman, normalizedSchools, deferredQuery),
+    [normalizedHuvudman, normalizedSchools, deferredQuery],
   );
 
   const total = list.rows.length;
@@ -191,7 +196,20 @@ export function HuvudmanView({
             />
           </ListToolbar>
 
-          <div className="min-h-[712px]">
+          {/*
+            Reserve the height this page will occupy, so the footer does not
+            jump as you page or filter. A full page of rows reserves a full
+            page; a filter that leaves three rows reserves three, rather than
+            the fixed 712px that used to leave most of a screen blank under
+            them.
+          */}
+          <div
+            style={{
+              minHeight:
+                HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
+            }}
+            className={`transition-opacity ${stale ? "opacity-60" : ""}`}
+          >
             <DataGrid
               rows={list.rows}
               rowKey={(r) => r.huvudman.slug}
