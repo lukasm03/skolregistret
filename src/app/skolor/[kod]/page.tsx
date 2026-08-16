@@ -28,13 +28,8 @@ import {
   nyckeltalDisplayRows,
   nyckeltalRows,
 } from "@/components/tables/nyckeltalColumns";
-import {
-  programColumns,
-  programGenomsnittRow,
-  programRow,
-  sumProgramElever,
-  type ProgramRow,
-} from "@/components/tables/programColumns";
+import { ProgramTable } from "@/components/tables/ProgramTable";
+import { buildProgramComparisons, sumProgramElever } from "@/lib/program-compare";
 import { DASH, bytes, kommunLong, num, plural, slugify } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
 import {
@@ -169,12 +164,11 @@ export default async function SkolaPage({
   );
 
   const hasProgramStats = school.program.length > 0;
-  const programRows: ProgramRow[] = school.program
-    .flatMap((p) => [
-      programRow(p),
-      programGenomsnittRow(p, riksByProgramKod, beräknatRiks.perProgram),
-    ])
-    .filter((r): r is ProgramRow => r != null);
+  const programComparisons = buildProgramComparisons(
+    school.program,
+    riksByProgramKod,
+    beräknatRiks.perProgram,
+  );
 
   const [skolenkät, dokumentgrupper, kommunEnkätGrupper, riksEnkätGrupper] =
     await Promise.all([
@@ -331,17 +325,7 @@ export default async function SkolaPage({
                       {
                         id: "program",
                         label: "Program",
-                        content: (
-                          <section className="flex flex-col gap-2.5">
-                            <SectionTitle>Program</SectionTitle>
-                            <DataTable
-                              columns={programColumns}
-                              rows={programRows}
-                              rowKey={(r) => r.key}
-                              label="Program"
-                            />
-                          </section>
-                        ),
+                        content: <ProgramTable rows={programComparisons} />,
                       },
                     ]
                   : []),

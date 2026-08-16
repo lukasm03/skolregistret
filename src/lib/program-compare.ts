@@ -109,6 +109,18 @@ function värde(p: SkolaProgram, key: ProgramNyckeltalKey): NyckeltalVärde | un
   return key === "antalElever" ? p.antalElever : p.nyckeltal[key];
 }
 
+/**
+ * Some gymnasieskolor report no unit-wide elevantal but do report one per
+ * programme — summing those gives an approximate total instead of a dash.
+ * `null` when no programme has a figure to sum.
+ */
+export function sumProgramElever(program: SkolaProgram[]): number | null {
+  const tal = program
+    .map((p) => talOf(p.antalElever))
+    .filter((v): v is number => v != null);
+  return tal.length ? tal.reduce((sum, v) => sum + v, 0) : null;
+}
+
 export function buildProgramComparisons(
   program: SkolaProgram[],
   riksByKod: Map<string, NationelltProgramGenomsnitt>,

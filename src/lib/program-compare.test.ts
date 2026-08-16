@@ -3,6 +3,7 @@ import {
   buildProgramComparisons,
   nextProgramSort,
   sortProgramComparisons,
+  sumProgramElever,
   type ProgramComparison,
 } from "./program-compare";
 import type {
@@ -251,5 +252,24 @@ describe("nextProgramSort", () => {
     expect(
       nextProgramSort({ key: "antalElever", dir: "asc" }, "betygspoängMedExamen"),
     ).toEqual({ key: "betygspoängMedExamen", dir: "desc" });
+  });
+});
+
+describe("sumProgramElever", () => {
+  test("adds up what the programmes report when the unit reports nothing", () => {
+    expect(
+      sumProgramElever([
+        program("A", "A", [160, null, null, null, null, null]),
+        program("B", "B", [40, null, null, null, null, null]),
+      ]),
+    ).toBe(200);
+  });
+
+  test("is null rather than 0 when no programme has a figure", () => {
+    // 0 would be a claim about the school; null says we were not told.
+    expect(
+      sumProgramElever([program("A", "A", [null, null, null, null, null, null])]),
+    ).toBeNull();
+    expect(sumProgramElever([])).toBeNull();
   });
 });

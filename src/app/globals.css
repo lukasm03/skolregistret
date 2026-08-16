@@ -72,6 +72,13 @@
   --accent-ink: #ffffff;
   --row-hover: #f3f5fa;
 
+  /* Comparison against riket, in the programtabell. A pair of their own
+     rather than `ok`/`warn`: those two say "this is fine" / "look at this",
+     while these say only which side of the average a figure falls on.
+     6.49 and 6.93 on `--surface`. */
+  --over: #1b6b46;
+  --under: #a3312b;
+
   /* Status */
   --ok: #2f6b4f;
   --ok-bg: #f1f7f3;
@@ -117,6 +124,10 @@
     --accent-ink: #0e1013;
     --row-hover: #1b1f27;
 
+    /* 8.28 and 6.69 on the dark `--surface`. */
+    --over: #6cc294;
+    --under: #e8827a;
+
     --ok: #6cc294;
     --ok-bg: #152019;
     --ok-line: #26402f;
@@ -155,6 +166,8 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
   --color-row-hover: var(--row-hover);
+  --color-over: var(--over);
+  --color-under: var(--under);
 
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);
