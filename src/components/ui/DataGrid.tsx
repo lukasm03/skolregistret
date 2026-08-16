@@ -14,7 +14,9 @@ import {
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import {
+  Bar,
   TableScroller,
+  barMax,
   cellClass,
   headerClass,
   tableMinWidth,
@@ -142,6 +144,11 @@ export function DataGrid<T extends RowData>({
   const bodyRows = table.getRowModel().rows;
   const span = columns.length;
 
+  // Scaled against every filtered row, not the twenty on this page: a bar
+  // rescaled per page would make page 40's smallest school look like page
+  // 1's largest.
+  const maxes = useMemo(() => columns.map((col) => barMax(col, rows)), [columns, rows]);
+
   return (
     <TableScroller minWidth={tableMinWidth(columns)} label={label}>
       <table className="w-full table-fixed border-collapse">
@@ -205,6 +212,7 @@ export function DataGrid<T extends RowData>({
                 const col = columns[i];
                 return (
                   <td key={cell.id} className={cellClass(col)}>
+                    {col.bar && <Bar value={col.bar(row.original)} max={maxes[i]} />}
                     {rowHref ? (
                       // Every cell links to the row target so the whole row is
                       // clickable, but only the first one is a tab stop — the
@@ -216,7 +224,8 @@ export function DataGrid<T extends RowData>({
                         aria-hidden={i === 0 ? undefined : true}
                         aria-label={i === 0 ? rowLabel?.(row.original) : undefined}
                         style={{ height: rowHeight }}
-                        className={`flex items-center outline-offset-[-2px] ${
+                        // `relative` keeps the figure painted over its bar.
+                        className={`relative flex items-center outline-offset-[-2px] ${
                           col.align === "right" ? "justify-end" : ""
                         }`}
                       >
@@ -228,6 +237,10 @@ export function DataGrid<T extends RowData>({
                           <table.FlexRender cell={cell} />
                         )}
                       </Link>
+                    ) : col.bar ? (
+                      <span className="relative">
+                        <table.FlexRender cell={cell} />
+                      </span>
                     ) : (
                       <table.FlexRender cell={cell} />
                     )}

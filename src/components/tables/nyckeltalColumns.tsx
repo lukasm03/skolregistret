@@ -9,7 +9,7 @@
  */
 
 import type { Column } from "@/components/ui/DataTable";
-import { DASH, dec } from "@/lib/format";
+import { DASH, dec, signed } from "@/lib/format";
 import type { KommunNyckeltalStat, Nyckeltal } from "@/lib/skolregister";
 
 export interface NyckeltalRow {
@@ -21,6 +21,9 @@ export interface NyckeltalRow {
   kommunsnitt: string;
   placering: string;
   riksgenomsnitt: string;
+  /** The unit's own figure less the kommunsnitt; null when either is missing. */
+  kommunDiff: number | null;
+  riksDiff: number | null;
 }
 
 export const NYCKELTAL_LABELS: Record<keyof Nyckeltal, string> = {
@@ -43,6 +46,11 @@ export function nyckeltalRows(
     const placering = stat?.rank != null ? `${stat.rank} av ${stat.antalRankade}` : DASH;
     const riks = riksNyckeltal[key];
     const riksgenomsnitt = riks != null ? dec(riks) : DASH;
+    // Differences are taken from the numbers, never from the rendered
+    // strings: `value` is the register's own Swedish text ("cirka 360"), and
+    // parsing it back would quietly turn a rounded figure into an exact one.
+    const diff = (mot: number | null | undefined) =>
+      v.status === "finns" && mot != null ? v.tal - mot : null;
     return v.status === "finns"
       ? {
           key,
@@ -53,6 +61,8 @@ export function nyckeltalRows(
           kommunsnitt,
           placering,
           riksgenomsnitt,
+          kommunDiff: diff(stat?.genomsnitt),
+          riksDiff: diff(riks),
         }
       : {
           key,
@@ -63,6 +73,8 @@ export function nyckeltalRows(
           kommunsnitt,
           placering: DASH,
           riksgenomsnitt,
+          kommunDiff: null,
+          riksDiff: null,
         };
   });
 }
@@ -74,6 +86,12 @@ export interface NyckeltalDisplayRow {
   value: string;
   placering: string;
   note: string | null;
+  /**
+   * On a comparison row: how far the unit's own figure sits from this
+   * average, already signed. Empty on the unit's own row, which is the thing
+   * being compared.
+   */
+  diff: string;
   /** Riksgenomsnitt/kommunsnitt row for the metric above it, styled as a quieter comparison line. */
   muted?: boolean;
 }
@@ -88,6 +106,7 @@ export function nyckeltalDisplayRows(rows: NyckeltalRow[]): NyckeltalDisplayRow[
       value: r.value,
       placering: r.placering,
       note: r.note,
+      diff: "",
     };
     const riks: NyckeltalDisplayRow | null =
       r.riksgenomsnitt !== DASH
@@ -98,6 +117,7 @@ export function nyckeltalDisplayRows(rows: NyckeltalRow[]): NyckeltalDisplayRow[
             value: r.riksgenomsnitt,
             placering: DASH,
             note: null,
+            diff: signed(r.riksDiff),
             muted: true,
           }
         : null;
@@ -110,6 +130,7 @@ export function nyckeltalDisplayRows(rows: NyckeltalRow[]): NyckeltalDisplayRow[
             value: r.kommunsnitt,
             placering: DASH,
             note: null,
+            diff: signed(r.kommunDiff),
             muted: true,
           }
         : null;
@@ -153,6 +174,18 @@ export const nyckeltalColumns: Column<NyckeltalDisplayRow>[] = [
     align: "right",
     mono: true,
     cell: (r) => nyckeltalValueCell(r.value, r.muted),
+  },
+  {
+    // The comparison rows carry the unit's distance from the average beside
+    // it, so the two figures can be read as one line rather than subtracted
+    // in your head.
+    key: "diff",
+    header: "Enheten mot snittet",
+    width: 128,
+    align: "right",
+    mono: true,
+    muted: true,
+    cell: (r) => r.diff,
   },
   {
     key: "placering",

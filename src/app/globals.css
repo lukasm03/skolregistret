@@ -47,6 +47,9 @@
      `accent-bg` rather than the 4.5:1 text bar. Measures 3.37. */
   --color-accent-soft: #6d84ad;
   --color-row-hover: #f3f5fa;
+  /* Magnitude bars behind the count columns. Deeper than `accent-bg` so the
+     bar survives the row's hover tint, which is nearly that colour. */
+  --color-bar: #dde5f2;
 
   /* Status */
   --color-ok: #2f6b4f;

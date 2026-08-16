@@ -110,6 +110,7 @@ export function HuvudmanView({
         cell: (r) => num(r.enheter),
         sortValue: (r) => huvudmanSortValue(r, "enheter"),
         descFirst: true,
+        bar: (r) => r.enheter,
       },
       {
         key: "elever",
@@ -120,6 +121,7 @@ export function HuvudmanView({
         cell: (r) => (r.elever ? num(r.elever) : DASH),
         sortValue: (r) => huvudmanSortValue(r, "elever"),
         descFirst: true,
+        bar: (r) => r.elever,
       },
       {
         key: "andel",
@@ -130,6 +132,9 @@ export function HuvudmanView({
         cell: (r) => (r.andel != null ? `${dec(r.andel)}%` : DASH),
         sortValue: (r) => huvudmanSortValue(r, "andel"),
         descFirst: true,
+        // A share of the kommun's pupils counts up from zero, so a bar means
+        // what it looks like. The metric median below does not — see `bar`.
+        bar: (r) => r.andel,
       },
       // Only comparable within one skolform, so the column appears with one.
       ...(primary

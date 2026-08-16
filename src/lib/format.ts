@@ -55,6 +55,22 @@ export function bytes(n: number | null): string {
   return kb < 1024 ? `${Math.round(kb)} kB` : `${dec(kb / 1024)} MB`;
 }
 
+/**
+ * A difference with its sign spelled out: "+2,3", "−1,4", "±0". The minus is
+ * U+2212, which is the width of a digit — a hyphen would leave the column of
+ * figures visibly ragged.
+ *
+ * Deliberately unsigned by direction: whether a difference is good news
+ * depends on the measure (fewer elever per lärare, more behöriga lärare), and
+ * a register reports rather than grades.
+ */
+export function signed(n: number | null | undefined): string {
+  if (n == null) return DASH;
+  const rounded = Number(n.toFixed(1));
+  if (rounded === 0) return "±0";
+  return `${rounded > 0 ? "+" : "−"}${dec(Math.abs(rounded))}`;
+}
+
 /** "1 skolenhet" / "12 skolenheter". */
 export function plural(n: number, one: string, many: string): string {
   return `${num(n)} ${n === 1 ? one : many}`;

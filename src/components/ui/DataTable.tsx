@@ -20,11 +20,46 @@ export interface Column<T> {
   sortValue?: (row: T) => string | number | undefined;
   /** Sorting starts descending — right for "flest först" measures. */
   descFirst?: boolean;
+  /**
+   * Draws a bar behind the cell, scaled against the largest value in the
+   * table. Only for measures counted up from zero — elever, enheter, andel.
+   * A meritvärde runs from about 150 to 260, so a bar from zero would make
+   * every school look alike and the differences that matter disappear.
+   */
+  bar?: (row: T) => number | null | undefined;
+}
+
+/** The largest bar value in the set, or 0 when the column has nothing to scale. */
+export function barMax<T>(column: Column<T>, rows: T[]): number {
+  if (!column.bar) return 0;
+  let max = 0;
+  for (const row of rows) {
+    const v = column.bar(row);
+    if (v != null && v > max) max = v;
+  }
+  return max;
+}
+
+/**
+ * The bar itself, behind the figure and out of the accessibility tree — the
+ * number it is drawn from is right there in the same cell.
+ */
+export function Bar({ value, max }: { value: number | null | undefined; max: number }) {
+  if (value == null || value <= 0 || max <= 0) return null;
+  return (
+    <span
+      aria-hidden
+      className="absolute inset-y-[5px] right-0 rounded-xs bg-bar"
+      style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
+    />
+  );
 }
 
 export function cellClass<T>(col: Column<T>): string {
   return [
     "px-2 align-middle",
+    // The bar is absolutely positioned inside the cell.
+    col.bar ? "relative" : "",
     col.align === "right" ? "text-right" : "text-left",
     col.mono ? "font-mono text-sm" : col.muted ? "text-sm" : "text-base",
     col.muted ? "text-ink-muted" : "",
@@ -111,6 +146,10 @@ export function DataTable<T>({
   emptyMessage = "Inga träffar.",
   label = "Tabell",
 }: Props<T>) {
+  // Scaled against every row in the table, not the rows on screen — a bar
+  // that means something different per page means nothing.
+  const maxes = columns.map((col) => barMax(col, rows));
+
   return (
     <TableScroller minWidth={tableMinWidth(columns, selectable)} label={label}>
       <table className="w-full table-fixed border-collapse">
@@ -160,6 +199,7 @@ export function DataTable<T>({
               )}
               {columns.map((col, i) => (
                 <td key={col.key} className={cellClass(col)}>
+                  {col.bar && <Bar value={col.bar(row)} max={maxes[i]} />}
                   {rowHref ? (
                     // Every cell links to the row target so the whole row is
                     // clickable, but only the first one is a tab stop — the rest
@@ -170,7 +210,8 @@ export function DataTable<T>({
                       aria-hidden={i === 0 ? undefined : true}
                       aria-label={i === 0 ? rowLabel?.(row) : undefined}
                       style={{ height: rowHeight }}
-                      className={`flex items-center outline-offset-[-2px] ${
+                      // `relative` keeps the figure painted over its bar.
+                      className={`relative flex items-center outline-offset-[-2px] ${
                         col.align === "right" ? "justify-end" : ""
                       }`}
                     >
@@ -180,6 +221,8 @@ export function DataTable<T>({
                         col.cell(row)
                       )}
                     </Link>
+                  ) : col.bar ? (
+                    <span className="relative">{col.cell(row)}</span>
                   ) : (
                     col.cell(row)
                   )}

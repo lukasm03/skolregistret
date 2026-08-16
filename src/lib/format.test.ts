@@ -1,5 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { DASH, bytes, dec, kommunLong, median, num, plural, slugify } from "./format";
+import {
+  DASH,
+  bytes,
+  dec,
+  kommunLong,
+  median,
+  num,
+  plural,
+  signed,
+  slugify,
+} from "./format";
 
 describe("num", () => {
   test("groups thousands the Swedish way (non-breaking space)", () => {
@@ -23,6 +33,30 @@ describe("dec", () => {
 
   test("dashes on missing", () => {
     expect(dec(null)).toBe(DASH);
+  });
+});
+
+describe("signed", () => {
+  test("spells the direction out, both ways", () => {
+    expect(signed(2.34)).toBe("+2,3");
+    expect(signed(-1.4)).toBe("−1,4");
+  });
+
+  test("uses a typographic minus, not a hyphen", () => {
+    // The column is mono and right-aligned; a hyphen is narrower than a digit
+    // and leaves the figures ragged.
+    expect(signed(-1)[0]).toBe("\u2212");
+  });
+
+  test("no difference reads as none, not as a positive zero", () => {
+    expect(signed(0)).toBe("±0");
+    // Rounds to the shown precision first, so +0,04 is not reported as "+0,0".
+    expect(signed(0.04)).toBe("±0");
+  });
+
+  test("dashes on missing", () => {
+    expect(signed(null)).toBe(DASH);
+    expect(signed(undefined)).toBe(DASH);
   });
 });
 
