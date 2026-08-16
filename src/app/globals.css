@@ -71,9 +71,6 @@
   /* Marks drawn on top of `--accent`: the checkmark, the radio dot. */
   --accent-ink: #ffffff;
   --row-hover: #f3f5fa;
-  /* Magnitude bars behind the count columns. Deeper than `accent-bg` so the
-     bar survives the row's hover tint, which is nearly that colour. */
-  --bar: #dde5f2;
 
   /* Status */
   --ok: #2f6b4f;
@@ -119,7 +116,6 @@
     --accent-soft: #7b93bb;
     --accent-ink: #0e1013;
     --row-hover: #1b1f27;
-    --bar: #22304a;
 
     --ok: #6cc294;
     --ok-bg: #152019;
@@ -159,7 +155,6 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
   --color-row-hover: var(--row-hover);
-  --color-bar: var(--bar);
 
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);

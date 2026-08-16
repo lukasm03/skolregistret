@@ -68,6 +68,5 @@ export const schoolColumns = {
     cell: (s) => num(studentsOf(s, form)),
     sortValue: (s) => schoolSortValue(s, "elever", form),
     descFirst: true,
-    bar: (s) => studentsOf(s, form),
   }),
 };
