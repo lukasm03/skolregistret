@@ -163,12 +163,7 @@ export function DataGrid<T extends RowData>({
                     sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined
                   }
                   style={meta?.width ? { width: meta.width } : undefined}
-                  // The column the table is ordered by is worth finding at a
-                  // glance. A tint on the header does it without fighting the
-                  // row hover, which a tinted column of cells would.
-                  className={`${headerClass} ${right ? "text-right" : "text-left"} ${
-                    sorted ? "bg-surface-segment" : ""
-                  }`}
+                  className={`${headerClass} ${right ? "text-right" : "text-left"}`}
                 >
                   {header.column.getCanSort() ? (
                     <button
