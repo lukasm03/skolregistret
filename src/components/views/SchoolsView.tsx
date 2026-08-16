@@ -79,7 +79,7 @@ export function SchoolsView({
       searchValue={query.q}
       onSearchChange={(q) => patch({ q: q || null }, true)}
     >
-      <div className="flex items-stretch">
+      <div className="flex flex-col lg:flex-row lg:items-stretch">
         <SchoolFilters
           query={query}
           counts={selection.counts}
@@ -109,6 +109,7 @@ export function SchoolsView({
               rowHref={(s) => `/skolor/${s.kod}${searchString(params)}`}
               rowLabel={(s) => `Visa ${s.name}`}
               emptyMessage="Inga skolenheter matchar filtret."
+              label="Skolenheter"
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}
               onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}

@@ -44,23 +44,27 @@ export function AppShell({
           : { defaultValue: searchValue })}
         placeholder={searchPlaceholder}
         aria-label={searchPlaceholder}
-        className="w-full min-w-0 bg-transparent text-base outline-none"
+        // 16px until sm: iOS Safari zooms the page when a focused field is
+        // set smaller than that, and coming back out of the zoom is manual.
+        className="w-full min-w-0 bg-transparent text-[16px] outline-none sm:text-base"
       />
     </>
   );
+  // Below sm the field takes a line of its own — brand, nav and a 300px
+  // search do not fit across a phone.
   const searchClass =
-    "flex h-[30px] max-w-[300px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent";
+    "flex h-[30px] w-full flex-1 basis-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent sm:w-auto sm:max-w-[300px] sm:basis-auto";
 
   return (
     <div className="flex min-h-screen justify-center">
       <div className="w-full bg-surface">
-        <header className="flex h-[52px] items-center gap-[18px] border-b border-line-soft bg-surface-subtle px-[18px]">
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft bg-surface-subtle px-3 py-2.5 sm:h-[52px] sm:flex-nowrap sm:gap-[18px] sm:px-[18px] sm:py-0">
           <Link href="/skolor" className="flex items-center gap-[9px]">
             <span className="size-[18px] rounded-xs bg-accent" />
             <span className="text-lg font-semibold tracking-[-0.01em]">{site.brand}</span>
           </Link>
 
-          <span className="h-5 w-px bg-line-soft" />
+          <span className="hidden h-5 w-px bg-line-soft sm:block" />
 
           <nav
             aria-label="Huvudnavigering"

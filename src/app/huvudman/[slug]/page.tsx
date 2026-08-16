@@ -83,7 +83,7 @@ export default async function HuvudmanDetailPage({
       searchPlaceholder={site.search.huvudman}
     >
       <div className="flex flex-col">
-        <header className="flex items-start gap-6 border-b border-line-soft px-6 pt-5 pb-[18px]">
+        <header className="flex flex-wrap items-start gap-x-6 gap-y-4 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <div className="flex min-w-0 flex-col gap-2">
             <BackLink href="/huvudman">Alla huvudmän</BackLink>
             <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
@@ -145,7 +145,7 @@ export default async function HuvudmanDetailPage({
           )}
         </header>
 
-        <StatGrid columns={4}>
+        <StatGrid>
           <Stat label="Skolenheter" value={num(h.antalEnheter)} />
           <Stat label="Elever" value={num(h.antalElever)} note="summa av avrundade tal" />
           <Stat
@@ -160,8 +160,8 @@ export default async function HuvudmanDetailPage({
           />
         </StatGrid>
 
-        <div className="flex items-stretch">
-          <div className="flex min-w-0 flex-1 flex-col gap-[26px] px-6 pt-5 pb-6">
+        <div className="flex flex-col lg:flex-row lg:items-stretch">
+          <div className="flex min-w-0 flex-1 flex-col gap-[26px] px-4 pt-5 pb-6 sm:px-6">
             <section className="flex flex-col gap-2.5">
               <SectionTitle
                 note={
@@ -207,6 +207,7 @@ export default async function HuvudmanDetailPage({
                 rowHref={(s) => `/skolor/${s.kod}`}
                 rowLabel={(s) => `Visa ${s.name}`}
                 emptyMessage="Inga enheter registrerade för den här huvudmannen."
+                label="Enheter under huvudmannen"
                 columns={[
                   schoolColumns.name(),
                   schoolColumns.status(),
@@ -218,7 +219,7 @@ export default async function HuvudmanDetailPage({
             </section>
           </div>
 
-          <aside className="flex w-[300px] flex-none flex-col gap-[22px] border-l border-line-soft bg-surface-panel p-5">
+          <aside className="flex w-full flex-col gap-[22px] border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
             <RailSection title="Uppgifter" divided={false}>
               <FactList
                 items={[

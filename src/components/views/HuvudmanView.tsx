@@ -160,7 +160,7 @@ export function HuvudmanView({
       searchValue={query.q}
       onSearchChange={(q) => patch({ q: q || null }, true)}
     >
-      <div className="flex items-stretch">
+      <div className="flex flex-col lg:flex-row lg:items-stretch">
         <HuvudmanFilters
           query={query}
           counts={list.counts}
@@ -184,6 +184,7 @@ export function HuvudmanView({
               }
               rowLabel={(r) => `Visa ${r.huvudman.name}`}
               emptyMessage="Inga huvudmän matchar filtret."
+              label="Huvudmän"
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}
               onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}

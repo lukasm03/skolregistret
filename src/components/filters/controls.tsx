@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Label } from "@/components/ui/primitives";
 
 /**
@@ -208,7 +208,7 @@ export function SelectField({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="h-[30px] w-full min-w-0 rounded-md border border-line bg-surface px-2 text-base"
+      className="h-[30px] w-full min-w-0 rounded-md border border-line bg-surface px-2 text-[16px] sm:text-base"
     >
       <option value="">{allLabel}</option>
       {options.map((o) => (
@@ -238,7 +238,7 @@ export function RangeField({
   placeholderMax: number;
 }) {
   const field =
-    "h-[28px] w-full rounded-md border border-line bg-surface px-2 font-mono text-xs";
+    "h-[28px] w-full rounded-md border border-line bg-surface px-2 font-mono text-[16px] sm:text-xs";
   return (
     <div className="flex items-center gap-[7px]">
       <input
@@ -356,16 +356,48 @@ export function MultiSelectDropdown({
 
 export function SidebarFootnote({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-auto border-t border-line-soft pt-4 text-xs leading-[1.5] text-ink-subtle">
+    <p className="col-span-full mt-auto border-t border-line-soft pt-4 text-xs leading-[1.5] text-ink-subtle">
       {children}
     </p>
   );
 }
 
+/**
+ * A rail on a wide screen, a disclosure above the table below `lg` — 236px of
+ * filters and a table of fixed-width columns do not share a phone.
+ *
+ * Open, the panel lays its groups out two or three across rather than as one
+ * tall column, so the table is still reachable by scrolling past it. The
+ * toggle and the panel are siblings, which is why the views arrange this row
+ * as a column until `lg`.
+ */
 export function Sidebar({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
   return (
-    <aside className="flex w-[236px] flex-none flex-col gap-5 border-r border-line-soft bg-surface-panel px-4 pt-4 pb-5">
-      {children}
-    </aside>
+    <>
+      <div className="flex items-center border-b border-line-soft bg-surface-panel px-4 py-2 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="flex h-[30px] items-center gap-2 rounded-md border border-line bg-surface px-2.5 text-base font-medium hover:border-ink-faint"
+        >
+          Filter
+          <span aria-hidden className="text-[9px] text-ink-faint">
+            {open ? "▴" : "▾"}
+          </span>
+        </button>
+      </div>
+
+      <aside
+        id={panelId}
+        className={`${open ? "grid" : "hidden"} w-full grid-cols-2 gap-x-4 gap-y-5 border-b border-line-soft bg-surface-panel px-4 pt-4 pb-5 sm:grid-cols-3 lg:flex lg:w-[236px] lg:flex-none lg:flex-col lg:gap-5 lg:border-r lg:border-b-0`}
+      >
+        {children}
+      </aside>
+    </>
   );
 }

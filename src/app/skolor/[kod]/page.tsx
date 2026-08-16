@@ -265,7 +265,7 @@ export default async function SkolaPage({
       searchPlaceholder={site.search.skolor}
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-start gap-5 border-b border-line-soft px-6 pt-5 pb-[18px]">
+        <header className="flex flex-wrap items-start gap-x-5 gap-y-4 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <div className="flex min-w-0 flex-col gap-2">
             <BackLink href={backHref}>Alla skolenheter</BackLink>
             <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
@@ -293,7 +293,7 @@ export default async function SkolaPage({
           <div className="flex-1" />
         </header>
 
-        <StatGrid columns={4}>
+        <StatGrid>
           <Stat
             label="Elever"
             value={
@@ -322,8 +322,8 @@ export default async function SkolaPage({
           />
         </StatGrid>
 
-        <div className="flex items-stretch">
-          <div className="flex min-w-0 flex-1 flex-col gap-6 px-6 pt-5 pb-6">
+        <div className="flex flex-col lg:flex-row lg:items-stretch">
+          <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
             {(() => {
               const tabs = [
                 ...(hasProgramStats
@@ -338,6 +338,7 @@ export default async function SkolaPage({
                               columns={programColumns}
                               rows={programRows}
                               rowKey={(r) => r.key}
+                              label="Program"
                             />
                           </section>
                         ),
@@ -352,6 +353,7 @@ export default async function SkolaPage({
                       columns={nyckeltalColumns}
                       rows={nyckeltalDisplayRows(rows)}
                       rowKey={(r) => r.key}
+                      label="Nyckeltal"
                     />
                   ),
                 },
@@ -365,6 +367,7 @@ export default async function SkolaPage({
                             columns={enkätColumns}
                             rows={enkätRows}
                             rowKey={(r) => r.key}
+                            label="Enkätsvar"
                           />
                         ),
                       },
@@ -380,6 +383,7 @@ export default async function SkolaPage({
                             columns={dokumentColumns}
                             rows={dokumentRows}
                             rowKey={(r) => r.key}
+                            label="Dokument"
                           />
                         ),
                       },
@@ -397,7 +401,7 @@ export default async function SkolaPage({
             })()}
           </div>
 
-          <aside className="flex w-[300px] flex-none flex-col gap-[22px] border-l border-line-soft bg-surface-panel p-5">
+          <aside className="flex w-full flex-col gap-[22px] border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
             <RailSection title="Registeruppgifter" divided={false}>
               <FactList
                 items={[

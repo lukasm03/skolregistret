@@ -13,7 +13,13 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo } from "react";
-import { cellClass, headerClass, type Column } from "./DataTable";
+import {
+  TableScroller,
+  cellClass,
+  headerClass,
+  tableMinWidth,
+  type Column,
+} from "./DataTable";
 
 /**
  * The list tables. Same look as `DataTable`, but the rows are held by
@@ -55,6 +61,8 @@ interface Props<T> {
   /** Renders the leading checkbox column from the design. */
   rowHeight?: number;
   emptyMessage?: string;
+  /** Names the scroll region for assistive tech. */
+  label?: string;
   sort: GridSort;
   onSortChange: (sort: GridSort) => void;
   pageIndex: number;
@@ -81,6 +89,7 @@ export function DataGrid<T extends RowData>({
   rowLabel,
   rowHeight = 34,
   emptyMessage = "Inga träffar.",
+  label = "Tabell",
   sort,
   onSortChange,
   pageIndex,
@@ -134,100 +143,102 @@ export function DataGrid<T extends RowData>({
   const span = columns.length;
 
   return (
-    <table className="w-full table-fixed border-collapse">
-      <thead>
-        <tr className="bg-surface-head">
-          {table.getHeaderGroups()[0]?.headers.map((header) => {
-            const meta = header.column.columnDef.meta;
-            const right = meta?.align === "right";
-            const sorted = header.column.getIsSorted();
-            return (
-              <th
-                key={header.id}
-                scope="col"
-                aria-sort={
-                  sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined
-                }
-                style={meta?.width ? { width: meta.width } : undefined}
-                className={`${headerClass} ${right ? "text-right" : "text-left"}`}
-              >
-                {header.column.getCanSort() ? (
-                  <button
-                    type="button"
-                    onClick={header.column.getToggleSortingHandler()}
-                    className={`flex w-full items-center gap-1 uppercase hover:text-ink ${
-                      right ? "justify-end" : ""
-                    } ${sorted ? "text-ink" : ""}`}
-                  >
-                    <table.FlexRender header={header} />
-                    <span aria-hidden className="text-[9px] text-ink-faint">
-                      {sorted === "desc" ? "▾" : sorted ? "▴" : "⇅"}
-                    </span>
-                  </button>
-                ) : (
-                  <table.FlexRender header={header} />
-                )}
-              </th>
-            );
-          })}
-          {/* Trailing spacer so the last column isn't flush against the
-              scroll edge. */}
-          <th aria-hidden className="w-6 border-b border-line" />
-        </tr>
-      </thead>
-      <tbody>
-        {bodyRows.length === 0 && (
-          <tr>
-            <td colSpan={span + 1} className="h-[64px] px-2 text-base text-ink-muted">
-              {emptyMessage}
-            </td>
-          </tr>
-        )}
-        {bodyRows.map((row) => (
-          <tr
-            key={row.id}
-            style={{ height: rowHeight }}
-            className={`border-b border-line-row ${
-              rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
-            }`}
-          >
-            {row.getAllCells().map((cell, i) => {
-              const col = columns[i];
+    <TableScroller minWidth={tableMinWidth(columns)} label={label}>
+      <table className="w-full table-fixed border-collapse">
+        <thead>
+          <tr className="bg-surface-head">
+            {table.getHeaderGroups()[0]?.headers.map((header) => {
+              const meta = header.column.columnDef.meta;
+              const right = meta?.align === "right";
+              const sorted = header.column.getIsSorted();
               return (
-                <td key={cell.id} className={cellClass(col)}>
-                  {rowHref ? (
-                    // Every cell links to the row target so the whole row is
-                    // clickable, but only the first one is a tab stop — the
-                    // rest are hidden from assistive tech to avoid repeated
-                    // links.
-                    <Link
-                      href={rowHref(row.original)}
-                      tabIndex={i === 0 ? undefined : -1}
-                      aria-hidden={i === 0 ? undefined : true}
-                      aria-label={i === 0 ? rowLabel?.(row.original) : undefined}
-                      style={{ height: rowHeight }}
-                      className={`flex items-center outline-offset-[-2px] ${
-                        col.align === "right" ? "justify-end" : ""
-                      }`}
+                <th
+                  key={header.id}
+                  scope="col"
+                  aria-sort={
+                    sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined
+                  }
+                  style={meta?.width ? { width: meta.width } : undefined}
+                  className={`${headerClass} ${right ? "text-right" : "text-left"}`}
+                >
+                  {header.column.getCanSort() ? (
+                    <button
+                      type="button"
+                      onClick={header.column.getToggleSortingHandler()}
+                      className={`flex w-full items-center gap-1 uppercase hover:text-ink ${
+                        right ? "justify-end" : ""
+                      } ${sorted ? "text-ink" : ""}`}
                     >
-                      {col.truncate ? (
-                        <span className="min-w-0 truncate">
-                          <table.FlexRender cell={cell} />
-                        </span>
-                      ) : (
-                        <table.FlexRender cell={cell} />
-                      )}
-                    </Link>
+                      <table.FlexRender header={header} />
+                      <span aria-hidden className="text-[9px] text-ink-faint">
+                        {sorted === "desc" ? "▾" : sorted ? "▴" : "⇅"}
+                      </span>
+                    </button>
                   ) : (
-                    <table.FlexRender cell={cell} />
+                    <table.FlexRender header={header} />
                   )}
-                </td>
+                </th>
               );
             })}
-            <td aria-hidden />
+            {/* Trailing spacer so the last column isn't flush against the
+              scroll edge. */}
+            <th aria-hidden className="w-6 border-b border-line" />
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {bodyRows.length === 0 && (
+            <tr>
+              <td colSpan={span + 1} className="h-[64px] px-2 text-base text-ink-muted">
+                {emptyMessage}
+              </td>
+            </tr>
+          )}
+          {bodyRows.map((row) => (
+            <tr
+              key={row.id}
+              style={{ height: rowHeight }}
+              className={`border-b border-line-row ${
+                rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
+              }`}
+            >
+              {row.getAllCells().map((cell, i) => {
+                const col = columns[i];
+                return (
+                  <td key={cell.id} className={cellClass(col)}>
+                    {rowHref ? (
+                      // Every cell links to the row target so the whole row is
+                      // clickable, but only the first one is a tab stop — the
+                      // rest are hidden from assistive tech to avoid repeated
+                      // links.
+                      <Link
+                        href={rowHref(row.original)}
+                        tabIndex={i === 0 ? undefined : -1}
+                        aria-hidden={i === 0 ? undefined : true}
+                        aria-label={i === 0 ? rowLabel?.(row.original) : undefined}
+                        style={{ height: rowHeight }}
+                        className={`flex items-center outline-offset-[-2px] ${
+                          col.align === "right" ? "justify-end" : ""
+                        }`}
+                      >
+                        {col.truncate ? (
+                          <span className="min-w-0 truncate">
+                            <table.FlexRender cell={cell} />
+                          </span>
+                        ) : (
+                          <table.FlexRender cell={cell} />
+                        )}
+                      </Link>
+                    ) : (
+                      <table.FlexRender cell={cell} />
+                    )}
+                  </td>
+                );
+              })}
+              <td aria-hidden />
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableScroller>
   );
 }

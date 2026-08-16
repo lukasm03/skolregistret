@@ -35,7 +35,7 @@ export function Stat({
   note?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1 border-r border-line-row px-6 py-4 last:border-r-0">
+    <div className="flex flex-col gap-1 bg-surface px-4 py-3.5 sm:px-6 sm:py-4">
       <Label>{label}</Label>
       <div className="font-mono text-stat leading-[1.1]">{value}</div>
       {note && <div className="text-xs text-ink-faint">{note}</div>}
@@ -43,17 +43,20 @@ export function Stat({
   );
 }
 
-export function StatGrid({
-  columns,
-  children,
-}: {
-  columns: number;
-  children: ReactNode;
-}) {
+/**
+ * As many tiles per row as fit, which is all of them on a wide screen and two
+ * on a phone — `auto-fit` collapses the tracks it doesn't fill, so a row of
+ * four still divides the full width evenly.
+ *
+ * The separators are the grid's own background showing through a 1px gap
+ * rather than a border per tile: a wrapped row would otherwise leave a rule
+ * hanging at the end of the line.
+ */
+export function StatGrid({ children }: { children: ReactNode }) {
   return (
     <div
-      className="grid border-b border-line-soft"
-      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      className="grid gap-px border-b border-line-soft bg-line-row"
+      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 158px), 1fr))" }}
     >
       {children}
     </div>

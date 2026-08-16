@@ -13,7 +13,7 @@ export function ListToolbar({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex h-[42px] items-center gap-3.5 border-b border-line-soft px-4">
+    <div className="flex min-h-[42px] flex-wrap items-center gap-x-3.5 gap-y-1 border-b border-line-soft px-4 py-2 sm:h-[42px] sm:flex-nowrap sm:py-0">
       <span className="text-base font-medium">{count}</span>
       <span className="text-base text-ink-subtle">{scope}</span>
       <div className="flex-1" />
@@ -24,7 +24,7 @@ export function ListToolbar({
 
 export function ListFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-auto flex h-[44px] items-center gap-3 border-t border-line-soft bg-surface-subtle px-4">
+    <div className="mt-auto flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-soft bg-surface-subtle px-4 py-2 sm:h-[44px] sm:flex-nowrap sm:py-0">
       {children}
     </div>
   );
