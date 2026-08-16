@@ -83,8 +83,11 @@ export function SchoolFilters({
       {/* One skolform at a time: meritvärde and betygspoäng are not the same
           column, and a median across both would not mean anything. */}
       <FilterGroup label="Skolform">
-        <div role="radiogroup" className="flex flex-col gap-[7px]">
+        {/* Native radios sharing one name are already a group to the
+            platform; the role names it for a screen reader. */}
+        <div role="radiogroup" aria-label="Skolform" className="flex flex-col gap-[7px]">
           <RadioControl
+            name="skolform"
             label={site.allaSkolformer}
             checked={!query.skolform}
             onSelect={() => selectForm(null)}
@@ -94,6 +97,7 @@ export function SchoolFilters({
             .map((f) => (
               <RadioControl
                 key={f.code}
+                name="skolform"
                 label={f.label}
                 count={formCounts.get(f.code) ?? 0}
                 checked={query.skolform === f.code}

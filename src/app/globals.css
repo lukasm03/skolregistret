@@ -18,7 +18,11 @@
   --color-line-soft: #e3e3df;
   --color-line-softer: #e9e9e5;
   --color-line-row: #f0f0ec;
-  --color-line-control: #d2d2cc;
+  /* Borders of controls — the unchecked box, the radio ring, the switch's
+     off track. WCAG asks 3:1 of a component boundary against what surrounds
+     it, and the old #d2d2cc managed 1.52 on white: technically a border,
+     practically invisible. Measures 3.29 / 3.23 on surface / panel. */
+  --color-line-control: #8e8e88;
 
   /* Ink
      The app's smallest text — 10.5px uppercase labels, column headers, filter

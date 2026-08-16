@@ -25,6 +25,21 @@ export function FilterGroup({
   );
 }
 
+/**
+ * Both of these were `<button role="checkbox">` and `<button role="radio">`,
+ * which announce correctly and behave wrongly: a declared radiogroup is one
+ * tab stop whose members are chosen with the arrow keys, and eight buttons in
+ * a row are eight tab stops that ignore them.
+ *
+ * They are native inputs now, styled with `appearance-none` and a peer-driven
+ * mark. The grouping, the arrow keys, the checked state and the form
+ * semantics come from the platform; only the look is ours. The `<label>`
+ * wraps both halves, so the text is part of the target rather than a dead
+ * zone beside it.
+ */
+const markClass =
+  "peer absolute inset-0 appearance-none border border-line-control bg-surface checked:border-accent checked:bg-accent";
+
 export function CheckboxControl({
   onToggle,
   checked,
@@ -37,66 +52,68 @@ export function CheckboxControl({
   count?: number;
 }) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={checked}
-      onClick={onToggle}
-      className="group flex items-center gap-2 rounded-xs text-left"
-    >
-      <span
-        aria-hidden
-        className={`flex size-[13px] flex-none items-center justify-center rounded-xs text-[9px] leading-none ${
-          checked ? "bg-accent text-white" : "border border-line-control bg-surface"
-        }`}
-      >
-        {checked ? "✓" : ""}
+    <label className="group flex cursor-pointer items-center gap-2">
+      <span className="relative flex size-[13px] flex-none items-center justify-center">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggle}
+          className={`${markClass} rounded-xs`}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none hidden text-[9px] leading-none text-white peer-checked:block"
+        >
+          ✓
+        </span>
       </span>
-      <span className="truncate text-base group-hover:text-accent">{label}</span>
+      <span className="min-w-0 truncate text-base group-hover:text-accent">{label}</span>
       {count != null && (
         <span className="ml-auto font-mono text-mono text-ink-faint">{count}</span>
       )}
-    </button>
+    </label>
   );
 }
 
 /** Single-select sibling of `CheckboxControl` — used for skolform. */
 export function RadioControl({
+  name,
   onSelect,
   checked,
   label,
   count,
 }: {
+  /** Shared by every radio in one group — this is what makes it a group. */
+  name: string;
   onSelect: () => void;
   checked: boolean;
   label: string;
   count?: number;
 }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      onClick={onSelect}
-      className="group flex items-center gap-2 rounded-xs text-left"
-    >
-      <span
-        aria-hidden
-        className={`flex size-[13px] flex-none items-center justify-center rounded-full ${
-          checked ? "bg-accent" : "border border-line-control bg-surface"
-        }`}
-      >
-        {checked && <span className="size-[5px] rounded-full bg-white" />}
+    <label className="group flex cursor-pointer items-center gap-2">
+      <span className="relative flex size-[13px] flex-none items-center justify-center">
+        <input
+          type="radio"
+          name={name}
+          checked={checked}
+          onChange={onSelect}
+          className={`${markClass} rounded-full`}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none hidden size-[5px] rounded-full bg-white peer-checked:block"
+        />
       </span>
       <span
-        className={`truncate text-base group-hover:text-accent ${checked ? "font-medium" : ""}`}
+        className={`min-w-0 truncate text-base group-hover:text-accent ${checked ? "font-medium" : ""}`}
       >
         {label}
       </span>
       {count != null && (
         <span className="ml-auto font-mono text-mono text-ink-faint">{count}</span>
       )}
-    </button>
+    </label>
   );
 }
 
@@ -146,7 +163,7 @@ export function Toggle({
       <span
         aria-hidden
         className={`flex h-[17px] w-[30px] flex-none rounded-full p-0.5 ${
-          on ? "justify-end bg-accent" : "justify-start bg-line"
+          on ? "justify-end bg-accent" : "justify-start bg-line-control"
         }`}
       >
         <span
@@ -293,7 +310,6 @@ export function MultiSelectDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
         className="flex h-[30px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-line bg-surface px-2 text-left text-base"
@@ -306,9 +322,10 @@ export function MultiSelectDropdown({
         </span>
       </button>
       {open && (
+        // A listbox's members are options, and these are checkboxes — the
+        // roles have to agree with what is actually in the panel.
         <div
-          role="listbox"
-          aria-multiselectable="true"
+          role="group"
           aria-label={label}
           className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto rounded-md border border-line bg-surface p-2 shadow-md"
         >
