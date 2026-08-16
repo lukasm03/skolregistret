@@ -147,6 +147,13 @@ function parseTyp(params: RawParams): HuvudmanTyp[] {
   return list(raw).filter((t): t is HuvudmanTyp => (ALL_TYPER as string[]).includes(t));
 }
 
+/**
+ * The search term is kept exactly as typed, including trailing space. It used
+ * to be trimmed here, which made the field impossible to type two words into:
+ * the input is controlled by this value, so every space was trailing at the
+ * moment it was typed and was stripped again before it could be rendered.
+ * Trimming belongs where the term is matched — see `selectSchools`.
+ */
 export function parseSchoolQuery(params: RawParams): SchoolQuery {
   const typ = parseTyp(params);
   const rawForm = one(params.skolform)?.toUpperCase();
@@ -157,7 +164,7 @@ export function parseSchoolQuery(params: RawParams): SchoolQuery {
   const dir = one(params.dir);
 
   return {
-    q: one(params.q)?.trim() ?? "",
+    q: one(params.q) ?? "",
     huvudman: one(params.huvudman),
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
     typ,
@@ -218,7 +225,8 @@ export function parseHuvudmanQuery(params: RawParams): HuvudmanQuery {
   const dir = one(params.dir);
   const perPage = int(params.perPage);
   return {
-    q: one(params.q)?.trim() ?? "",
+    // Raw, as in `parseSchoolQuery`.
+    q: one(params.q) ?? "",
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
     typ,
     skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,

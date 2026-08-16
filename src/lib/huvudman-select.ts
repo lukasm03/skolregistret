@@ -163,11 +163,14 @@ export function selectHuvudman(
   // units in that form is not a result, it is an empty row.
   if (form) filtered = filtered.filter((r) => r.enheter > 0);
   if (query.koncernOnly) filtered = filtered.filter((r) => r.huvudman.koncern);
-  if (query.q) {
-    const q = query.q.toLowerCase();
+  // Trimmed and folded once — see `selectSchools` for why the term arrives
+  // untrimmed.
+  const needle = query.q.trim().toLowerCase();
+  if (needle) {
     filtered = filtered.filter(
       (r) =>
-        r.huvudman.name.toLowerCase().includes(q) || (r.huvudman.org ?? "").includes(q),
+        r.huvudman.name.toLowerCase().includes(needle) ||
+        (r.huvudman.org ?? "").includes(needle),
     );
   }
 

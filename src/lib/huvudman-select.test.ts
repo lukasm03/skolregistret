@@ -104,6 +104,10 @@ describe("filtering", () => {
   });
 
   test("search matches the name", () => {
+    // Untrimmed, as it comes from the field — see `parseSchoolQuery`.
+    expect(names(selectHuvudman(hs, schools, query({ q: " fri " })).rows)).toEqual(
+      names(selectHuvudman(hs, schools, query({ q: "fri" })).rows),
+    );
     expect(names(selectHuvudman(hs, schools, query({ q: "fri" })).rows)).toEqual([
       "Friskolan",
     ]);

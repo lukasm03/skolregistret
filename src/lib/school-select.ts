@@ -55,11 +55,15 @@ export function selectSchools<T extends ListSchool>(
   // once here rather than per row.
   const valdaÅrskurser = query.arskurs.flatMap(expandSpan);
 
+  // Trimmed and folded once rather than per row: this runs over the whole
+  // register on every keystroke, and a term of only spaces is not a filter.
+  const needle = query.q.trim().toLowerCase();
+
   const tests = {
     status: (s: T) => query.status.includes(s.status),
     huvudman: (s: T) => !huvudmanName || s.huvudman === huvudmanName,
     kommun: (s: T) => !query.kommun || s.kommunkod === query.kommun,
-    q: (s: T) => !query.q || s.name.toLowerCase().includes(query.q.toLowerCase()),
+    q: (s: T) => !needle || s.name.toLowerCase().includes(needle),
     skolform: (s: T) => !form || s.forms.includes(form),
     // Overlap, not containment: picking "4–6" keeps a unit running F–9. A unit
     // the register reports no years for matches nothing — see `yearsOverlap`.

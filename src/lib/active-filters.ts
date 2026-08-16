@@ -92,8 +92,12 @@ function rangeFilter(min?: number, max?: number): ActiveFilter | null {
 }
 
 function searchFilter(q: string): ActiveFilter | null {
-  if (!q) return null;
-  return { key: "q", label: "Sök", value: q, clear: { q: null } };
+  // The term arrives as typed, so a half-finished "vasa " is a filter but
+  // whitespace on its own is not, and neither is worth a token with a
+  // trailing space in it.
+  const term = q.trim();
+  if (!term) return null;
+  return { key: "q", label: "Sök", value: term, clear: { q: null } };
 }
 
 export function activeSchoolFilters(

@@ -75,6 +75,11 @@ describe("activeSchoolFilters", () => {
     );
     expect(keys).toEqual(["q", "kommun", "skolform", "typ", "elever"]);
   });
+
+  test("a half-typed term is a token, whitespace alone is not", () => {
+    expect(school("q=vasa ")[0]).toMatchObject({ key: "q", value: "vasa" });
+    expect(school("q=%20%20")).toEqual([]);
+  });
 });
 
 describe("activeHuvudmanFilters", () => {

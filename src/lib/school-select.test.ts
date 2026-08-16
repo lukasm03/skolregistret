@@ -73,6 +73,12 @@ describe("kommun, type and search filtering", () => {
   test("search matches the unit name, case-insensitively", () => {
     expect(kods(selectSchools(rows, query({ q: "vasa" })).sorted)).toEqual(["sthlm"]);
     expect(kods(selectSchools(rows, query({ q: "VASA" })).sorted)).toEqual(["sthlm"]);
+    // The term arrives untrimmed from the field — matching normalizes it.
+    expect(kods(selectSchools(rows, query({ q: " vasa " })).sorted)).toEqual(["sthlm"]);
+    // Whitespace on its own is not a filter.
+    expect(selectSchools(rows, query({ q: "   " })).sorted).toEqual(
+      selectSchools(rows, query({ q: "" })).sorted,
+    );
   });
 
   test("search does not match the huvudman name", () => {

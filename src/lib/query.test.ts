@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { site } from "@/config/site";
 import { DEFAULT_STATUS, SKOLSTATUS_ORDER } from "./types";
 import {
+  paramsFromSearch,
   parseHuvudmanQuery,
   parseSchoolQuery,
   patchParams,
@@ -22,8 +23,14 @@ describe("parseSchoolQuery defaults", () => {
     expect(q.kommun).toBeUndefined();
   });
 
-  test("trims the search term", () => {
-    expect(parseSchoolQuery({ q: "  vasa  " }).q).toBe("vasa");
+  // Regression: this used to trim, and the search field is controlled by the
+  // result — so every space was trailing at the moment it was typed and was
+  // stripped before it could be rendered, and no two-word search could be
+  // entered at all. Trimming happens where the term is matched instead.
+  test("keeps the search term exactly as typed, spaces and all", () => {
+    expect(parseSchoolQuery({ q: "vasa " }).q).toBe("vasa ");
+    expect(parseSchoolQuery({ q: "  vasa  " }).q).toBe("  vasa  ");
+    expect(parseHuvudmanQuery({ q: "kunskaps " }).q).toBe("kunskaps ");
   });
 
   test("takes the first value when Next hands over an array", () => {
@@ -244,6 +251,21 @@ describe("searchString", () => {
   test("prefixes with ? and keeps explicit empty values", () => {
     expect(searchString({ status: "" })).toBe("?status=");
     expect(searchString({ q: "vasa" })).toBe("?q=vasa");
+  });
+
+  /*
+   * The loop a keystroke actually takes: patch the params, write the URL,
+   * read it back, parse. The search field is controlled by the far end of
+   * it, so anything lost on the way is a character you cannot type — which
+   * is how the trim in `parseSchoolQuery` made spaces impossible to enter.
+   */
+  test("a trailing space survives the trip the search field takes", () => {
+    const url = searchString(patchParams({}, { q: "vasa " }));
+    expect(url).toBe("?q=vasa+");
+    expect(parseSchoolQuery(paramsFromSearch(url)).q).toBe("vasa ");
+
+    const next = searchString(patchParams(paramsFromSearch(url), { q: "vasa s" }));
+    expect(parseSchoolQuery(paramsFromSearch(next)).q).toBe("vasa s");
   });
 
   test("round-trips back through parseSchoolQuery", () => {
