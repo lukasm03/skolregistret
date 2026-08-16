@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
+import { SortArrow } from "./icons";
 import {
   TableScroller,
   cellClass,
@@ -174,12 +175,11 @@ export function DataGrid<T extends RowData>({
                       } ${sorted ? "text-ink" : ""}`}
                     >
                       <table.FlexRender header={header} />
-                      <span
-                        aria-hidden
-                        className={`text-[10px] ${sorted ? "text-ink" : "text-ink-faint"}`}
-                      >
-                        {sorted === "desc" ? "▾" : sorted ? "▴" : "⇅"}
-                      </span>
+                      <SortArrow
+                        size={11}
+                        dir={sorted === "desc" ? "desc" : sorted ? "asc" : null}
+                        className={sorted ? "text-ink" : "text-ink-faint"}
+                      />
                     </button>
                   ) : (
                     <table.FlexRender header={header} />

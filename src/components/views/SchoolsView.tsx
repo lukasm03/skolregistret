@@ -148,7 +148,7 @@ export function SchoolsView({
               minHeight:
                 HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
             }}
-            className={`transition-opacity ${stale ? "opacity-60" : ""}`}
+            className={`transition-opacity duration-150 ${stale ? "opacity-60 delay-200" : ""}`}
           >
             <DataGrid
               rows={selection.sorted}

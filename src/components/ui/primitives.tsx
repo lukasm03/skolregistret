@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "./icons";
 import type { ReactNode } from "react";
 
 /** Small uppercase label used above every field, stat and rail section. */
@@ -74,7 +75,9 @@ export function StatusPill({ children }: { children: ReactNode }) {
 
 export function KoncernPill({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-xl border border-warn-line bg-warn-bg px-2.5 py-[3px] text-xs font-medium text-warn">
+    // Hover firms up the border rather than fading the pill: dimming a whole
+    // token, label and all, reads as disabled instead of interactive.
+    <span className="rounded-xl border border-warn-line bg-warn-bg px-2.5 py-[3px] text-xs font-medium text-warn transition-colors group-hover:border-warn">
       {children}
     </span>
   );
@@ -133,7 +136,7 @@ export function ButtonLink({ href, children }: { href: string; children: ReactNo
   return (
     <Link
       href={href}
-      className="flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-base font-medium hover:border-ink-faint"
+      className="flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-base font-medium transition-transform hover:border-ink-faint active:scale-[0.96]"
     >
       {children}
     </Link>
@@ -142,8 +145,12 @@ export function ButtonLink({ href, children }: { href: string; children: ReactNo
 
 export function BackLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="text-sm text-accent hover:underline">
-      ‹ {children}
+    <Link
+      href={href}
+      className="flex items-center gap-1 text-sm text-accent hover:underline"
+    >
+      <ChevronLeft size={11} />
+      {children}
     </Link>
   );
 }

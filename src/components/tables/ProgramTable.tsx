@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import { SectionTitle } from "@/components/ui/primitives";
 import { TableScroller, headerClass } from "@/components/ui/DataTable";
+import { CaretRight, SortArrow } from "@/components/ui/icons";
 import { programmetriker } from "@/config/programmetriker";
 import { DASH, signed } from "@/lib/format";
 import {
@@ -110,12 +111,11 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
                       }`}
                     >
                       {m.short}
-                      <span
-                        aria-hidden
-                        className={`text-[10px] ${active ? "text-ink" : "text-ink-faint"}`}
-                      >
-                        {active ? (sort.dir === "desc" ? "▾" : "▴") : "⇅"}
-                      </span>
+                      <SortArrow
+                        size={11}
+                        dir={active ? sort.dir : null}
+                        className={active ? "text-ink" : "text-ink-faint"}
+                      />
                     </button>
                   </th>
                 );
@@ -193,14 +193,10 @@ function ProgramRows({
               aria-controls={detailId}
               className="flex min-h-[24px] min-w-0 flex-1 items-center gap-2.5 text-left"
             >
-              <span
-                aria-hidden
-                className={`w-[10px] flex-none text-[9px] text-ink-faint transition-transform ${
-                  isOpen ? "rotate-90" : ""
-                }`}
-              >
-                ▶
-              </span>
+              <CaretRight
+                size={11}
+                className={`text-ink-faint transition-transform ${isOpen ? "rotate-90" : ""}`}
+              />
               <span className="min-w-0 flex-1 truncate text-md font-medium">
                 {row.namn}
               </span>
@@ -243,7 +239,17 @@ function ProgramRows({
 
       {isOpen && (
         <tr className="border-b border-line-row bg-surface-subtle">
-          <td id={detailId} colSpan={row.cells.length + 1} className="px-2 pb-4">
+          {/*
+            The caret takes 150ms to turn; without this the thing it points at
+            was already there before it finished. A staged, once-only entrance
+            is what keyframes are for, and the reduced-motion guard in
+            globals.css stops it for anyone who asked.
+          */}
+          <td
+            id={detailId}
+            colSpan={row.cells.length + 1}
+            className="animate-[reveal_150ms_ease-out] px-2 pb-4"
+          >
             <div className="grid gap-x-10 gap-y-0.5 pl-[30px] md:grid-cols-2">
               {row.cells.map((cell) => (
                 <ProgramDeviation key={cell.metrik.key} cell={cell} />

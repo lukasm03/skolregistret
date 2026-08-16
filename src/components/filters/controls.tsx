@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Label } from "@/components/ui/primitives";
+import { Check, ChevronDown } from "@/components/ui/icons";
 
 /**
  * The filter controls. They used to be links that reloaded the page; now each
@@ -60,12 +61,10 @@ export function CheckboxControl({
           onChange={onToggle}
           className={`${markClass} rounded-xs`}
         />
-        <span
-          aria-hidden
-          className="pointer-events-none hidden text-[9px] leading-none text-accent-ink peer-checked:block"
-        >
-          ✓
-        </span>
+        <Check
+          size={9}
+          className="pointer-events-none hidden text-accent-ink peer-checked:block"
+        />
       </span>
       <span className="min-w-0 truncate text-base group-hover:text-accent">{label}</span>
       {count != null && (
@@ -167,7 +166,7 @@ export function Toggle({
         }`}
       >
         <span
-          className={`size-[13px] rounded-full bg-surface ${on ? "" : "shadow-[0_1px_2px_rgba(20,22,26,0.2)]"}`}
+          className={`size-[13px] rounded-full bg-surface ${on ? "" : "shadow-raised"}`}
         />
       </span>
     </button>
@@ -317,9 +316,7 @@ export function MultiSelectDropdown({
         <span className={`truncate ${selected.length ? "" : "text-ink-faint"}`}>
           {summary}
         </span>
-        <span aria-hidden className="flex-none text-xs text-ink-faint">
-          ▾
-        </span>
+        <ChevronDown size={10} className="text-ink-faint" />
       </button>
       {open && (
         // A listbox's members are options, and these are checkboxes — the
@@ -327,7 +324,7 @@ export function MultiSelectDropdown({
         <div
           role="group"
           aria-label={label}
-          className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto rounded-md border border-line bg-surface p-2 shadow-md"
+          className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto rounded-md border border-line-overlay bg-surface p-2 shadow-overlay"
         >
           <div className="flex flex-col gap-[7px]">
             {options.map((o) => (
@@ -390,9 +387,10 @@ export function Sidebar({
               {activeCount}
             </span>
           )}
-          <span aria-hidden className="text-[9px] text-ink-faint">
-            {open ? "▴" : "▾"}
-          </span>
+          <ChevronDown
+            size={10}
+            className={`text-ink-faint transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 

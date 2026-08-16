@@ -88,6 +88,14 @@
   --warn-line: #e0d3be;
 
   --selection: #dce3f0;
+
+  /* Elevation. A popup's edge is carried by its shadow in light and by its
+     border in dark, where a black shadow is no shadow at all — so the border
+     lightens there and the shadow deepens, and both tokens change together. */
+  --line-overlay: #dcdcd6;
+  --elevation-overlay: 0 4px 12px rgb(20 22 26 / 0.1);
+  /* The nav's active chip and the switch knob: lifted off their own track. */
+  --elevation-raised: 0 1px 2px rgb(20 22 26 / 0.14);
 }
 
 /* The same roles, re-measured rather than mechanically inverted. Every text
@@ -136,6 +144,10 @@
     --warn-line: #443521;
 
     --selection: #2a3854;
+
+    --line-overlay: #3b414a;
+    --elevation-overlay: 0 6px 16px rgb(0 0 0 / 0.55);
+    --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.5);
   }
 }
 
@@ -152,6 +164,7 @@
   --color-line-softer: var(--line-softer);
   --color-line-row: var(--line-row);
   --color-line-control: var(--line-control);
+  --color-line-overlay: var(--line-overlay);
 
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
@@ -168,6 +181,11 @@
   --color-row-hover: var(--row-hover);
   --color-over: var(--over);
   --color-under: var(--under);
+
+  /* Named apart from the utilities they feed: `--shadow-*` is Tailwind's own
+     namespace, and a token mapping to itself resolves to nothing. */
+  --shadow-overlay: var(--elevation-overlay);
+  --shadow-raised: var(--elevation-raised);
 
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);
@@ -196,6 +214,13 @@
 
   --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 @layer base {

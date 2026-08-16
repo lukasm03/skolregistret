@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { site } from "@/config/site";
 
@@ -14,7 +15,13 @@ import { site } from "@/config/site";
  * when it arrives.
  */
 export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }) {
-  const block = "animate-pulse rounded-sm bg-line-row";
+  // Each region breathes a beat after the one above it — in unison the whole
+  // page reads as one flashing rectangle rather than something assembling.
+  // The delay rides a custom property because those inherit and
+  // `animation-delay` does not, and because a class built from a template
+  // string is a class Tailwind never sees.
+  const block = "animate-pulse rounded-sm bg-line-row [animation-delay:var(--beat,0ms)]";
+  const beat = (n: number) => ({ "--beat": `${n * 120}ms` }) as CSSProperties;
 
   return (
     <AppShell
@@ -29,7 +36,10 @@ export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }
           Laddar
         </span>
 
-        <header className="flex flex-col gap-3 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
+        <header
+          style={beat(0)}
+          className="flex flex-col gap-3 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6"
+        >
           <div className={`${block} h-[11px] w-[110px]`} />
           <div className={`${block} h-[26px] w-[min(100%,340px)]`} />
           <div className="flex flex-wrap items-center gap-2.5">
@@ -42,6 +52,7 @@ export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }
         <div
           className="grid gap-px border-b border-line-soft bg-line-row"
           style={{
+            ...beat(1),
             gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 158px), 1fr))",
           }}
         >
@@ -57,7 +68,10 @@ export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-stretch">
-          <div className="flex min-w-0 flex-1 flex-col gap-2.5 px-4 pt-5 pb-6 sm:px-6">
+          <div
+            style={beat(2)}
+            className="flex min-w-0 flex-1 flex-col gap-2.5 px-4 pt-5 pb-6 sm:px-6"
+          >
             <div className={`${block} h-[13px] w-[120px]`} />
             <div className={`${block} h-[30px] w-full`} />
             {Array.from({ length: 8 }, (_, i) => (
@@ -65,7 +79,10 @@ export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }
             ))}
           </div>
 
-          <aside className="flex w-full flex-col gap-3 border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
+          <aside
+            style={beat(3)}
+            className="flex w-full flex-col gap-3 border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l"
+          >
             <div className={`${block} h-[10px] w-[110px]`} />
             {Array.from({ length: 9 }, (_, i) => (
               <div key={i} className={`${block} h-[13px] w-full`} />

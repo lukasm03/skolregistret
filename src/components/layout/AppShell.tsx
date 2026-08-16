@@ -68,7 +68,7 @@ export function AppShell({
 
           <nav
             aria-label="Huvudnavigering"
-            className="flex rounded-md bg-surface-segment p-0.5"
+            className="flex rounded-lg bg-surface-segment p-0.5"
           >
             {site.nav.map((item) => {
               const active = item.match === section;
@@ -79,7 +79,7 @@ export function AppShell({
                   aria-current={active ? "page" : undefined}
                   className={
                     active
-                      ? "rounded-sm bg-surface px-3 py-[5px] text-base font-medium shadow-[0_1px_1px_rgba(20,22,26,0.06)]"
+                      ? "rounded-sm bg-surface px-3 py-[5px] text-base font-medium shadow-raised"
                       : "px-3 py-[5px] text-base text-ink-muted hover:text-ink"
                   }
                 >

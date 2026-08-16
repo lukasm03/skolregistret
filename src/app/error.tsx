@@ -44,7 +44,7 @@ export default function Error({
           <button
             type="button"
             onClick={retry}
-            className="flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-base font-medium hover:border-ink-faint"
+            className="flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-base font-medium transition-transform hover:border-ink-faint active:scale-[0.96]"
           >
             Försök igen
           </button>

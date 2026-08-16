@@ -94,10 +94,7 @@ export default async function HuvudmanDetailPage({
                 {isKommunal ? "Kommunal verksamhet" : "Aktivt bolag"}
               </StatusPill>
               {koncernSlug && (
-                <Link
-                  href={`/koncern/${koncernSlug}`}
-                  className="transition-opacity hover:opacity-80"
-                >
+                <Link href={`/koncern/${koncernSlug}`} className="group">
                   <KoncernPill>Del av koncern</KoncernPill>
                 </Link>
               )}
@@ -180,9 +177,10 @@ export default async function HuvudmanDetailPage({
                       className="flex items-center gap-1.5 text-sm text-ink"
                     >
                       {i > 0 && (
-                        <span aria-hidden className="font-mono text-mono text-ink-ghost">
-                          └
-                        </span>
+                        <span
+                          aria-hidden
+                          className="mr-1 h-[9px] w-[7px] flex-none rounded-bl-xs border-b border-l border-line-control"
+                        />
                       )}
                       {bolag}
                     </li>

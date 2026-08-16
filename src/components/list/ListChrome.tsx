@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { site } from "@/config/site";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
+import { ChevronDown, ChevronLeft, ChevronRight, Close } from "@/components/ui/icons";
 
 export function ListToolbar({
   count,
@@ -57,9 +58,7 @@ export function FilterSummary({
         >
           <span className="flex-none text-ink-muted">{f.label}</span>
           <span className="truncate font-medium text-accent">{f.value}</span>
-          <span aria-hidden className="flex-none text-mono text-accent-soft">
-            ✕
-          </span>
+          <Close size={9} className="text-accent-soft" />
           <span className="sr-only">Ta bort filtret</span>
         </button>
       ))}
@@ -94,7 +93,7 @@ export function NoMatches({
         <button
           type="button"
           onClick={onClearAll}
-          className="flex h-[26px] items-center rounded-md border border-line bg-surface px-2.5 text-sm font-medium text-ink hover:border-ink-faint"
+          className="flex h-[26px] items-center rounded-md border border-line bg-surface px-2.5 text-sm font-medium text-ink transition-transform hover:border-ink-faint active:scale-[0.96]"
         >
           Rensa {filters.length === 1 ? "filtret" : `alla ${filters.length} filter`}
         </button>
@@ -160,7 +159,7 @@ export function Pagination({
         disabled={page <= 1}
         label="Föregående sida"
       >
-        ‹
+        <ChevronLeft />
       </PageArrow>
       {pageWindow(page, totalPages).map((p, i) =>
         p === "gap" ? (
@@ -192,7 +191,7 @@ export function Pagination({
         disabled={page >= totalPages}
         label="Nästa sida"
       >
-        ›
+        <ChevronRight />
       </PageArrow>
     </nav>
   );
@@ -261,15 +260,13 @@ export function PerPageControl({
         className="flex h-[27px] items-center gap-[7px] rounded-md border border-line px-2.5 text-sm text-ink-muted hover:border-ink-faint"
       >
         <span>{perPage} per sida</span>
-        <span aria-hidden className="text-[9px] text-ink-faint">
-          ▾
-        </span>
+        <ChevronDown size={10} className="text-ink-faint" />
       </button>
       {open && (
         <ul
           role="listbox"
           aria-label="Rader per sida"
-          className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line bg-surface py-1 shadow-md"
+          className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line-overlay bg-surface py-1 shadow-overlay"
         >
           {perPageOptions.map((option) => (
             <li key={option} role="presentation">
