@@ -64,12 +64,18 @@ function orderedStatus(status: string[]): string[] {
   return SKOLSTATUS_ORDER.filter((s) => status.includes(s));
 }
 
-function typFilter(typ: string[]): ActiveFilter | null {
+/**
+ * `label` differs per page on purpose, and a token has to read back the
+ * heading that produced it: the skolenhet list says "Huvudmannatyp" to
+ * separate it from skolform, while a page already about huvudmän needs only
+ * "Typ".
+ */
+function typFilter(typ: string[], label: string): ActiveFilter | null {
   // Both types selected is the default; neither is the empty-list case above.
   if (typ.length === 2) return null;
   return {
     key: "typ",
-    label: "Huvudmannatyp",
+    label,
     value: typ.length === 0 ? "ingen vald" : typ.join(", "),
     clear: { typ: null },
   };
@@ -130,7 +136,7 @@ export function activeSchoolFilters(
           clear: CLEAR_FORM,
         }
       : null,
-    typFilter(query.typ),
+    typFilter(query.typ, "Huvudmannatyp"),
     query.arskurs.length
       ? {
           key: "arskurs",
@@ -178,7 +184,7 @@ export function activeHuvudmanFilters(
           clear: CLEAR_FORM,
         }
       : null,
-    typFilter(query.typ),
+    typFilter(query.typ, "Typ"),
     query.koncernOnly
       ? {
           key: "koncern",

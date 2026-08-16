@@ -83,6 +83,19 @@ describe("activeSchoolFilters", () => {
 });
 
 describe("activeHuvudmanFilters", () => {
+  // Each token has to name the sidebar heading that produced it, and the two
+  // pages head this filter differently.
+  test("the typ token reads back this page's own heading", () => {
+    expect(huvudman("typ=Kommunal")[0]).toMatchObject({
+      key: "typ",
+      label: "Typ",
+    });
+    expect(school("typ=Kommunal")[0]).toMatchObject({
+      key: "typ",
+      label: "Huvudmannatyp",
+    });
+  });
+
   test("the koncern toggle shows what it is doing", () => {
     expect(huvudman("koncern=1")).toEqual([
       {
