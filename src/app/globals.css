@@ -2,67 +2,174 @@
 
 /* ---------------------------------------------------------------------------
    Design tokens. Everything visual is defined here — edit these to re-skin
-   the whole app. Component files reference token names, never raw hex values.
+   the whole app. Component files reference token names, never raw hex values,
+   which is what made a second appearance a matter of this file alone.
+
+   The palette lives on `:root` as plain custom properties and is mapped into
+   Tailwind through `@theme inline` below. `@theme` on its own bakes each
+   value into the utilities that use it, so a media query could never reach
+   them; `inline` emits `var(--surface)` instead, and the override further
+   down is what the browser resolves at paint time.
+
+   Dark follows the system setting and nothing else. A manual switch would
+   need a class or attribute on `<html>`, a place to persist the choice, and
+   an inline script to apply it before first paint — worth doing only once
+   somebody asks for the choice.
 --------------------------------------------------------------------------- */
-@theme {
+:root {
+  /* Tells the browser to draw its own furniture — scrollbars, form controls,
+     the canvas behind the page — to match. */
+  color-scheme: light dark;
+
   /* Surfaces */
-  --color-canvas: #edede9;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #fbfbf9;
-  --color-surface-panel: #fdfdfb;
-  --color-surface-head: #f7f7f5;
-  --color-surface-segment: #efefeb;
+  --canvas: #edede9;
+  --surface: #ffffff;
+  --surface-subtle: #fbfbf9;
+  --surface-panel: #fdfdfb;
+  --surface-head: #f7f7f5;
+  --surface-segment: #efefeb;
 
   /* Lines */
-  --color-line: #dcdcd6;
-  --color-line-soft: #e3e3df;
-  --color-line-softer: #e9e9e5;
-  --color-line-row: #f0f0ec;
+  --line: #dcdcd6;
+  --line-soft: #e3e3df;
+  --line-softer: #e9e9e5;
+  --line-row: #f0f0ec;
   /* Borders of controls — the unchecked box, the radio ring, the switch's
      off track. WCAG asks 3:1 of a component boundary against what surrounds
      it, and the old #d2d2cc managed 1.52 on white: technically a border,
      practically invisible. Measures 3.29 / 3.23 on surface / panel. */
-  --color-line-control: #8e8e88;
+  --line-control: #8e8e88;
 
   /* Ink
      The app's smallest text — 10.5px uppercase labels, column headers, filter
      counts, stat notes — is drawn in the lower three steps, so each one has to
      clear WCAG AA (4.5:1) on the lightest surface it lands on. Measured
-     against `--color-surface` / `--color-surface-head`:
+     against `--surface` / `--surface-head`:
 
        muted  6.72 / 6.26     subtle  5.58 / 5.20     faint  4.76 / 4.44
 
      `faint`'s 4.44 on `surface-head` is only ever the sort glyph, which is
      aria-hidden decoration held to the 3:1 non-text bar. Lightening any of
      these again puts real text below AA — check before you do. */
-  --color-ink: #14161a;
-  --color-ink-muted: #585c63;
-  --color-ink-subtle: #65686f;
-  --color-ink-faint: #6f737b;
+  --ink: #14161a;
+  --ink-muted: #585c63;
+  --ink-subtle: #65686f;
+  --ink-faint: #6f737b;
   /* Disabled controls only (the paging arrows at either end), which WCAG
      exempts — dark enough to read as present, light enough to read as inert. */
-  --color-ink-ghost: #9ea1a7;
+  --ink-ghost: #9ea1a7;
+  /* Text drawn on top of `--ink` itself, e.g. the current page number. */
+  --ink-inverse: #ffffff;
 
   /* Accent */
-  --color-accent: #24457a;
-  --color-accent-bg: #eef2fa;
-  --color-accent-line: #c3d0e4;
+  --accent: #24457a;
+  --accent-bg: #eef2fa;
+  --accent-line: #c3d0e4;
   /* The ✕ on a removable filter token — a control affordance, so 3:1 on
      `accent-bg` rather than the 4.5:1 text bar. Measures 3.37. */
-  --color-accent-soft: #6d84ad;
-  --color-row-hover: #f3f5fa;
+  --accent-soft: #6d84ad;
+  /* Marks drawn on top of `--accent`: the checkmark, the radio dot. */
+  --accent-ink: #ffffff;
+  --row-hover: #f3f5fa;
   /* Magnitude bars behind the count columns. Deeper than `accent-bg` so the
      bar survives the row's hover tint, which is nearly that colour. */
-  --color-bar: #dde5f2;
+  --bar: #dde5f2;
 
   /* Status */
-  --color-ok: #2f6b4f;
-  --color-ok-bg: #f1f7f3;
-  --color-ok-line: #cbddd2;
-  --color-warn: #8a5a22;
-  --color-warn-bg: #faf7f2;
-  --color-warn-line: #e0d3be;
+  --ok: #2f6b4f;
+  --ok-bg: #f1f7f3;
+  --ok-line: #cbddd2;
+  --warn: #8a5a22;
+  --warn-bg: #faf7f2;
+  --warn-line: #e0d3be;
 
+  --selection: #dce3f0;
+}
+
+/* The same roles, re-measured rather than mechanically inverted. Every text
+   step clears AA on the surface it lands on — ink 14.8, muted 7.9, subtle
+   6.4, faint 5.0 against `--surface` — and `--line-control` clears the 3:1
+   boundary bar at 4.3. The accent flips from a dark blue on white to a light
+   blue on near-black, so the marks drawn on top of it flip with it. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #0e1013;
+    --surface: #16181c;
+    --surface-subtle: #121418;
+    --surface-panel: #141619;
+    --surface-head: #1c1f24;
+    --surface-segment: #212429;
+
+    --line: #2b2f36;
+    --line-soft: #252930;
+    --line-softer: #202329;
+    --line-row: #1e2127;
+    --line-control: #767d88;
+
+    --ink: #e9eaec;
+    --ink-muted: #a8adb5;
+    --ink-subtle: #959ba4;
+    --ink-faint: #828892;
+    --ink-ghost: #5f656e;
+    --ink-inverse: #0e1013;
+
+    --accent: #8db4f2;
+    --accent-bg: #1a2231;
+    --accent-line: #2f3f5c;
+    --accent-soft: #7b93bb;
+    --accent-ink: #0e1013;
+    --row-hover: #1b1f27;
+    --bar: #22304a;
+
+    --ok: #6cc294;
+    --ok-bg: #152019;
+    --ok-line: #26402f;
+    --warn: #d7a35d;
+    --warn-bg: #221c12;
+    --warn-line: #443521;
+
+    --selection: #2a3854;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-head: var(--surface-head);
+  --color-surface-segment: var(--surface-segment);
+
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-line-softer: var(--line-softer);
+  --color-line-row: var(--line-row);
+  --color-line-control: var(--line-control);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-ghost: var(--ink-ghost);
+  --color-ink-inverse: var(--ink-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
+  --color-accent-line: var(--accent-line);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-row-hover: var(--row-hover);
+  --color-bar: var(--bar);
+
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-line: var(--ok-line);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-line: var(--warn-line);
+}
+
+@theme {
   /* Type scale — small, dense, data-dashboard sizes */
   --text-micro: 10.5px;
   --text-mono: 11px;
@@ -85,16 +192,16 @@
 
 @layer base {
   html {
-    background: var(--color-canvas);
+    background: var(--canvas);
   }
   body {
-    background: var(--color-canvas);
-    color: var(--color-ink);
+    background: var(--canvas);
+    color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
-    background: #dce3f0;
+    background: var(--selection);
   }
   a {
     color: inherit;
@@ -105,10 +212,10 @@
     color: inherit;
   }
   input::placeholder {
-    color: var(--color-ink-faint);
+    color: var(--ink-faint);
   }
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
 }

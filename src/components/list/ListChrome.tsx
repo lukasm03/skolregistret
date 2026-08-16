@@ -172,7 +172,7 @@ export function Pagination({
             …
           </span>
         ) : p === page ? (
-          <span key={p} aria-current="page" className={`${box} bg-ink text-white`}>
+          <span key={p} aria-current="page" className={`${box} bg-ink text-ink-inverse`}>
             {p}
           </span>
         ) : (

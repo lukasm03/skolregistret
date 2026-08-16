@@ -62,7 +62,7 @@ export function CheckboxControl({
         />
         <span
           aria-hidden
-          className="pointer-events-none hidden text-[9px] leading-none text-white peer-checked:block"
+          className="pointer-events-none hidden text-[9px] leading-none text-accent-ink peer-checked:block"
         >
           ✓
         </span>
@@ -102,7 +102,7 @@ export function RadioControl({
         />
         <span
           aria-hidden
-          className="pointer-events-none hidden size-[5px] rounded-full bg-white peer-checked:block"
+          className="pointer-events-none hidden size-[5px] rounded-full bg-accent-ink peer-checked:block"
         />
       </span>
       <span
@@ -167,7 +167,7 @@ export function Toggle({
         }`}
       >
         <span
-          className={`size-[13px] rounded-full bg-white ${on ? "" : "shadow-[0_1px_2px_rgba(20,22,26,0.2)]"}`}
+          className={`size-[13px] rounded-full bg-surface ${on ? "" : "shadow-[0_1px_2px_rgba(20,22,26,0.2)]"}`}
         />
       </span>
     </button>
@@ -386,7 +386,7 @@ export function Sidebar({
         >
           Filter
           {activeCount > 0 && (
-            <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-accent px-1 font-mono text-micro text-white">
+            <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-accent px-1 font-mono text-micro text-accent-ink">
               {activeCount}
             </span>
           )}
