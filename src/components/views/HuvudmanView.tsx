@@ -4,8 +4,10 @@ import { useMemo } from "react";
 import { HuvudmanFilters } from "@/components/filters/HuvudmanFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
+  FilterSummary,
   ListFooter,
   ListToolbar,
+  NoMatches,
   Pagination,
   PerPageControl,
 } from "@/components/list/ListChrome";
@@ -14,8 +16,9 @@ import type { Column } from "@/components/ui/DataTable";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
 import { kommunName } from "@/data/kommuner";
+import { activeHuvudmanFilters, clearAllPatch } from "@/lib/active-filters";
 import { normalizeApiHuvudmanList, normalizeApiSchool } from "@/lib/api-normalize";
-import { DASH, dec, kommunLong, metricNumber, num, plural } from "@/lib/format";
+import { DASH, dec, metricNumber, num, plural } from "@/lib/format";
 import {
   huvudmanSortValue,
   selectHuvudman,
@@ -65,11 +68,12 @@ export function HuvudmanView({
 
   const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
-  // The React Compiler declines to optimize this one because the conditional
-  // `primary` column spread reads as a dependency it cannot prove stable. The
-  // memo is still correct — the component just misses compiler optimization.
-  // Disabled rather than restructured: rewriting it would change working
-  // render behaviour for no user-visible gain.
+  const filters = useMemo(
+    () => activeHuvudmanFilters(query, { kommun, skolform: form?.label }),
+    [query, kommun, form],
+  );
+  const clearAll = () => patch(clearAllPatch(filters));
+
   const columns = useMemo<Column<HuvudmanAggregate>[]>(
     () => [
       {
@@ -143,14 +147,8 @@ export function HuvudmanView({
           ]
         : []),
     ],
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     [primary],
   );
-
-  const where = kommun ? kommunLong(kommun) : site.riket;
-  const scope = form
-    ? `${where} · ${form.label.toLowerCase()}`
-    : `${where} · alla skolformer`;
 
   return (
     <AppShell
@@ -166,11 +164,27 @@ export function HuvudmanView({
           counts={list.counts}
           formCounts={list.formCounts}
           kommuner={list.kommuner}
+          activeCount={filters.length}
           onChange={patch}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ListToolbar count={plural(total, "huvudman", "huvudmän")} scope={scope} />
+          <ListToolbar
+            count={plural(total, "huvudman", "huvudmän")}
+            // Replaced by the tokens as soon as there are any — see
+            // `SchoolsView` for why the two are not shown together.
+            scope={
+              filters.length
+                ? undefined
+                : `${site.riket} · ${site.allaSkolformer.toLowerCase()}`
+            }
+          >
+            <FilterSummary
+              filters={filters}
+              onClear={(p) => patch(p)}
+              onClearAll={clearAll}
+            />
+          </ListToolbar>
 
           <div className="min-h-[712px]">
             <DataGrid
@@ -183,7 +197,13 @@ export function HuvudmanView({
                 })}`
               }
               rowLabel={(r) => `Visa ${r.huvudman.name}`}
-              emptyMessage="Inga huvudmän matchar filtret."
+              emptyMessage={
+                <NoMatches
+                  message="Inga huvudmän matchar filtret."
+                  filters={filters}
+                  onClearAll={clearAll}
+                />
+              }
               label="Huvudmän"
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}

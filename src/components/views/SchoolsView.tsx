@@ -4,8 +4,10 @@ import { useMemo } from "react";
 import { SchoolFilters } from "@/components/filters/SchoolFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
+  FilterSummary,
   ListFooter,
   ListToolbar,
+  NoMatches,
   Pagination,
   PerPageControl,
 } from "@/components/list/ListChrome";
@@ -13,8 +15,9 @@ import { schoolColumns } from "@/components/tables/schoolColumns";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
+import { activeSchoolFilters, clearAllPatch } from "@/lib/active-filters";
 import { normalizeApiSchool } from "@/lib/api-normalize";
-import { kommunLong, plural } from "@/lib/format";
+import { plural } from "@/lib/format";
 import { parseSchoolQuery, searchString, type RawParams } from "@/lib/query";
 import { selectSchools } from "@/lib/school-select";
 import type { SkolorRad } from "@/lib/skolregister";
@@ -48,13 +51,24 @@ export function SchoolsView({
     [normalized, query, huvudmanName],
   );
 
+  const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
+
+  const filters = useMemo(
+    () =>
+      activeSchoolFilters(query, {
+        kommun,
+        huvudman: huvudmanName,
+        skolform: form?.label,
+      }),
+    [query, kommun, huvudmanName, form],
+  );
+  const clearAll = () => patch(clearAllPatch(filters));
+
   const total = selection.sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / query.perPage));
   const page = Math.min(query.page, totalPages);
   const from = total ? (page - 1) * query.perPage + 1 : 0;
   const to = Math.min(page * query.perPage, total);
-
-  const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
   const columns = useMemo(
     () => [
@@ -88,19 +102,28 @@ export function SchoolsView({
           kommuner={selection.kommuner}
           programmes={selection.gymnasieprogram}
           form={form}
-          huvudmanName={huvudmanName}
+          activeCount={filters.length}
           onChange={patch}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <ListToolbar
             count={plural(total, "skolenhet", "skolenheter")}
+            // The scope line describes an unfiltered list. Once there are
+            // tokens they say the same thing more precisely, and repeating
+            // "Hela riket" beside a kommun token would contradict them.
             scope={
-              query.huvudman
-                ? "filtrerat på huvudman"
-                : `${kommun ? kommunLong(kommun) : site.riket} · ${(form?.label ?? site.allaSkolformer).toLowerCase()}`
+              filters.length
+                ? undefined
+                : `${site.riket} · ${site.allaSkolformer.toLowerCase()}`
             }
-          />
+          >
+            <FilterSummary
+              filters={filters}
+              onClear={(p) => patch(p)}
+              onClearAll={clearAll}
+            />
+          </ListToolbar>
 
           <div className="min-h-[712px]">
             <DataGrid
@@ -108,7 +131,13 @@ export function SchoolsView({
               rowKey={(s) => s.kod}
               rowHref={(s) => `/skolor/${s.kod}${searchString(params)}`}
               rowLabel={(s) => `Visa ${s.name}`}
-              emptyMessage="Inga skolenheter matchar filtret."
+              emptyMessage={
+                <NoMatches
+                  message="Inga skolenheter matchar filtret."
+                  filters={filters}
+                  onClearAll={clearAll}
+                />
+              }
               label="Skolenheter"
               columns={columns}
               sort={{ id: query.sort, desc: query.desc }}

@@ -157,31 +157,6 @@ export function Toggle({
   );
 }
 
-/** Removable filter token, e.g. the active huvudman filter. */
-export function ActiveFilter({
-  onClear,
-  children,
-}: {
-  onClear: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClear}
-      className="flex items-center gap-[7px] rounded-md border border-accent bg-accent-bg px-2.5 py-1.5"
-    >
-      <span className="min-w-0 flex-1 truncate text-left text-sm font-medium text-accent">
-        {children}
-      </span>
-      <span aria-hidden className="text-mono text-accent-soft">
-        ✕
-      </span>
-      <span className="sr-only">Ta bort filtret</span>
-    </button>
-  );
-}
-
 /**
  * Single-select. A radio list is the house style, but with 290 kommuner it
  * would be longer than the page — a native select stays searchable by typing
@@ -371,7 +346,14 @@ export function SidebarFootnote({ children }: { children: ReactNode }) {
  * toggle and the panel are siblings, which is why the views arrange this row
  * as a column until `lg`.
  */
-export function Sidebar({ children }: { children: ReactNode }) {
+export function Sidebar({
+  children,
+  activeCount = 0,
+}: {
+  children: ReactNode;
+  /** Shown on the closed toggle, so a collapsed panel still declares itself. */
+  activeCount?: number;
+}) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -386,6 +368,11 @@ export function Sidebar({ children }: { children: ReactNode }) {
           className="flex h-[30px] items-center gap-2 rounded-md border border-line bg-surface px-2.5 text-base font-medium hover:border-ink-faint"
         >
           Filter
+          {activeCount > 0 && (
+            <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-accent px-1 font-mono text-micro text-white">
+              {activeCount}
+            </span>
+          )}
           <span aria-hidden className="text-[9px] text-ink-faint">
             {open ? "▴" : "▾"}
           </span>

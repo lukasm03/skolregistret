@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { site } from "@/config/site";
+import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
 
 export function ListToolbar({
   count,
@@ -9,16 +10,96 @@ export function ListToolbar({
   children,
 }: {
   count: ReactNode;
-  scope: ReactNode;
+  /** The unfiltered description of the list — left out once tokens say it. */
+  scope?: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-[42px] flex-wrap items-center gap-x-3.5 gap-y-1 border-b border-line-soft px-4 py-2 sm:h-[42px] sm:flex-nowrap sm:py-0">
-      <span className="text-base font-medium">{count}</span>
-      <span className="text-base text-ink-subtle">{scope}</span>
-      <div className="flex-1" />
+    <div className="flex min-h-[42px] flex-wrap items-center gap-x-3.5 gap-y-1.5 border-b border-line-soft px-4 py-2 sm:min-h-[42px] sm:py-1.5">
+      {/*
+        Filtering happens in the browser with no navigation, so nothing else
+        tells a screen reader the list changed size. The count is the one
+        thing worth announcing; the tokens beside it are reachable on their
+        own terms.
+      */}
+      <span aria-live="polite" aria-atomic className="text-base font-medium">
+        {count}
+      </span>
+      {scope && <span className="text-base text-ink-subtle">{scope}</span>}
       {children}
     </div>
+  );
+}
+
+/**
+ * The active filters, read back beside the count they produced. Each one
+ * removes itself; "Rensa filter" removes the lot.
+ */
+export function FilterSummary({
+  filters,
+  onClear,
+  onClearAll,
+}: {
+  filters: ActiveFilter[];
+  onClear: (patch: ClearPatch) => void;
+  onClearAll: () => void;
+}) {
+  if (filters.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {filters.map((f) => (
+        <button
+          key={f.key}
+          type="button"
+          onClick={() => onClear(f.clear)}
+          className="flex max-w-[260px] items-center gap-1.5 rounded-sm border border-accent-line bg-accent-bg px-2 py-[3px] text-xs hover:border-accent"
+        >
+          <span className="flex-none text-ink-muted">{f.label}</span>
+          <span className="truncate font-medium text-accent">{f.value}</span>
+          <span aria-hidden className="flex-none text-mono text-accent-soft">
+            ✕
+          </span>
+          <span className="sr-only">Ta bort filtret</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={onClearAll}
+        className="rounded-sm px-1 py-[3px] text-xs text-ink-muted underline decoration-line-control underline-offset-2 hover:text-ink hover:decoration-ink-faint"
+      >
+        Rensa filter
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The empty state. "Nothing matched" is only half the message when six
+ * controls could be responsible — the way out belongs next to it.
+ */
+export function NoMatches({
+  message,
+  filters,
+  onClearAll,
+}: {
+  message: string;
+  filters: ActiveFilter[];
+  onClearAll: () => void;
+}) {
+  return (
+    <span className="flex flex-wrap items-center gap-2.5">
+      {message}
+      {filters.length > 0 && (
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="flex h-[26px] items-center rounded-md border border-line bg-surface px-2.5 text-sm font-medium text-ink hover:border-ink-faint"
+        >
+          Rensa {filters.length === 1 ? "filtret" : `alla ${filters.length} filter`}
+        </button>
+      )}
+    </span>
   );
 }
 

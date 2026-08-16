@@ -21,19 +21,22 @@ export function HuvudmanFilters({
   counts,
   formCounts,
   kommuner,
+  activeCount,
   onChange,
 }: {
   query: HuvudmanQuery;
   counts: Record<HuvudmanTyp, number>;
   formCounts: Map<SkolformCode, number>;
   kommuner: KommunOption[];
+  /** Active filter count, shown on the collapsed toggle below `lg`. */
+  activeCount: number;
   onChange: (patch: Patch, replace?: boolean) => void;
 }) {
   const selectForm = (next: SkolformCode | null) =>
     onChange({ skolform: next, sort: null, dir: null });
 
   return (
-    <Sidebar>
+    <Sidebar activeCount={activeCount}>
       <FilterGroup label="Verksam i kommun">
         <SelectField
           name="kommun"

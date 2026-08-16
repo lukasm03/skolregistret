@@ -12,7 +12,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   TableScroller,
   cellClass,
@@ -60,7 +60,7 @@ interface Props<T> {
   rowLabel?: (row: T) => string;
   /** Renders the leading checkbox column from the design. */
   rowHeight?: number;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   /** Names the scroll region for assistive tech. */
   label?: string;
   sort: GridSort;

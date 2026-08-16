@@ -12,7 +12,6 @@ import type { KommunOption, ProgramOption } from "@/lib/school-select";
 import type { Patch } from "@/hooks/use-query-params";
 import type { HuvudmanTyp, SkolformCode, SkolStatus } from "@/lib/types";
 import {
-  ActiveFilter,
   CheckboxControl,
   Chip,
   FilterGroup,
@@ -32,7 +31,7 @@ export function SchoolFilters({
   kommuner,
   programmes,
   form,
-  huvudmanName,
+  activeCount,
   onChange,
 }: {
   query: SchoolQuery;
@@ -42,7 +41,8 @@ export function SchoolFilters({
   kommuner: KommunOption[];
   programmes: ProgramOption[];
   form: SkolformDef | undefined;
-  huvudmanName?: string;
+  /** Active filter count, shown on the collapsed toggle below `lg`. */
+  activeCount: number;
   onChange: (patch: Patch, replace?: boolean) => void;
 }) {
   // Unchecking the last remaining type drops the param, which means "all"
@@ -64,7 +64,7 @@ export function SchoolFilters({
     });
 
   return (
-    <Sidebar>
+    <Sidebar activeCount={activeCount}>
       <FilterGroup label="Kommun">
         <SelectField
           name="kommun"
@@ -79,14 +79,6 @@ export function SchoolFilters({
           }))}
         />
       </FilterGroup>
-
-      {huvudmanName && (
-        <FilterGroup label="Huvudman">
-          <ActiveFilter onClear={() => onChange({ huvudman: null })}>
-            {huvudmanName}
-          </ActiveFilter>
-        </FilterGroup>
-      )}
 
       {/* One skolform at a time: meritvärde and betygspoäng are not the same
           column, and a median across both would not mean anything. */}

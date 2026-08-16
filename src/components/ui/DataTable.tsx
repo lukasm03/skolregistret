@@ -95,7 +95,7 @@ interface Props<T> {
   /** Renders the leading checkbox column from the design. */
   selectable?: boolean;
   rowHeight?: number;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   /** Names the scroll region for assistive tech. */
   label?: string;
 }
