@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { HuvudmanView } from "@/components/views/HuvudmanView";
+import { site } from "@/config/site";
 import { listHuvudman, listSkolor } from "@/lib/skolregister";
+
+export const metadata: Metadata = {
+  title: "Huvudmän",
+  description: `Alla skolhuvudmän i ${site.riket.toLowerCase()} — kommunala och fristående, med skolenheter, elevantal och koncerntillhörighet.`,
+};
 
 /**
  * As with the skolenhet list: the data goes over once, and the view

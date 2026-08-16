@@ -15,8 +15,17 @@ const mono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+/**
+ * `template` is what every other route leans on: a page sets only its own
+ * subject as the title and gets the brand appended. Without it each of the
+ * register's thousands of prerendered pages shipped the same `<title>`, which
+ * is what a bookmark, a tab strip and a shared link all show.
+ */
 export const metadata: Metadata = {
-  title: `${site.brand} · ${site.riket}`,
+  title: {
+    default: `${site.brand} · ${site.riket}`,
+    template: `%s · ${site.brand}`,
+  },
   description: `Skolenheter och huvudmän i hela riket.`,
 };
 

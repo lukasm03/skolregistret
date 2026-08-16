@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { SchoolsView } from "@/components/views/SchoolsView";
+import { site } from "@/config/site";
 import { slugify } from "@/lib/format";
 import { listHuvudman, listSkolor } from "@/lib/skolregister";
+
+export const metadata: Metadata = {
+  title: "Skolenheter",
+  description: `Alla skolenheter i ${site.riket.toLowerCase()} — sök och filtrera på kommun, skolform, huvudman, årskurs och elevantal.`,
+};
 
 /**
  * The list filters in the browser, so the page's job is to hand it the

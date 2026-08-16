@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
 import { dedupeHuvudmanRows, normalizeApiSchool } from "@/lib/api-normalize";
-import { DASH, num, plural, slugify } from "@/lib/format";
+import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
 import { href } from "@/lib/query";
 import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
@@ -31,6 +32,31 @@ import { listHuvudman, listSkolor } from "@/lib/skolregister";
 export async function generateStaticParams() {
   const rows = dedupeHuvudmanRows(await listHuvudman());
   return rows.map((h) => ({ slug: slugify(h.namn) }));
+}
+
+/** The register list is parsed once per process — see `/skolor/[kod]`. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const rows = dedupeHuvudmanRows(await listHuvudman());
+  const h = rows.find((row) => slugify(row.namn) === slug);
+  if (!h) return { title: "Huvudmannen finns inte" };
+
+  const var_ =
+    h.kommuner.length === 1
+      ? ` i ${kommunLong(h.kommuner[0])}`
+      : ` i ${plural(h.kommuner.length, "kommun", "kommuner")}`;
+
+  return {
+    title: `${h.namn} · ${h.typ.toLowerCase()} huvudman`,
+    description:
+      `${h.namn} driver ${plural(h.antalEnheter, "skolenhet", "skolenheter")}${var_} ` +
+      `med ${plural(h.antalElever, "elev", "elever")}.` +
+      (h.koncern?.koncernNamn ? ` Ingår i koncernen ${h.koncern.koncernNamn}.` : ""),
+  };
 }
 
 export default async function HuvudmanDetailPage({

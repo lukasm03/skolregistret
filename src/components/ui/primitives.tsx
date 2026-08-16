@@ -130,7 +130,7 @@ export function ButtonLink({ href, children }: { href: string; children: ReactNo
   return (
     <Link
       href={href}
-      className="flex h-8 items-center justify-center rounded-md border border-line bg-surface text-base font-medium hover:border-ink-faint"
+      className="flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-base font-medium hover:border-ink-faint"
     >
       {children}
     </Link>

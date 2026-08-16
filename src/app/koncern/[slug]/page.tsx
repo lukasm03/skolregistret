@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { DataTable, type Column } from "@/components/ui/DataTable";
@@ -54,6 +55,27 @@ const dotterbolagColumns: Column<HuvudmanRad>[] = [
 export async function generateStaticParams() {
   const groups = groupKoncern(await listHuvudman());
   return groups.map((g) => ({ slug: g.slug }));
+}
+
+/** The register list is parsed once per process — see `/skolor/[kod]`. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const group = groupKoncern(await listHuvudman()).find((g) => g.slug === slug);
+  if (!group) return { title: "Koncernen finns inte" };
+
+  const enheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
+  const elever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
+
+  return {
+    title: `${group.namn} · koncern`,
+    description:
+      `${group.namn} har ${plural(group.dotterbolag.length, "huvudman", "huvudmän")} i skolregistret, ` +
+      `med ${plural(enheter, "skolenhet", "skolenheter")} och ${plural(elever, "elev", "elever")}.`,
+  };
 }
 
 export default async function KoncernPage({

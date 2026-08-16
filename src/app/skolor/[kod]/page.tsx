@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { site } from "@/config/site";
@@ -34,7 +35,7 @@ import {
   sumProgramElever,
   type ProgramRow,
 } from "@/components/tables/programColumns";
-import { DASH, bytes, num, slugify } from "@/lib/format";
+import { DASH, bytes, kommunLong, num, plural, slugify } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
 import {
   enkätGruppKey,
@@ -66,6 +67,32 @@ import {
 export async function generateStaticParams() {
   const skolor = await listSkolor();
   return skolor.map((s) => ({ kod: s.skolenhetskod }));
+}
+
+/**
+ * The register export is parsed once per process, so looking the unit up a
+ * second time here costs a map lookup rather than a second read.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ kod: string }>;
+}): Promise<Metadata> {
+  const { kod } = await params;
+  const school = await getSkola(kod);
+  if (!school) return { title: "Skolenheten finns inte" };
+
+  const var_ = school.kommun ? ` i ${kommunLong(school.kommun)}` : "";
+  const formOrd = school.skolformer.join(", ").toLowerCase() || "skolenhet";
+  const elever =
+    school.antalElever != null ? ` ${plural(school.antalElever, "elev", "elever")},` : "";
+
+  return {
+    title: school.kommun ? `${school.namn} · ${school.kommun}` : school.namn,
+    description:
+      `${school.namn} —${elever} ${formOrd}${var_} med ${school.huvudman} som huvudman. ` +
+      `Nyckeltal, enkätsvar och registeruppgifter ur Skolverkets register.`,
+  };
 }
 
 const backHref = "/skolor";
