@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/AppShell";
 import { ButtonLink, Label } from "@/components/ui/primitives";
 import { site } from "@/config/site";
-
-export const metadata: Metadata = {
-  title: "Sidan finns inte",
-};
 
 /**
  * Serves both the unmatched URL and every `notFound()` in the detail routes —
  * a skolenhetskod, ett huvudmannaslug or a koncern that isn't in the register
  * export the site was built from. The search field in the shell is the fastest
  * way out, so the shell stays.
+ *
+ * No `metadata` export: this version documents one for `global-not-found.js`
+ * only, and a `not-found.js` is not a page. The title comes from the route
+ * that called `notFound()` — each detail route's `generateMetadata` answers
+ * "…finns inte" for a param it cannot resolve — and from the layout's default
+ * for a URL that matched no route at all.
  */
 export default function NotFound() {
   return (
