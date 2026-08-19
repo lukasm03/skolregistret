@@ -1,0 +1,6 @@
+{
+  "name": "skolregistret-ui",
+  "version": "0.1.0",
+  "private": true,
+  "types": "dist/.design-sync/kit/entry.d.ts"
+}
