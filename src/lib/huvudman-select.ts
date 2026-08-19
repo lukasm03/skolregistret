@@ -4,7 +4,12 @@ import { median } from "./format";
 import type { HuvudmanQuery } from "./query";
 import { metricNumberOf, studentsOf, type ListSchool } from "./school-fields";
 import type { KommunOption } from "./school-select";
-import type { Huvudman, HuvudmanTyp, SkolformCode } from "./types";
+import {
+  HUVUDMANTYP_ORDER,
+  type Huvudman,
+  type HuvudmanTyp,
+  type SkolformCode,
+} from "./types";
 
 /**
  * Aggregating huvudmän out of the unit list, pure and free of I/O — the same
@@ -144,10 +149,9 @@ export function selectHuvudman(
   const kommunElever = totalStudents(everySchool, form, query.kommun);
   const rows = all.map((h) => aggregateHuvudman(h, schools, kommunElever, form));
 
-  const counts = {
-    Kommunal: all.filter((h) => h.typ === "Kommunal").length,
-    Fristående: all.filter((h) => h.typ === "Fristående").length,
-  };
+  const counts = Object.fromEntries(
+    HUVUDMANTYP_ORDER.map((t) => [t, all.filter((h) => h.typ === t).length]),
+  ) as Record<HuvudmanTyp, number>;
 
   // How many huvudmän would remain per skolform — the chip counts.
   const formCounts = new Map<SkolformCode, number>();

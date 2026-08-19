@@ -3,6 +3,7 @@ import { skolform, type SkolformDef } from "@/config/skolformer";
 import { normalizeKommunkod } from "@/data/kommuner";
 import {
   DEFAULT_STATUS,
+  HUVUDMANTYP_ORDER,
   isSkolformCode,
   isSkolStatus,
   SKOLSTATUS_ORDER,
@@ -30,7 +31,7 @@ const int = (v: string | string[] | undefined): number | undefined => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-const ALL_TYPER: HuvudmanTyp[] = ["Kommunal", "Fristående"];
+const ALL_TYPER: HuvudmanTyp[] = HUVUDMANTYP_ORDER;
 
 interface SortOption {
   /** Also the id of the table column this sorts. */

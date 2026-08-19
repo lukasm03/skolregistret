@@ -26,8 +26,12 @@ describe("activeSchoolFilters", () => {
   });
 
   test("the defaults do not count as filters", () => {
-    // Both huvudmannatyper and status=Aktiv are what you get without asking.
-    expect(school("typ=Kommunal,Fristående&status=Aktiv")).toEqual([]);
+    // Every huvudmannatyp and status=Aktiv are what you get without asking.
+    expect(
+      school(
+        "typ=Kommunal,Fristående,Kommunalförbund,Region,Specialskola,Sameskolan,Okänd&status=Aktiv",
+      ),
+    ).toEqual([]);
   });
 
   test("a filter is labelled with the name, not the code", () => {

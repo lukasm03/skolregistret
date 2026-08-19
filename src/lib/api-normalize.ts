@@ -1,7 +1,7 @@
 import { skolformer } from "@/config/skolformer";
 import { slugify } from "@/lib/format";
 import type { ListSchool } from "@/lib/school-fields";
-import type { HuvudmanRad, SkolorRad, ÅrskursSkolformKod } from "@/lib/skolregister";
+import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
 import { formatYears } from "@/lib/skolverket/parse";
 import type {
   HuvudmanTyp,
@@ -30,10 +30,12 @@ const skolformCodeFromLabel = (label: string): SkolformCode | undefined =>
  * different vocabulary from this app's `SkolformCode`. Only these three forms
  * report years at all.
  */
-const ÅRSKURS_KOD_TILL_SKOLFORM: Record<ÅrskursSkolformKod, SkolformCode> = {
+const ÅRSKURS_KOD_TILL_SKOLFORM: Partial<Record<string, SkolformCode>> = {
   fsk: "FKLASS",
   gr: "GR",
   gran: "GRS",
+  sp: "SP",
+  sam: "SAM",
 };
 
 const toMetricValue = (value: number | null): MetricValue | null =>
@@ -138,46 +140,4 @@ export function dedupeHuvudmanRows(rows: HuvudmanRad[]): HuvudmanRad[] {
 
 export function normalizeApiHuvudmanList(rows: HuvudmanRad[]): Huvudman[] {
   return dedupeHuvudmanRows(rows).map(normalizeApiHuvudman);
-}
-
-/** One koncern with every huvudman in the register that belongs to it. */
-interface KoncernGroup {
-  /** URL segment, derived the same way huvudman slugs are. */
-  slug: string;
-  namn: string;
-  orgNr: string;
-  /**
-   * The koncern's total company count as Bolagsverket reports it — often
-   * bigger than `dotterbolag.length`, since most of a koncern's companies
-   * are holding companies or run nothing in the school register.
-   */
-  antalFöretag: number;
-  dotterbolag: HuvudmanRad[];
-}
-
-/**
- * Huvudmän grouped by koncern, keyed by `koncernNamn` for the same reason
- * `dedupeHuvudmanRows` keys on name — the API gives no other id every row
- * agrees on, and the app's routing is name-based throughout.
- */
-export function groupKoncern(rows: HuvudmanRad[]): KoncernGroup[] {
-  const groups = new Map<string, KoncernGroup>();
-  for (const row of dedupeHuvudmanRows(rows)) {
-    const k = row.koncern;
-    // The register isn't always internally consistent — a `koncern` block
-    // with no name has been seen in the wild despite the declared type.
-    if (!k || !k.koncernNamn) continue;
-    const slug = slugify(k.koncernNamn);
-    const existing = groups.get(slug);
-    if (existing) existing.dotterbolag.push(row);
-    else
-      groups.set(slug, {
-        slug,
-        namn: k.koncernNamn,
-        orgNr: k.koncernOrgNr,
-        antalFöretag: k.antalFöretag,
-        dotterbolag: [row],
-      });
-  }
-  return [...groups.values()];
 }

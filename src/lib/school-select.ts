@@ -3,6 +3,7 @@ import type { SchoolQuery } from "./query";
 import { sortSchools, studentsOf, yearsOf, type ListSchool } from "./school-fields";
 import { expandSpan, yearsOverlap } from "./skolverket/parse";
 import {
+  HUVUDMANTYP_ORDER,
   SKOLSTATUS_ORDER,
   type HuvudmanTyp,
   type SkolStatus,
@@ -91,10 +92,9 @@ export function selectSchools<T extends ListSchool>(
   // Counts next to the type checkboxes reflect what is still available, so
   // they don't collapse to zero as soon as you narrow the type.
   const forTyp = applyExcept("typ");
-  const counts = {
-    Kommunal: forTyp.filter((s) => s.typ === "Kommunal").length,
-    Fristående: forTyp.filter((s) => s.typ === "Fristående").length,
-  };
+  const counts = Object.fromEntries(
+    HUVUDMANTYP_ORDER.map((t) => [t, forTyp.filter((s) => s.typ === t).length]),
+  ) as Record<HuvudmanTyp, number>;
 
   // Same idea for the skolform chips: how many units each form would give you
   // from here, not from the current form's selection.

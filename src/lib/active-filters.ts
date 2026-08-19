@@ -1,4 +1,4 @@
-import { DEFAULT_STATUS, SKOLSTATUS_ORDER } from "./types";
+import { DEFAULT_STATUS, HUVUDMANTYP_ORDER, SKOLSTATUS_ORDER } from "./types";
 import type { HuvudmanQuery, SchoolQuery } from "./query";
 
 /**
@@ -71,8 +71,8 @@ function orderedStatus(status: string[]): string[] {
  * "Typ".
  */
 function typFilter(typ: string[], label: string): ActiveFilter | null {
-  // Both types selected is the default; neither is the empty-list case above.
-  if (typ.length === 2) return null;
+  // Every type selected is the default; none is the empty-list case above.
+  if (typ.length === HUVUDMANTYP_ORDER.length) return null;
   return {
     key: "typ",
     label,

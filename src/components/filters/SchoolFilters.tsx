@@ -10,7 +10,12 @@ import {
 } from "@/lib/query";
 import type { KommunOption, ProgramOption } from "@/lib/school-select";
 import type { Patch } from "@/hooks/use-query-params";
-import type { HuvudmanTyp, SkolformCode, SkolStatus } from "@/lib/types";
+import {
+  HUVUDMANTYP_ORDER,
+  type HuvudmanTyp,
+  type SkolformCode,
+  type SkolStatus,
+} from "@/lib/types";
 import {
   CheckboxControl,
   Chip,
@@ -109,15 +114,17 @@ export function SchoolFilters({
 
       <FilterGroup label="Huvudmannatyp">
         <div className="flex flex-col gap-[7px]">
-          {(["Kommunal", "Fristående"] as HuvudmanTyp[]).map((t) => (
-            <CheckboxControl
-              key={t}
-              label={t}
-              count={counts[t]}
-              checked={query.typ.includes(t)}
-              onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
-            />
-          ))}
+          {HUVUDMANTYP_ORDER.filter((t) => counts[t] > 0 || query.typ.includes(t)).map(
+            (t) => (
+              <CheckboxControl
+                key={t}
+                label={t}
+                count={counts[t]}
+                checked={query.typ.includes(t)}
+                onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
+              />
+            ),
+          )}
         </div>
       </FilterGroup>
 

@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
 import {
   dedupeHuvudmanRows,
-  groupKoncern,
   normalizeApiHuvudmanList,
   normalizeApiSchool,
 } from "./api-normalize";
@@ -22,6 +21,7 @@ const skola = (over: Partial<SkolorRad> = {}): SkolorRad => ({
   skolformer: ["Förskoleklass", "Grundskola"],
   gymnasieprogram: [],
   antalElever: 300,
+  antalEleverKälla: "rapporterat",
   årskurser: ["0", "1", "2", "3"],
   årskurserPerSkolform: [
     { kod: "fsk", skolform: "Förskoleklass", årskurser: ["0"] },
@@ -264,8 +264,10 @@ describe("normalizeApiHuvudmanList", () => {
         koncern: {
           koncernOrgNr: "556999-0000",
           koncernNamn: "Academedia",
-          kedja: [],
           antalFöretag: 40,
+          asof: "2025-06",
+          inaktuellt: false,
+          träd: [],
         },
       }),
     ]);
@@ -315,49 +317,7 @@ describe("dedupeHuvudmanRows", () => {
   });
 });
 
-describe("groupKoncern", () => {
-  const inKoncern = (namn: string, koncernNamn: string) =>
-    huvudman({
-      namn,
-      koncern: {
-        koncernOrgNr: "556999-0000",
-        koncernNamn,
-        kedja: [],
-        antalFöretag: 40,
-      },
-    });
-
-  test("collects every huvudman sharing a koncern name", () => {
-    const groups = groupKoncern([
-      inKoncern("Vittra", "Academedia"),
-      inKoncern("Pysslingen", "Academedia"),
-    ]);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].slug).toBe("academedia");
-    expect(groups[0].dotterbolag).toHaveLength(2);
-  });
-
-  test("keeps Bolagsverket's company count, which exceeds the units we see", () => {
-    const [g] = groupKoncern([inKoncern("Vittra", "Academedia")]);
-    expect(g.antalFöretag).toBe(40);
-    expect(g.dotterbolag).toHaveLength(1);
-  });
-
-  test("huvudmän without a koncern are skipped entirely", () => {
-    expect(groupKoncern([huvudman({ koncern: null })])).toEqual([]);
-  });
-
-  test("a koncern block with no name is skipped rather than grouped under ''", () => {
-    const groups = groupKoncern([
-      huvudman({
-        koncern: {
-          koncernOrgNr: "556999-0000",
-          koncernNamn: "" as never,
-          kedja: [],
-          antalFöretag: 2,
-        },
-      }),
-    ]);
-    expect(groups).toEqual([]);
-  });
-});
+// `groupKoncern` was retired along with the flat `HuvudmanRad.koncern.kedja`
+// shape — koncern grouping now reads `karta.koncerner` directly (the
+// source's own authoritative grouping) via `buildKoncernGroups` in
+// `lib/skolregister/koncern.ts`, tested there.

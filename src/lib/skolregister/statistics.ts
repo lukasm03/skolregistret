@@ -8,7 +8,6 @@
  * every detail page would make all of them slow.
  */
 
-import { readRegisterFile, registerFilePath } from "./client";
 import { getSkola, getSkolenkät, listSkolor } from "./resources";
 import { GRUNDSKOLA_NYCKELTAL, primärStatistikskolform } from "./skolform";
 import {
@@ -304,20 +303,14 @@ let riksEnkätCache: Promise<Map<string, EnkätGrupp>> | null = null;
 /**
  * Riksgenomsnitt for the skolenkät, computed once per process across every
  * unit in the register — there's no Skolverket/Skolinspektionen endpoint for
- * this the way `getNationelltGenomsnitt` has for nyckeltal. In file mode
- * this reads the already in-memory `skolenkäterOchDokument` export; in live
- * mode it fetches every unit's enkät once and keeps the computed averages
- * for the rest of the process, since re-fetching ~5000+ units per request
- * would make every skoldetalj page slow.
+ * this the way `getNationelltGenomsnitt` used to have for nyckeltal. Fetches
+ * every unit's enkät once and keeps the computed averages for the rest of
+ * the process, since re-fetching ~6500 units per request would make every
+ * skoldetalj page slow.
  */
 export async function getRiksEnkätGenomsnitt(): Promise<Map<string, EnkätGrupp>> {
   if (!riksEnkätCache) {
     riksEnkätCache = (async () => {
-      const path = registerFilePath();
-      if (path) {
-        const { skolenkäterOchDokument } = await readRegisterFile(path);
-        return averageEnkäter((skolenkäterOchDokument ?? []).map((e) => e.enkät));
-      }
       const skolor = await listSkolor();
       const enkäter = await Promise.all(skolor.map((s) => getSkolenkät(s.skolenhetskod)));
       return averageEnkäter(enkäter);

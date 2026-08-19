@@ -20,23 +20,37 @@ bun run check      # typecheck + lint + test
 bun run format     # prettier
 ```
 
-`bun run build` is the strongest check. It needs `data/skolregister-export.json`
-— run `bun run export` once if it isn't there.
+`bun run build` is the strongest check. It reads `data/allt.json`, which is
+**not committed** — see below — so a fresh clone needs its own copy before
+`bun run build` (or `bun dev`) will produce anything.
 
-## Two halves, one repo
+## Just the Next app, reading a bigger file than it used to
 
-The collector (`skolverket.ts`, `bolagsverket.ts`, `koncern.ts`, `export.ts`,
-`server.ts`) sits at the root beside the Next app. They meet at exactly one
-place: `export.ts` writes `data/skolregister-export.json`, and
-`registerFilePath()` in `src/lib/skolregister/client.ts` finds it. There is no
-import edge between them, and there must not be — `bolagsverket.ts` reads an API
-secret from the environment, so anything under `src/` importing it would ship
-that path to the browser. Data crosses on disk, not through modules.
+This repo used to also hold a standalone collector (Skolverket/Bolagsverket
+scripts) alongside the Next app; that collector was removed in favour of a
+richer export from a separate tool outside this repo: `data/allt.json`
+(200+MB — a full koncern ownership tree, Bolagsverket company data, and
+SALSA figures, not just the skolenhet/huvudman rows the old export had).
+It's gitignored and never committed — too large for git, and rebuilt by
+whoever runs the external collector, not by anything in this repo.
+`registerFilePath()`/`readAlltFile()` in `src/lib/skolregister/client.ts`
+find and cache it; `src/lib/skolregister/` is otherwise unaware of where it
+came from.
 
-One `tsconfig.json` covers both. It targets ES2022 and sets
-`allowImportingTsExtensions` because the collector imports as `./skolverket.ts`.
-`noUncheckedIndexedAccess` was on in the collector's old standalone config and is
-off here; turning it on repo-wide is worth doing, but as its own pass.
+`src/lib/skolregister/types.ts` holds two families of type: `allt.json`'s own
+raw shapes (used only inside `src/lib/skolregister/`) and this module's
+**stable output contract** — `SkolorRad`, `SkolaDetalj`, `HuvudmanRad`,
+`Nyckeltal`, `Skolenkät`, `SkolinspektionDokument(grupp)`, and the rest.
+Everything above `resources.ts`/`statistics.ts` — `api-normalize.ts`, every
+`*-compare.ts` builder, `dokument-view.ts` — consumes only the second family,
+never `allt.json`'s shapes directly. That boundary is what let this app's
+data source change once already without touching its comparison/view-model
+layer; keep it that way if it changes again.
+
+`allt.json` carries no bulk official riksgenomsnitt outside five
+gymnasieprogram measures — `getNationelltGenomsnitt`/
+`getNationelltProgramGenomsnitt` always return `null` now, so nearly every
+nyckeltal card reads "(beräknat)". That's expected, not a bug to chase.
 
 ## Language
 
@@ -57,14 +71,24 @@ messages are in English; domain nouns stay Swedish.
 | `src/hooks/`             | Anything `"use client"`. The one hook lives here, not in `lib/`.                                            |
 | `src/config/`            | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
 | `src/components/tables/` | Column definitions. Route files should not declare columns.                                                 |
+| `src/components/detail/` | The skolenhet page's own panels — nyckeltalskort, enkätkort, dokumentlista, comparison band.                |
 | `src/lib/skolregister/`  | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                  |
-| `data/`                  | Collector output. Only `koncern-lookup.json` is committed; the rest is rebuildable and ignored.             |
-| root `*.ts`              | The collector. Swedish throughout, 4-space, and never imported from `src/`.                                 |
+| `data/`                  | Just `allt.json`, gitignored — the app's data source, not committed.                                        |
 
 `src/config/skolformer.ts` is the registry that makes the app work for more
 than grundskolan — filter chips, columns, stat tiles, sort options and the
 detail comparison are all generated from it. Adding a skolform means adding an
 entry there, not writing new components.
+
+Its two siblings do the same job for the skolenhet page's own measures:
+`nyckeltalmetriker.ts` (the four unit-level nyckeltal) and `programmetriker.ts`
+(the six gymnasieprogram measures). Both declare the scale a comparison band is
+drawn on, which direction counts as better, and — for nyckeltal — the prose
+behind "Varifrån kommer talet?". **A figure the page colours must be able to
+say where it came from**: `RiksNyckeltal.beräknat` carries whether a
+riksgenomsnitt is Skolverket's own or one we averaged ourselves, and the card
+prints "(beräknat)" when it is. Don't collapse the two into a bare number on
+the way to the screen.
 
 **Every `gradeFilter` chip must be backed by data the register actually
 reports for that form.** Years arrive keyed by skolformsnyckel — `fsk`, `gr`,
@@ -83,16 +107,9 @@ you add a form.
   **`src/lib/query.ts` (336)** are large but cohesive. Not worth splitting
   unless you are already changing them.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
-  are I/O; testing them means mocking fetch or shipping a fixture export file.
-  The pure logic around them is covered instead.
-- **The collector has no tests either**, for the same reason — it is almost
-  entirely network I/O against two live APIs. The exceptions are worth knowing:
-  `läsFakta`, `tolkaKoncern`, `läsDotterföretag` and `tolkaÅrsredovisning` in
-  `bolagsverket.ts`/`koncern.ts` are pure text parsers and testable offline.
-- **The collector arrived 4-space and semicolon-free** and was reformatted to
-  the repo's Prettier config on the way in — it had no git history to bury, so
-  its first commit here was the free moment to do it. `bun run format` covers
-  it like everything else now.
+  are I/O; testing them means mocking the filesystem or shipping a fixture
+  `allt.json`. The pure logic around them — `normalize.ts`'s field readers,
+  `koncern.ts`'s tree rebuild — is covered directly instead.
 
 ## Testing
 

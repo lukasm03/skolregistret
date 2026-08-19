@@ -5,9 +5,6 @@ A browser for the Swedish school register: **skolenheter** (school units) and
 filtering, sorting and detail views that compare each unit against its kommun
 and against riket.
 
-Two halves in one repo: the **collector** that harvests Skolverket's and
-Bolagsverket's open APIs into one JSON file, and the **app** that renders it.
-
 Next.js 16 (App Router) · React 19 · Tailwind v4 · TypeScript · Bun.
 
 ---
@@ -16,58 +13,39 @@ Next.js 16 (App Router) · React 19 · Tailwind v4 · TypeScript · Bun.
 
 ```bash
 bun install
-bun run export     # collects the register into data/skolregister-export.json
 bun dev
 ```
 
-That is the whole setup — no configuration. The app reads
-`data/skolregister-export.json` whenever it exists, so `bun run export` is what
-puts data on the screen. Skip it and every list is empty.
-
-`bun run export` is slow: ~17 000 Skolverket calls plus per-school enkät,
-dokument and detalj fetches across 7 466 units. It needs no API key. Copy
-`.env.example` to `.env.local` only if you want to override the data path or run
-the Bolagsverket half.
+You also need `data/allt.json` — the app's data source, 200+MB, produced by a
+separate collector tool outside this repo and never committed here. Without
+it, `bun dev`/`bun run build` fail with a clear error naming the missing
+file. Copy `.env.example` to `.env.local` only if you want to read it from
+somewhere other than `data/allt.json`.
 
 ## Commands
 
-| Command                           |                                                                                                             |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `bun dev`                         | Development server                                                                                          |
-| `bun run export`                  | **Collect the register** into `data/skolregister-export.json`. Slow; no key needed.                         |
-| `bun run build`                   | Production build. Prerenders **every** skolenhet, huvudman and koncern, so it needs data and takes a while. |
-| `bun run build:data`              | `export` then `build` — fresh data, then the site                                                           |
-| `bun start`                       | Serve the build                                                                                             |
-| `bun run koncern`                 | Build the koncern register — see [docs/datainsamling.md](docs/datainsamling.md). Hours; needs a key.        |
-| `bun run api`                     | The collector's own HTTP API (`server.ts`), an alternative to the export file                               |
-| `bun run check`                   | **typecheck + lint + test** — run this before committing                                                    |
-| `bun run typecheck`               | `tsc --noEmit` — one config, covering the collector too                                                     |
-| `bun run lint` / `lint:fix`       | ESLint (flat config; Next 16 removed `next lint`)                                                           |
-| `bun run format` / `format:check` | Prettier                                                                                                    |
-| `bun test` / `test:watch`         | 179 tests over the pure logic                                                                               |
+| Command                           |                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `bun dev`                         | Development server                                                                           |
+| `bun run build`                   | Production build. Prerenders **every** skolenhet, huvudman and koncern, so it takes a while. |
+| `bun start`                       | Serve the build                                                                              |
+| `bun run check`                   | **typecheck + lint + test** — run this before committing                                     |
+| `bun run typecheck`               | `tsc --noEmit`                                                                               |
+| `bun run lint` / `lint:fix`       | ESLint (flat config; Next 16 removed `next lint`)                                            |
+| `bun run format` / `format:check` | Prettier                                                                                     |
+| `bun test` / `test:watch`         | 254 tests over the pure logic                                                                |
 
 ## The data
 
-| Path                            |                                                                         |
-| ------------------------------- | ----------------------------------------------------------------------- |
-| `skolverket.ts`                 | Skolregister, skoldetaljer, huvudmän, riksgenomsnitt, enkäter, dokument |
-| `bolagsverket.ts`               | Whether a huvudman belongs to a koncern, read out of its annual report  |
-| `koncern.ts`                    | Builds the koncern register over time. Module _and_ CLI                 |
-| `export.ts`                     | Writes the whole register to one JSON file                              |
-| `server.ts`                     | HTTP API over the three above                                           |
-| `data/koncern-lookup.json`      | The built koncern lookup table. **Committed** — `export.ts` reads it    |
-| `data/skolregister-export.json` | The register the app renders. Git-ignored: 81 MB, and rebuildable       |
+| Path             |                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `data/allt.json` | The register the app renders — skolenheter, huvudmän, the koncern ownership tree, Bolagsverket data, SALSA. Gitignored, never committed. |
 
-[docs/datainsamling.md](docs/datainsamling.md) is the full reference for the
-collector — every function, every return shape, and how the koncern mapping
-works. It is in Swedish, like the domain.
-
-The collector is **server-side only**. `bolagsverket.ts` holds an API secret;
-nothing under `src/` may import these modules, or it would ship to the browser.
-
-With an older export file, some sections (nationella genomsnitt, enkäter,
-dokument, per-unit detail) are simply absent and render as _saknas_ rather than
-failing.
+`allt.json` carries no bulk official riksgenomsnitt outside five
+gymnasieprogram measures, so nearly every nyckeltal card on `/skolor/[kod]`
+now reads "(beräknat)" — self-computed from every unit's own reported
+figures, not Skolverket's own average. That's expected with this source, not
+a bug.
 
 ## Routes
 
@@ -108,20 +86,20 @@ and every later filter change agree by construction.
 
 ## Where things live
 
-| Path                                             |                                                                                                                                                          |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/config/site.ts`                             | Brand, läsår, pagination, nav, footnotes                                                                                                                 |
-| `src/config/skolformer.ts`                       | **The skolform registry.** Chips, columns, stat tiles, sort options and comparisons are generated from it — adding a skolform means adding an entry here |
-| `src/lib/skolregister/`                          | API client — `types` · `client` · `resources` · `statistics` · `skolform`. Import from the barrel, `@/lib/skolregister`                                  |
-| `src/lib/api-normalize.ts`                       | API shapes → the app's own view models                                                                                                                   |
-| `src/lib/query.ts`                               | URL ⇄ typed query, plus the href/patch helpers                                                                                                           |
-| `src/lib/school-select.ts`, `huvudman-select.ts` | Filtering, counting, aggregation — pure                                                                                                                  |
-| `src/lib/school-fields.ts`                       | Skolform-qualified accessors and sorting                                                                                                                 |
-| `src/lib/format.ts`                              | Swedish number/date/slug formatting                                                                                                                      |
-| `src/hooks/use-query-params.ts`                  | The URL-state hook (the only one)                                                                                                                        |
-| `src/components/tables/`                         | Column definitions, one file per table                                                                                                                   |
-| `src/components/filters/`                        | Filter sidebar and controls                                                                                                                              |
-| `src/data/kommuner.ts`                           | All 290 kommunkoder → names                                                                                                                              |
+| Path                                             |                                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/config/site.ts`                             | Brand, läsår, pagination, nav, footnotes                                                                                                                       |
+| `src/config/skolformer.ts`                       | **The skolform registry.** Chips, columns, stat tiles, sort options and comparisons are generated from it — adding a skolform means adding an entry here       |
+| `src/lib/skolregister/`                          | Data layer — `types` · `normalize` · `client` · `resources` · `huvudman` · `koncern` · `statistics` · `skolform`. Import from the barrel, `@/lib/skolregister` |
+| `src/lib/api-normalize.ts`                       | API shapes → the app's own view models                                                                                                                         |
+| `src/lib/query.ts`                               | URL ⇄ typed query, plus the href/patch helpers                                                                                                                 |
+| `src/lib/school-select.ts`, `huvudman-select.ts` | Filtering, counting, aggregation — pure                                                                                                                        |
+| `src/lib/school-fields.ts`                       | Skolform-qualified accessors and sorting                                                                                                                       |
+| `src/lib/format.ts`                              | Swedish number/date/slug formatting                                                                                                                            |
+| `src/hooks/use-query-params.ts`                  | The URL-state hook (the only one)                                                                                                                              |
+| `src/components/tables/`                         | Column definitions, one file per table                                                                                                                         |
+| `src/components/filters/`                        | Filter sidebar and controls                                                                                                                                    |
+| `src/data/kommuner.ts`                           | All 290 kommunkoder → names                                                                                                                                    |
 
 `src/lib/` is server-safe by rule — `skolregister/client.ts` reads the
 filesystem. Anything `"use client"` belongs in `src/hooks/`.
@@ -163,13 +141,14 @@ Things that look like bugs but are not:
 
 ## Known quirks
 
-There are no open TODOs in the code. What remains is two deliberate departures
-from the register, both pinned by tests in `src/lib/api-normalize.test.ts`:
+There are no open TODOs in the code. `allt.json` reports a real
+organisationsnummer on every unit, so huvudmän are joined to their units by
+that — the old register's export had no such key and forced a name-based
+join instead; `slugify(namn)` is still what the URL uses to identify a
+huvudman, so two organisations that happen to share a name still collapse
+onto one route (`dedupeHuvudmanRows` in `src/lib/api-normalize.ts`), pinned
+by a test.
 
-- **Huvudmän are joined to units by name alone.** The API offers no other
-  shared key, so two organisations sharing a name collapse into one row and
-  the second organisationsnummer is lost. Deliberate, and consistent between
-  the list and the detail page.
 - **A skolform is recovered from its årskurser.** `skolformer` and
   `årskurserPerSkolform` are maintained separately in hand-entered public data
   and do disagree. When a unit reports years for a form its `skolformer` omits,

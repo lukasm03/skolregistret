@@ -13,13 +13,9 @@
 # testing
 /coverage
 
-# collector output. data/koncern-lookup.json is NOT ignored — it is the built
-# artefact export.ts reads, and it is small enough to keep in the repo.
-/data/skolregister-export.json
-/data/koncern-lager.json
-/data/arsredovisningar/
-/skolregister-*.json
-/mitt-register.json
+# data/allt.json is the app's data source — 200+MB, produced by a separate
+# collector tool outside this repo, never committed. See AGENTS.md.
+/data/allt.json
 
 # next.js
 /.next/

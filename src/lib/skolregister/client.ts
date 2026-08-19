@@ -1,114 +1,76 @@
 /**
- * Transport only: how we talk to the skolregister API and how we read a local
- * register export. No knowledge of specific endpoints — those live in
- * `resources.ts`, and anything that computes over the results lives in
- * `statistics.ts`.
+ * Transport: how we read `data/allt.json`. No knowledge of specific fields —
+ * those live in `resources.ts` — and nothing computes over the results here.
  *
- * Server-only: `readRegisterFile` uses node:fs. Don't import this from a
+ * Server-only: `readAlltFile` uses node:fs. Don't import this from a
  * `"use client"` module.
+ *
+ * There is no live API anymore — the collector that used to serve one
+ * (`server.ts`) was removed along with the rest of the collector. File mode
+ * is the only mode.
  */
 
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import type { RegisterFile, Sida } from "./types";
+import type { AlltFile } from "./types";
 
-const apiBaseUrl = () => process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+/** What the external collector tool writes, relative to the repo root every script runs from. */
+const STANDARDEXPORT = "data/allt.json";
 
-const PAGE_SIZE = 500;
-
-export async function fetchAllPages<T>(path: string): Promise<T[]> {
-  const first = await fetchJson<Sida<T>>(`${path}?sida=1&sidstorlek=${PAGE_SIZE}`);
-  const rows = [...first.rader];
-  const pages = Math.ceil(first.totalt / first.sidstorlek);
-  const rest = await Promise.all(
-    Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-      fetchJson<Sida<T>>(`${path}?sida=${i + 2}&sidstorlek=${PAGE_SIZE}`),
-    ),
-  );
-  for (const page of rest) rows.push(...page.rader);
-  return rows;
-}
+let registerFilePathCache: string | undefined;
 
 /**
- * `next build` fires thousands of these concurrently across
- * `generateStaticParams` for every skolenhet, huvudman and koncern — enough
- * that the local dev API drops connections under the burst (`ECONNREFUSED`,
- * `SocketError: other side closed`) even though it's healthy moments later.
- * Retrying with backoff absorbs that instead of failing the whole build.
- */
-async function fetchWithRetry(
-  url: URL,
-  init: RequestInit,
-  attempts = 6,
-): Promise<Response> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await fetch(url, init);
-    } catch (err) {
-      if (attempt >= attempts) throw err;
-      await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** (attempt - 1)));
-    }
-  }
-}
-
-export async function fetchJson<T>(path: string): Promise<T> {
-  const url = new URL(path, apiBaseUrl());
-  const res = await fetchWithRetry(url, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) {
-    throw new Error(`${url.pathname} svarade ${res.status} ${res.statusText}`);
-  }
-  return res.json();
-}
-
-/** `null` when the API reports the resource doesn't exist (404). */
-export async function fetchJsonOr404<T>(path: string): Promise<T | null> {
-  const url = new URL(path, apiBaseUrl());
-  const res = await fetchWithRetry(url, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 60 },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    throw new Error(`${url.pathname} svarade ${res.status} ${res.statusText}`);
-  }
-  return res.json();
-}
-
-/** What `bun run export` writes, relative to the repo root every script runs from. */
-const STANDARDEXPORT = "data/skolregister-export.json";
-
-let registerFilePathCache: string | null | undefined;
-
-/**
- * The register export to read, or `null` to go via the API instead.
+ * The `allt.json` to read. `SKOLREGISTER_DATA_FILE` wins when set — it can
+ * point anywhere. Otherwise `data/allt.json` in the repo root.
  *
- * `SKOLREGISTER_DATA_FILE` wins when set — it can point anywhere. Otherwise we
- * use the export in the repo, but only once `bun run export` has actually
- * written it: without that check a fresh clone would fail every page rather
- * than fall back to the API.
- *
- * Resolved once per process. `generateStaticParams` calls this for thousands of
- * pages during `next build`, and the answer cannot change mid-build.
+ * Resolved once per process. `generateStaticParams` calls this for thousands
+ * of pages during `next build`, and the answer cannot change mid-build.
  */
-export function registerFilePath(): string | null {
+export function registerFilePath(): string {
   if (registerFilePathCache === undefined) {
-    const explicit = process.env.SKOLREGISTER_DATA_FILE;
-    registerFilePathCache =
-      explicit ?? (existsSync(STANDARDEXPORT) ? STANDARDEXPORT : null);
+    registerFilePathCache = process.env.SKOLREGISTER_DATA_FILE ?? STANDARDEXPORT;
   }
   return registerFilePathCache;
 }
 
-let registerFileCache: Promise<RegisterFile> | null = null;
+let registerFileCache: Promise<AlltFile> | null = null;
 
-/** Reads and parses the register export once per process, caching the result. */
-export function readRegisterFile(path: string): Promise<RegisterFile> {
+/**
+ * Strips every `raw` field recursively — the doc for `allt.json` measures it
+ * at roughly half the parsed file's size, and nothing downstream ever reads
+ * it. Done once, right after parse, so the rest of the process holds the
+ * smaller tree rather than repeating the strip per read.
+ */
+function omitRaw(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(omitRaw);
+  if (value !== null && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value)) {
+      if (key === "raw") continue;
+      result[key] = omitRaw(v);
+    }
+    return result;
+  }
+  return value;
+}
+
+/**
+ * Reads and parses `allt.json` once per process, caching the result. Fails
+ * loudly and immediately if the file is missing — there is nothing left to
+ * fall back to, so a clear "file not found" beats every page failing one at
+ * a time with a confusing downstream error.
+ */
+export function readAlltFile(path: string): Promise<AlltFile> {
   if (!registerFileCache) {
+    if (!existsSync(path)) {
+      throw new Error(
+        `${path} finns inte. Skolregistret behöver en lokal data/allt.json ` +
+          `(inte incheckad i repot — se AGENTS.md) för att bygga sidorna. ` +
+          `Sätt SKOLREGISTER_DATA_FILE om filen ligger någon annanstans.`,
+      );
+    }
     registerFileCache = readFile(path, "utf8").then(
-      (text) => JSON.parse(text) as RegisterFile,
+      (text) => omitRaw(JSON.parse(text)) as AlltFile,
     );
   }
   return registerFileCache;

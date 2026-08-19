@@ -4,7 +4,7 @@ import { site } from "@/config/site";
 import { skolformer } from "@/config/skolformer";
 import { toggleInList, type HuvudmanQuery } from "@/lib/query";
 import type { KommunOption } from "@/lib/school-select";
-import type { HuvudmanTyp, SkolformCode } from "@/lib/types";
+import { HUVUDMANTYP_ORDER, type HuvudmanTyp, type SkolformCode } from "@/lib/types";
 import type { Patch } from "@/hooks/use-query-params";
 import {
   CheckboxControl,
@@ -75,15 +75,17 @@ export function HuvudmanFilters({
 
       <FilterGroup label="Typ">
         <div className="flex flex-col gap-[7px]">
-          {(["Kommunal", "Fristående"] as HuvudmanTyp[]).map((t) => (
-            <CheckboxControl
-              key={t}
-              label={t}
-              count={counts[t]}
-              checked={query.typ.includes(t)}
-              onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
-            />
-          ))}
+          {HUVUDMANTYP_ORDER.filter((t) => counts[t] > 0 || query.typ.includes(t)).map(
+            (t) => (
+              <CheckboxControl
+                key={t}
+                label={t}
+                count={counts[t]}
+                checked={query.typ.includes(t)}
+                onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
+              />
+            ),
+          )}
         </div>
       </FilterGroup>
 

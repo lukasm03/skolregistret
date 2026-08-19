@@ -22,7 +22,7 @@ import { site } from "@/config/site";
 import { dedupeHuvudmanRows, normalizeApiSchool } from "@/lib/api-normalize";
 import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
 import { href } from "@/lib/query";
-import { listHuvudman, listSkolor } from "@/lib/skolregister";
+import { ancestorPath, listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**
  * Statically generated for every huvudman the register currently has, the
@@ -72,7 +72,11 @@ export default async function HuvudmanDetailPage({
   const units = skolor.filter((s) => s.huvudman === h.namn).map(normalizeApiSchool);
 
   const isKommunal = h.typ === "Kommunal";
-  const kedja = h.koncern?.kedja ?? [];
+  // Just the path from the koncernmoder down to this huvudman — the full
+  // branching tree belongs on `/koncern`, where siblings are the point.
+  const kedja = h.koncern
+    ? (ancestorPath(h.koncern.träd, h.organisationsnummer) ?? [])
+    : [];
   // A `koncern` block with no name has been seen despite the declared type.
   const koncernSlug = h.koncern?.koncernNamn ? slugify(h.koncern.koncernNamn) : null;
 
@@ -136,7 +140,9 @@ export default async function HuvudmanDetailPage({
                 <span className="text-micro font-semibold tracking-[0.08em] text-ink-subtle uppercase">
                   Bolag i koncernen
                 </span>
-                <span className="font-mono text-md">{num(h.koncern.antalFöretag)}</span>
+                <span className="font-mono text-md">
+                  {h.koncern.antalFöretag != null ? num(h.koncern.antalFöretag) : DASH}
+                </span>
               </div>
             </div>
           )}
@@ -171,9 +177,9 @@ export default async function HuvudmanDetailPage({
               </SectionTitle>
               {kedja.length ? (
                 <ul className="flex flex-col gap-1.5 rounded-lg border border-line-soft bg-surface-panel p-4">
-                  {kedja.map((bolag, i) => (
+                  {kedja.map((nod, i) => (
                     <li
-                      key={`${bolag}-${i}`}
+                      key={nod.orgnr}
                       className="flex items-center gap-1.5 text-sm text-ink"
                     >
                       {i > 0 && (
@@ -182,7 +188,7 @@ export default async function HuvudmanDetailPage({
                           className="mr-1 h-[9px] w-[7px] flex-none rounded-bl-xs border-b border-l border-line-control"
                         />
                       )}
-                      {bolag}
+                      {nod.namn ?? nod.orgnr}
                     </li>
                   ))}
                 </ul>

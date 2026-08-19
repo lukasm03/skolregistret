@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
+import { KoncernTree } from "@/components/detail/KoncernTree";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import {
   BackLink,
@@ -13,9 +14,8 @@ import {
   StatGrid,
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
-import { groupKoncern } from "@/lib/api-normalize";
 import { DASH, num, plural, slugify } from "@/lib/format";
-import { listHuvudman } from "@/lib/skolregister";
+import { buildKoncernGroups } from "@/lib/skolregister";
 import type { HuvudmanRad } from "@/lib/skolregister";
 
 const dotterbolagColumns: Column<HuvudmanRad>[] = [
@@ -53,7 +53,7 @@ const dotterbolagColumns: Column<HuvudmanRad>[] = [
  * `dynamicParams` stays at its default (`true`).
  */
 export async function generateStaticParams() {
-  const groups = groupKoncern(await listHuvudman());
+  const groups = await buildKoncernGroups();
   return groups.map((g) => ({ slug: g.slug }));
 }
 
@@ -64,7 +64,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const group = groupKoncern(await listHuvudman()).find((g) => g.slug === slug);
+  const group = (await buildKoncernGroups()).find((g) => g.slug === slug);
   if (!group) return { title: "Koncernen finns inte" };
 
   const enheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
@@ -84,7 +84,7 @@ export default async function KoncernPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const groups = groupKoncern(await listHuvudman());
+  const groups = await buildKoncernGroups();
   const group = groups.find((g) => g.slug === slug);
   if (!group) notFound();
 
@@ -94,7 +94,8 @@ export default async function KoncernPage({
     (a, b) => a.localeCompare(b, "sv"),
   );
   const skolformer = [...new Set(group.dotterbolag.flatMap((d) => d.skolformer))];
-  const restForetag = group.antalFöretag - group.dotterbolag.length;
+  const restForetag =
+    group.antalFöretag != null ? group.antalFöretag - group.dotterbolag.length : null;
 
   return (
     <AppShell
@@ -132,7 +133,7 @@ export default async function KoncernPage({
             label="Huvudmän i registret"
             value={num(group.dotterbolag.length)}
             note={
-              restForetag > 0
+              restForetag != null && restForetag > 0
                 ? `av ${num(group.antalFöretag)} bolag i koncernen`
                 : undefined
             }
@@ -162,6 +163,17 @@ export default async function KoncernPage({
                 label="Dotterbolag"
               />
             </section>
+
+            <section className="flex flex-col gap-2.5">
+              <SectionTitle note="Dun & Bradstreets ägarträd, som det bolaget rapporterar det">
+                Ägarstruktur
+              </SectionTitle>
+              {group.träd.length ? (
+                <KoncernTree träd={group.träd} />
+              ) : (
+                <Note>Inget ägarträd registrerat för den här koncernen.</Note>
+              )}
+            </section>
           </div>
 
           <aside className="flex w-full flex-col gap-[22px] border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
@@ -169,7 +181,10 @@ export default async function KoncernPage({
               <FactList
                 items={[
                   ["Org.nr", group.orgNr],
-                  ["Bolag i koncernen", num(group.antalFöretag)],
+                  [
+                    "Bolag i koncernen",
+                    group.antalFöretag != null ? num(group.antalFöretag) : DASH,
+                  ],
                   ["Dotterbolag i registret", num(group.dotterbolag.length)],
                   ["Skolformer", skolformer.join(", ") || DASH],
                 ]}
@@ -177,12 +192,26 @@ export default async function KoncernPage({
             </RailSection>
 
             <RailSection title="Källor">
-              <FactList items={[["Huvudmän, enheter, elever", "Skolregistret"]]} />
+              <FactList
+                items={[
+                  ["Huvudmän, enheter, elever", "Skolregistret"],
+                  ["Ägarträd, koncernuppgifter", "Dun & Bradstreet"],
+                ]}
+              />
               <Note>
-                {restForetag > 0
+                {restForetag != null && restForetag > 0
                   ? `${num(restForetag)} bolag i koncernen driver ingen skolenhet och är inte huvudmän i registret.`
                   : "Alla bolag i koncernen är huvudmän i registret."}
               </Note>
+              {group.asof && (
+                <Note>{`Dun & Bradstreets ägaruppgifter är från ${group.asof}.`}</Note>
+              )}
+              {group.inaktuellt && (
+                <Note>
+                  Minst ett bolag i ägarträdet har avregistrerats sedan dess — bilden av
+                  koncernen kan ha hunnit bli inaktuell.
+                </Note>
+              )}
             </RailSection>
           </aside>
         </div>

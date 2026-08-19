@@ -7,38 +7,34 @@ import { DataTable } from "@/components/ui/DataTable";
 import {
   BackLink,
   ButtonLink,
-  Dot,
   FactList,
+  MetaField,
   RailSection,
-  SectionTitle,
   Stat,
+  StatFacts,
   StatGrid,
   StatusPill,
 } from "@/components/ui/primitives";
-import { Tabs } from "@/components/ui/Tabs";
-import { dokumentColumns, type DokumentRow } from "@/components/tables/dokumentColumns";
-import {
-  enkätColumns,
-  enkätGenomsnittRow,
-  enkätRow,
-  type EnkätRow,
-} from "@/components/tables/enkatColumns";
-import {
-  nyckeltalColumns,
-  nyckeltalDisplayRows,
-  nyckeltalRows,
-} from "@/components/tables/nyckeltalColumns";
+import { Tabs, type TabDef } from "@/components/ui/Tabs";
+import { BandLegend } from "@/components/detail/ComparisonBand";
+import { DokumentKälla, DokumentList } from "@/components/detail/DokumentList";
+import { EnkatCards } from "@/components/detail/EnkatCards";
+import { NyckeltalCards, NyckeltalKälla } from "@/components/detail/NyckeltalCards";
+import { SalsaCards, SalsaKälla } from "@/components/detail/SalsaCards";
+import { enkätColumns } from "@/components/tables/enkatColumns";
+import { nyckeltalColumns } from "@/components/tables/nyckeltalColumns";
 import { ProgramTable } from "@/components/tables/ProgramTable";
-import { buildProgramComparisons, sumProgramElever } from "@/lib/program-compare";
-import { DASH, bytes, kommunLong, num, plural, slugify } from "@/lib/format";
+import { buildProgramComparisons } from "@/lib/program-compare";
+import { buildEnkätComparisons } from "@/lib/enkat-compare";
+import { buildNyckeltalComparisons, type RiksNyckeltal } from "@/lib/nyckeltal-compare";
+import { buildSalsaComparisons } from "@/lib/salsa-compare";
+import { antalDokument, buildDokumentVyer } from "@/lib/dokument-view";
+import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
 import {
-  enkätGruppKey,
   getBeräknatRiksGenomsnitt,
   getKommunEnkätGenomsnitt,
   getKommunNyckeltalStats,
-  getNationelltGenomsnitt,
-  getNationelltProgramGenomsnitt,
   getRegisterByggd,
   getRiksEnkätGenomsnitt,
   getSkola,
@@ -46,10 +42,11 @@ import {
   getSkolinspektionDokument,
   listSkolor,
   primärStatistikskolform,
+  STATISTIKNYCKEL_NAMN,
   type EnkätGrupp,
   type NationelltProgramGenomsnitt,
   type Nyckeltal,
-  type NyckeltalVärde,
+  type Skolform,
 } from "@/lib/skolregister";
 
 /**
@@ -92,6 +89,16 @@ export async function generateMetadata({
 
 const backHref = "/skolor";
 
+/** The most recent läsår among a set of them — they sort as they read. */
+function senasteLäsår(läsår: string[]): string {
+  return (
+    [...läsår]
+      .filter((l) => l !== DASH)
+      .sort()
+      .at(-1) ?? DASH
+  );
+}
+
 export default async function SkolaPage({
   params,
 }: {
@@ -114,54 +121,38 @@ export default async function SkolaPage({
   // "gy" (only per-program), and no figure ("saknas") for some skolform/
   // nyckeltal combinations it does cover — beräknatRiks fills in an average
   // computed from every unit's own reported nyckeltal for both cases instead
-  // of leaving a dash.
+  // of leaving a dash. Which of the two a figure came from is carried through
+  // to the page rather than smoothed over: the cards say "(beräknat)".
+  // `allt.json` carries no bulk official riksgenomsnitt, so every nyckeltal
+  // now compares against `getBeräknatRiksGenomsnitt`'s self-computed average
+  // — every card below is "(beräknat)".
   const primärSkolform = primärStatistikskolform(school.skolformer);
-  const [grRiks, primärRiks, beräknatRiks, byggd] = await Promise.all([
-    getNationelltGenomsnitt("gr"),
-    primärSkolform && primärSkolform !== "gr" && primärSkolform !== "gy"
-      ? getNationelltGenomsnitt(primärSkolform)
-      : Promise.resolve(null),
+  const [beräknatRiks, byggd] = await Promise.all([
     getBeräknatRiksGenomsnitt(),
     getRegisterByggd(),
   ]);
-  const övrigaRiks = primärSkolform === "gr" ? grRiks : primärRiks;
   const beräknatGr = beräknatRiks.perSkolform.get("gr");
   const beräknatÖvriga = primärSkolform
     ? beräknatRiks.perSkolform.get(primärSkolform)
     : undefined;
-  const riksTal = (
-    officiell: NyckeltalVärde | undefined,
+  const riksFör = (
     beräknat: number | undefined,
-  ): number | undefined => (officiell?.status === "finns" ? officiell.tal : beräknat);
-  const riksNyckeltal: Partial<Record<keyof Nyckeltal, number>> = {
-    meritvärdeÅrskurs9: riksTal(
-      grRiks?.nyckeltal.meritvärdeÅrskurs9,
-      beräknatGr?.meritvärdeÅrskurs9,
-    ),
-    andelGodkändaÅrskurs9: riksTal(
-      grRiks?.nyckeltal.andelGodkändaÅrskurs9,
-      beräknatGr?.andelGodkändaÅrskurs9,
-    ),
-    andelBehörigaLärare: riksTal(
-      övrigaRiks?.nyckeltal.andelBehörigaLärare,
-      beräknatÖvriga?.andelBehörigaLärare,
-    ),
-    eleverPerLärare: riksTal(
-      övrigaRiks?.nyckeltal.eleverPerLärare,
-      beräknatÖvriga?.eleverPerLärare,
-    ),
+    skolform: Skolform | null,
+  ): RiksNyckeltal => ({
+    tal: beräknat ?? null,
+    beräknat: beräknat != null,
+    skolform: skolform ? STATISTIKNYCKEL_NAMN[skolform] : null,
+  });
+  const riksPerKey: Partial<Record<keyof Nyckeltal, RiksNyckeltal>> = {
+    meritvärdeÅrskurs9: riksFör(beräknatGr?.meritvärdeÅrskurs9, "gr"),
+    andelGodkändaÅrskurs9: riksFör(beräknatGr?.andelGodkändaÅrskurs9, "gr"),
+    andelBehörigaLärare: riksFör(beräknatÖvriga?.andelBehörigaLärare, primärSkolform),
+    eleverPerLärare: riksFör(beräknatÖvriga?.eleverPerLärare, primärSkolform),
   };
 
-  const programRiks = await Promise.all(
-    school.program.map((p) => getNationelltProgramGenomsnitt(p.kod)),
-  );
-  const riksByProgramKod = new Map(
-    school.program
-      .map((p, i) => [p.kod, programRiks[i]] as const)
-      .filter(
-        (entry): entry is [string, NationelltProgramGenomsnitt] => entry[1] != null,
-      ),
-  );
+  // `allt.json` carries no bulk official program riksgenomsnitt either — every
+  // program comparison falls back to `beräknatRiks.perProgram` below.
+  const riksByProgramKod = new Map<string, NationelltProgramGenomsnitt>();
 
   const hasProgramStats = school.program.length > 0;
   const programComparisons = buildProgramComparisons(
@@ -179,78 +170,173 @@ export default async function SkolaPage({
         : Promise.resolve(new Map<string, EnkätGrupp>()),
       getRiksEnkätGenomsnitt(),
     ]);
-  const enkätRows = [
-    ...skolenkät.vårdnadshavare.flatMap((e, i) => {
-      const gruppKey = enkätGruppKey(e.skolform);
-      return [
-        enkätRow(`v-${i}`, `Vårdnadshavare · ${e.skolform}`, e),
-        enkätGenomsnittRow(
-          `v-${i}-kommun`,
-          "Kommunsnitt",
-          kommunEnkätGrupper.get(gruppKey),
-        ),
-        enkätGenomsnittRow(
-          `v-${i}-riks`,
-          "Riksgenomsnitt",
-          riksEnkätGrupper.get(gruppKey),
-        ),
-      ];
-    }),
-    ...skolenkät.elever.flatMap((e, i) => {
-      const gruppKey = enkätGruppKey(e.skolform, e.årskurs);
-      return [
-        enkätRow(
-          `e-${i}`,
-          `Elev · ${e.skolform}${e.årskurs ? ` åk ${e.årskurs}` : ""}`,
-          e,
-        ),
-        enkätGenomsnittRow(
-          `e-${i}-kommun`,
-          "Kommunsnitt",
-          kommunEnkätGrupper.get(gruppKey),
-        ),
-        enkätGenomsnittRow(
-          `e-${i}-riks`,
-          "Riksgenomsnitt",
-          riksEnkätGrupper.get(gruppKey),
-        ),
-      ];
-    }),
-  ].filter((r): r is EnkätRow => r != null);
-  const hasEnkätData = skolenkät.vårdnadshavare.length + skolenkät.elever.length > 0;
-
-  const dokumentRows: DokumentRow[] = dokumentgrupper.flatMap((grupp) =>
-    grupp.dokument.map((d, i) => ({
-      key: `${grupp.skolform}-${d.typId}-${i}`,
-      skolform: grupp.skolform,
-      typ: d.typ,
-      titel: d.titel,
-      storlek: bytes(d.storlekBytes),
-      url: d.url,
-    })),
+  const enkätGrupper = buildEnkätComparisons(
+    skolenkät,
+    kommunEnkätGrupper,
+    riksEnkätGrupper,
   );
-  const hasDokument = dokumentRows.length > 0;
+  const hasEnkätData = enkätGrupper.length > 0;
+
+  const dokumentVyer = buildDokumentVyer(dokumentgrupper);
+  const antalDokumentTotalt = antalDokument(dokumentVyer);
 
   // The register never distinguishes "no årskurs 9" from "not reported" —
   // both come back as a missing value with no läsår. That's the same signal
   // either way says the same thing here: nothing to show for åk 9.
   const merit = school.nyckeltal.meritvärdeÅrskurs9;
   const noGrade9 = merit.status !== "finns" && merit.läsår == null;
-  const hideGrade9Rows = hasProgramStats || noGrade9;
+  const hideGrade9 = hasProgramStats || noGrade9;
   const GRADE9_KEYS: (keyof Nyckeltal)[] = [
     "meritvärdeÅrskurs9",
     "andelGodkändaÅrskurs9",
   ];
 
-  const allRows = nyckeltalRows(school.nyckeltal, kommunStats, riksNyckeltal);
-  const rows = hideGrade9Rows
-    ? allRows.filter((r) => !GRADE9_KEYS.includes(r.key))
-    : allRows;
-  const headline = allRows
-    .filter((r) =>
-      hideGrade9Rows ? !GRADE9_KEYS.includes(r.key) : r.key !== "meritvärdeÅrskurs9",
-    )
-    .slice(0, 2);
+  const nyckeltalRader = buildNyckeltalComparisons(
+    school.nyckeltal,
+    kommunStats,
+    riksPerKey,
+  ).filter((r) => !hideGrade9 || !GRADE9_KEYS.includes(r.key));
+  const harBeräknatRiks = nyckeltalRader.some((r) => r.beräknatRiks);
+
+  const salsaRader = buildSalsaComparisons(school.salsa);
+  const hasSalsaData = salsaRader.length > 0;
+
+  const elevantal = school.antalElever;
+  const statistikLäsår = senasteLäsår(nyckeltalRader.map((r) => r.läsår));
+  const enkätLäsår = senasteLäsår(enkätGrupper.map((g) => g.läsår));
+
+  const tabs: TabDef[] = [
+    {
+      id: "nyckeltal",
+      label: "Nyckeltal",
+      count: nyckeltalRader.length,
+      views: [
+        {
+          id: "forklarat",
+          label: "Förklarat",
+          hint: "Varje tal med jämförelse, placering och källa",
+          content: (
+            <section className="flex flex-col gap-3">
+              <BandLegend />
+              <NyckeltalCards rader={nyckeltalRader} />
+              <NyckeltalKälla beräknat={harBeräknatRiks} />
+              {hasSalsaData && (
+                <>
+                  <h3 className="mt-2 text-base leading-[1.3] font-medium">
+                    SALSA — mot förväntat resultat
+                  </h3>
+                  <SalsaCards rader={salsaRader} />
+                  <SalsaKälla />
+                </>
+              )}
+            </section>
+          ),
+        },
+        {
+          id: "tabell",
+          label: "Tabell",
+          hint: "Alla tal i rutnät, utan tolkning",
+          content: (
+            <section className="flex flex-col gap-2.5">
+              <DataTable
+                columns={nyckeltalColumns}
+                rows={nyckeltalRader}
+                rowKey={(r) => r.key}
+                label="Nyckeltal"
+              />
+              <NyckeltalKälla beräknat={harBeräknatRiks} />
+            </section>
+          ),
+        },
+      ],
+    },
+    ...(hasProgramStats
+      ? [
+          {
+            id: "program",
+            label: "Program",
+            count: programComparisons.length,
+            views: [
+              {
+                id: "forklarat",
+                label: "Förklarat",
+                hint: "Programmen mot samma program i riket",
+                content: <ProgramTable rows={programComparisons} />,
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(hasEnkätData
+      ? [
+          {
+            id: "enkat",
+            label: "Enkät",
+            count: enkätGrupper.length,
+            views: [
+              {
+                id: "forklarat",
+                label: "Förklarat",
+                hint: "Varje grupps svar mot kommunen och riket",
+                content: (
+                  <section className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-2">
+                      <p className="text-xs text-ink-subtle">
+                        Skolenkäten, skala 1–10 · högre är bättre
+                      </p>
+                      <BandLegend enheten="gruppens svar" />
+                    </div>
+                    <EnkatCards grupper={enkätGrupper} />
+                  </section>
+                ),
+              },
+              {
+                id: "tabell",
+                label: "Tabell",
+                hint: "Alla svar i rutnät, utan tolkning",
+                content: (
+                  <section className="flex flex-col gap-2.5">
+                    <DataTable
+                      columns={enkätColumns}
+                      rows={enkätGrupper}
+                      rowKey={(r) => r.key}
+                      rowHeight={46}
+                      label="Enkätsvar"
+                    />
+                    <p className="text-xs leading-[1.55] text-ink-faint">
+                      Talet under varje värde är gruppens avvikelse mot riksgenomsnittet
+                      för samma grupp.
+                    </p>
+                  </section>
+                ),
+              },
+            ],
+          },
+        ]
+      : []),
+    ...(antalDokumentTotalt > 0
+      ? [
+          {
+            id: "dokument",
+            label: "Dokument",
+            count: antalDokumentTotalt,
+            views: [
+              {
+                id: "forklarat",
+                label: "Förklarat",
+                hint: "Beslut och rapporter från Skolinspektionen",
+                content: (
+                  <section className="flex flex-col gap-3">
+                    <DokumentList grupper={dokumentVyer} />
+                    <DokumentKälla />
+                  </section>
+                ),
+              },
+            ],
+          },
+        ]
+      : []),
+  ];
 
   return (
     <AppShell
@@ -259,134 +345,94 @@ export default async function SkolaPage({
       searchPlaceholder={site.search.skolor}
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-wrap items-start gap-x-5 gap-y-4 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
-          <div className="flex min-w-0 flex-col gap-2">
-            <BackLink href={backHref}>Alla skolenheter</BackLink>
-            <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
+        <header className="flex flex-col gap-2.5 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
+          <BackLink href={backHref}>Alla skolenheter</BackLink>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-title leading-[1.1] font-semibold tracking-[-0.015em]">
               {school.namn}
             </h1>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <StatusPill>{school.status}</StatusPill>
-              <span className="text-base text-ink-muted">Huvudman</span>
+            <StatusPill>{school.status}</StatusPill>
+          </div>
+          {/*
+            The fields that identify the unit, each under its own label. They
+            used to run together on one line separated by dots, which reads as
+            a sentence you have to parse rather than four facts you can find.
+          */}
+          <div className="flex flex-wrap gap-x-9 gap-y-3 pt-0.5">
+            <MetaField label="Huvudman">
               <Link
                 href={`/huvudman/${huvudmanSlug}`}
-                className="text-base font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                className="font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
               >
                 {school.huvudman}
               </Link>
-              <Dot />
-              <span className="text-base text-ink-muted">
-                {school.skolformer.join(" · ") || site.allaSkolformer}
-              </span>
-              <Dot />
-              <span className="font-mono text-xs text-ink-subtle">
-                Skolenhetskod {school.skolenhetskod}
-              </span>
-            </div>
+            </MetaField>
+            <MetaField label="Skolformer">
+              {school.skolformer.join(", ") || site.allaSkolformer}
+            </MetaField>
+            <MetaField label="Årskurser">
+              {formatYears(school.årskurser) || DASH}
+            </MetaField>
+            <MetaField label="Kommun">{school.kommun ?? DASH}</MetaField>
+            <MetaField label="Skolenhetskod">
+              <span className="font-mono text-sm">{school.skolenhetskod}</span>
+            </MetaField>
           </div>
-          <div className="flex-1" />
         </header>
 
-        <StatGrid>
+        <StatGrid min={220}>
+          {/*
+            Some gymnasieskolor report no unit-wide elevantal but do report one
+            per programme; summing those beats a dash. When neither exists the
+            tile says so rather than captioning an empty figure with a note
+            about where it came from.
+          */}
           <Stat
             label="Elever"
-            value={
-              school.antalElever != null
-                ? num(school.antalElever)
-                : num(sumProgramElever(school.program))
-            }
+            value={elevantal != null ? num(elevantal) : DASH}
+            unit={elevantal != null ? "elever" : undefined}
             note={
-              school.antalElever != null
-                ? "avrundat av Skolverket"
-                : "summerat från programmens elevantal"
+              school.antalEleverKälla === "rapporterat"
+                ? "Avrundat av Skolverket. Fritidshem räknas inte in."
+                : school.antalEleverKälla === "summerat"
+                  ? "Summerat från programmens elevantal."
+                  : "Skolverket redovisar inget elevantal för enheten."
             }
           />
-          {headline.map((r) => (
-            <Stat
-              key={r.key}
-              label={r.label}
-              value={r.value}
-              note={r.läsår !== DASH ? `läsår ${r.läsår}` : (r.note ?? undefined)}
-            />
-          ))}
+          <StatFacts
+            label="Aktualitet"
+            items={[
+              ["Statistik", statistikLäsår === DASH ? DASH : `läsår ${statistikLäsår}`],
+              ...(hasEnkätData ? ([["Enkät", enkätLäsår]] as [string, string][]) : []),
+              ["Hämtat från API", byggd ? byggd.slice(0, 10) : DASH],
+            ]}
+          />
           <Stat
             label="Huvudmannatyp"
             value={school.huvudmannatyp}
-            note={school.huvudman}
+            sans
+            note={`Driven av ${school.huvudman}`}
           />
         </StatGrid>
 
         <div className="flex flex-col lg:flex-row lg:items-stretch">
           <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
-            {(() => {
-              const tabs = [
-                ...(hasProgramStats
-                  ? [
-                      {
-                        id: "program",
-                        label: "Program",
-                        content: <ProgramTable rows={programComparisons} />,
-                      },
-                    ]
-                  : []),
-                {
-                  id: "nyckeltal",
-                  label: "Nyckeltal",
-                  content: (
-                    <DataTable
-                      columns={nyckeltalColumns}
-                      rows={nyckeltalDisplayRows(rows)}
-                      rowKey={(r) => r.key}
-                      label="Nyckeltal"
-                    />
-                  ),
-                },
-                ...(hasEnkätData
-                  ? [
-                      {
-                        id: "enkat",
-                        label: "Enkät",
-                        content: (
-                          <DataTable
-                            columns={enkätColumns}
-                            rows={enkätRows}
-                            rowKey={(r) => r.key}
-                            label="Enkätsvar"
-                          />
-                        ),
-                      },
-                    ]
-                  : []),
-                ...(hasDokument
-                  ? [
-                      {
-                        id: "dokument",
-                        label: "Dokument",
-                        content: (
-                          <DataTable
-                            columns={dokumentColumns}
-                            rows={dokumentRows}
-                            rowKey={(r) => r.key}
-                            label="Dokument"
-                          />
-                        ),
-                      },
-                    ]
-                  : []),
-              ];
-              return tabs.length > 1 ? (
-                <Tabs defaultTab={tabs[0]!.id} tabs={tabs} />
-              ) : (
-                <section className="flex flex-col gap-2.5">
-                  <SectionTitle>Nyckeltal</SectionTitle>
-                  {tabs[0]!.content}
-                </section>
-              );
-            })()}
+            <Tabs tabs={tabs} defaultTab={hasProgramStats ? "program" : "nyckeltal"} />
           </div>
 
           <aside className="flex w-full flex-col gap-[22px] border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
-            <RailSection title="Registeruppgifter" divided={false}>
+            <RailSection title="Så läser du sidan" divided={false}>
+              <p className="text-base leading-[1.55] text-ink-muted">
+                Varje tal är enhetens eget, rapporterat till Skolverket. Färgen visar bara
+                hur talet ligger mot riksgenomsnittet — den är inte ett betyg.
+              </p>
+              <p className="text-base leading-[1.55] text-ink-muted">
+                Byt till <strong className="font-semibold">Tabell</strong> för alla tal i
+                rutnät utan tolkning.
+              </p>
+            </RailSection>
+
+            <RailSection title="Registeruppgifter">
               <FactList
                 items={[
                   [
@@ -395,17 +441,12 @@ export default async function SkolaPage({
                       {school.skolenhetskod}
                     </span>,
                   ],
-                  ["Kommun", school.kommun ?? DASH],
                   [
                     "Kommunkod",
                     <span key="kk" className="font-mono text-sm">
                       {school.kommunkod ?? DASH}
                     </span>,
                   ],
-                  ["Skolformer", school.skolformer.join(", ") || DASH],
-                  // An empty list means Skolverket reports no årskurser for
-                  // this unit's skolformer — a dash, never "0 årskurser".
-                  ["Årskurser", formatYears(school.årskurser) || DASH],
                   ["Huvudmannatyp", school.huvudmannatyp],
                   ["Status i registret", school.status],
                   ["Rektor", school.rektor ?? DASH],

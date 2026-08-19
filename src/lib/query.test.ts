@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { site } from "@/config/site";
-import { DEFAULT_STATUS, SKOLSTATUS_ORDER } from "./types";
+import { DEFAULT_STATUS, HUVUDMANTYP_ORDER, SKOLSTATUS_ORDER } from "./types";
 import {
   paramsFromSearch,
   parseHuvudmanQuery,
@@ -18,7 +18,7 @@ describe("parseSchoolQuery defaults", () => {
     expect(q.page).toBe(1);
     expect(q.perPage).toBe(site.pagination.perPage);
     expect(q.status).toEqual(DEFAULT_STATUS);
-    expect(q.typ).toEqual(["Kommunal", "Fristående"]);
+    expect(q.typ).toEqual(HUVUDMANTYP_ORDER);
     expect(q.skolform).toBeUndefined();
     expect(q.kommun).toBeUndefined();
   });
@@ -100,8 +100,8 @@ describe("parseSchoolQuery status tri-state", () => {
 });
 
 describe("parseSchoolQuery typ tri-state", () => {
-  test("absent means both types", () => {
-    expect(parseSchoolQuery({}).typ).toEqual(["Kommunal", "Fristående"]);
+  test("absent means every type", () => {
+    expect(parseSchoolQuery({}).typ).toEqual(HUVUDMANTYP_ORDER);
   });
 
   test("explicitly empty means neither, so nothing matches", () => {

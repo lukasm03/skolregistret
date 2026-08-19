@@ -78,6 +78,11 @@
      6.49 and 6.93 on `--surface`. */
   --over: #1b6b46;
   --under: #a3312b;
+  /* The same pair as a fill, behind the figure rather than on it: the filled
+     part of a comparison band. Held far enough back that the markers drawn on
+     top of it — the unit's own, kommunens, rikets — stay the thing you see. */
+  --over-bg: #dcebe3;
+  --under-bg: #f4dedc;
 
   /* Status */
   --ok: #2f6b4f;
@@ -135,6 +140,8 @@
     /* 8.28 and 6.69 on the dark `--surface`. */
     --over: #6cc294;
     --under: #e8827a;
+    --over-bg: #1a2c23;
+    --under-bg: #2d1d1c;
 
     --ok: #6cc294;
     --ok-bg: #152019;
@@ -181,6 +188,8 @@
   --color-row-hover: var(--row-hover);
   --color-over: var(--over);
   --color-under: var(--under);
+  --color-over-bg: var(--over-bg);
+  --color-under-bg: var(--under-bg);
 
   /* Named apart from the utilities they feed: `--shadow-*` is Tailwind's own
      namespace, and a token mapping to itself resolves to nothing. */

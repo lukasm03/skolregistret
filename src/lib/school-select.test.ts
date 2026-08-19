@@ -141,7 +141,15 @@ describe("facet counts exclude their own filter", () => {
   test("type counts stay visible after selecting one type", () => {
     const out = selectSchools(rows, query({ typ: "Kommunal" }));
     expect(out.sorted).toHaveLength(2);
-    expect(out.counts).toEqual({ Kommunal: 2, Fristående: 1 });
+    expect(out.counts).toEqual({
+      Kommunal: 2,
+      Fristående: 1,
+      Kommunalförbund: 0,
+      Region: 0,
+      Specialskola: 0,
+      Sameskolan: 0,
+      Okänd: 0,
+    });
   });
 
   test("skolform chip counts reflect the rest of the filter", () => {

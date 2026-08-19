@@ -1,4 +1,22 @@
-export type HuvudmanTyp = "Kommunal" | "Fristående";
+export type HuvudmanTyp =
+  | "Kommunal"
+  | "Fristående"
+  | "Kommunalförbund"
+  | "Region"
+  | "Specialskola"
+  | "Sameskolan"
+  | "Okänd";
+
+/** The order the huvudmannatyp filter lists them in — the two common ones first. */
+export const HUVUDMANTYP_ORDER: HuvudmanTyp[] = [
+  "Kommunal",
+  "Fristående",
+  "Kommunalförbund",
+  "Region",
+  "Specialskola",
+  "Sameskolan",
+  "Okänd",
+];
 
 /**
  * Driftstatus as the register reports it. "Okänd" is ours: it catches a status
