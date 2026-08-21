@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import { site } from "@/config/site";
 import "./globals.css";
@@ -27,6 +27,18 @@ export const metadata: Metadata = {
     template: `%s · ${site.brand}`,
   },
   description: `Skolenheter och huvudmän i hela riket.`,
+};
+
+/**
+ * Matches the `--canvas` tokens in globals.css, so the browser chrome — the
+ * address bar on mobile, the tab strip on desktop — takes the page's own
+ * background instead of flashing a default while it loads.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#edede9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1013" },
+  ],
 };
 
 export default function RootLayout({

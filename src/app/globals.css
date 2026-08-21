@@ -261,6 +261,21 @@
     outline-offset: 1px;
   }
 
+  /* Touch defaults for everything clickable. `manipulation` drops the
+     double-tap-zoom wait the browser otherwise inserts between tap and
+     click; the platform tap highlight is off because every control here
+     paints its own hover/active state, and a grey blob over them reads as
+     a rendering mistake. */
+  button,
+  a,
+  input,
+  select,
+  label,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Motion here is small — a tab's colour, a loading pulse, a pending fade —
      but "small" is not the test. Anything that moves without being asked
      stops for a reader who has asked it to. */

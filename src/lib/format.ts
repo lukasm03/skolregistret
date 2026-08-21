@@ -47,12 +47,13 @@ export function metricNumber(n: number | null, unit: MetricUnit): string {
   return unit === "percent" ? pct(n) : dec(n);
 }
 
-/** A byte count rendered compactly: "512 B", "128 kB", "2,4 MB". */
+/** A byte count rendered compactly: "512 B", "128 kB", "2,4 MB" — the value
+ *  and its unit joined by a non-breaking space so they never split. */
 export function bytes(n: number | null): string {
   if (n == null) return DASH;
-  if (n < 1024) return `${n} B`;
+  if (n < 1024) return `${n}\u00A0B`;
   const kb = n / 1024;
-  return kb < 1024 ? `${Math.round(kb)} kB` : `${dec(kb / 1024)} MB`;
+  return kb < 1024 ? `${Math.round(kb)}\u00A0kB` : `${dec(kb / 1024)}\u00A0MB`;
 }
 
 /**

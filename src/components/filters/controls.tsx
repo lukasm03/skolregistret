@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Label } from "@/components/ui/primitives";
 import { Check, ChevronDown } from "@/components/ui/icons";
+import { num } from "@/lib/format";
 
 /**
  * The filter controls. They used to be links that reloaded the page; now each
@@ -221,12 +222,17 @@ export function RangeField({
   onChange,
   placeholderMin,
   placeholderMax,
+  minLabel,
+  maxLabel,
 }: {
   min?: number;
   max?: number;
   onChange: (bound: "min" | "max", value: string) => void;
   placeholderMin: number;
   placeholderMax: number;
+  /** What the bounds count — the fields are aria-labelled with it. */
+  minLabel: string;
+  maxLabel: string;
 }) {
   const field =
     "h-[28px] w-full rounded-md border border-line bg-surface px-2 font-mono text-[16px] sm:text-xs";
@@ -237,8 +243,8 @@ export function RangeField({
         inputMode="numeric"
         value={min ?? ""}
         onChange={(e) => onChange("min", e.target.value)}
-        placeholder={String(placeholderMin)}
-        aria-label="Minsta antal elever"
+        placeholder={`Från ${num(placeholderMin)}`}
+        aria-label={minLabel}
         className={field}
       />
       <span aria-hidden className="text-sm text-ink-faint">
@@ -249,8 +255,8 @@ export function RangeField({
         inputMode="numeric"
         value={max ?? ""}
         onChange={(e) => onChange("max", e.target.value)}
-        placeholder={String(placeholderMax)}
-        aria-label="Största antal elever"
+        placeholder={`Till ${num(placeholderMax)}`}
+        aria-label={maxLabel}
         className={field}
       />
     </div>
@@ -278,6 +284,7 @@ export function MultiSelectDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -287,7 +294,12 @@ export function MultiSelectDropdown({
       }
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        // Focus was inside the panel that just unmounted; send it back to
+        // the trigger rather than dropping it on the body.
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -307,10 +319,14 @@ export function MultiSelectDropdown({
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label={label}
+        // The announced name carries the selection the visible summary
+        // shows — a static label would hide "3 program valda" from
+        // assistive tech.
+        aria-label={`${label}: ${summary}`}
         className="flex h-[30px] w-full min-w-0 items-center justify-between gap-2 rounded-md border border-line bg-surface px-2 text-left text-base"
       >
         <span className={`truncate ${selected.length ? "" : "text-ink-faint"}`}>
@@ -324,7 +340,7 @@ export function MultiSelectDropdown({
         <div
           role="group"
           aria-label={label}
-          className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto rounded-md border border-line-overlay bg-surface p-2 shadow-overlay"
+          className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto overscroll-contain rounded-md border border-line-overlay bg-surface p-2 shadow-overlay"
         >
           <div className="flex flex-col gap-[7px]">
             {options.map((o) => (

@@ -171,8 +171,7 @@ function ProgramRows({
   return (
     <>
       <tr
-        onClick={onToggle}
-        className={`group cursor-pointer border-b border-line-row ${
+        className={`group border-b border-line-row ${
           isOpen ? "bg-surface-subtle" : "hover:bg-row-hover"
         }`}
       >
@@ -188,12 +187,9 @@ function ProgramRows({
         >
           <button
             type="button"
-            // The row toggles too, for the mouse; this is the control that
-            // announces itself and that a keyboard reaches.
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle();
-            }}
+            // The one control for the row — the thing that announces itself
+            // and that both mouse and keyboard reach.
+            onClick={onToggle}
             aria-expanded={isOpen}
             aria-controls={detailId}
             className="flex min-h-[24px] w-full items-center gap-2.5 text-left"

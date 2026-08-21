@@ -62,10 +62,10 @@ describe("signed", () => {
 
 describe("bytes", () => {
   test("switches unit at each 1024 boundary", () => {
-    expect(bytes(512)).toBe("512 B");
-    expect(bytes(1023)).toBe("1023 B");
-    expect(bytes(1024)).toBe("1 kB");
-    expect(bytes(1024 * 1024)).toBe("1,0 MB");
+    expect(bytes(512)).toBe("512\u00A0B");
+    expect(bytes(1023)).toBe("1023\u00A0B");
+    expect(bytes(1024)).toBe("1\u00A0kB");
+    expect(bytes(1024 * 1024)).toBe("1,0\u00A0MB");
   });
 
   test("dashes on missing", () => {

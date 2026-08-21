@@ -31,7 +31,7 @@ describe("buildDokumentVyer", () => {
     expect(d.titel).toBe(
       "Gymnasieskola, Skolenkäten, Skolenhetsrapport, Göteborg, Sigrid Rudebecks gymnasium",
     );
-    expect(d.storlek).toBe("375 kB");
+    expect(d.storlek).toBe("375\u00A0kB");
   });
 
   test("a four-digit year is a term too", () => {

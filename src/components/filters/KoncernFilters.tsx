@@ -70,6 +70,8 @@ export function KoncernFilters({
           }
           placeholderMin={0}
           placeholderMax={320}
+          minLabel="Minsta antal skolenheter"
+          maxLabel="Största antal skolenheter"
         />
       </FilterGroup>
 
@@ -88,6 +90,8 @@ export function KoncernFilters({
           }
           placeholderMin={site.elevRange.min}
           placeholderMax={90000}
+          minLabel="Minsta antal elever"
+          maxLabel="Största antal elever"
         />
       </FilterGroup>
 

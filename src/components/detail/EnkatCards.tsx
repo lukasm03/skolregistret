@@ -29,7 +29,7 @@ function EnkatCard({ g }: { g: EnkätJämförelse }) {
     <section className="rounded-lg border border-line-soft bg-surface">
       <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1.5 rounded-t-md border-b border-line-row bg-surface-subtle px-3.5 py-2.5">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <h3 className="text-base font-semibold">{g.grupp}</h3>
+          <h2 className="text-base font-semibold">{g.grupp}</h2>
           <span className="font-mono text-mono text-ink-faint">
             {g.antalSvar} svar
             {g.svarsfrekvens && ` · ${g.svarsfrekvens} svarsfrekvens`}

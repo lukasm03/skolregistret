@@ -191,6 +191,8 @@ export function SchoolFilters({
           }
           placeholderMin={site.elevRange.min}
           placeholderMax={site.elevRange.max}
+          minLabel="Minsta antal elever"
+          maxLabel="Största antal elever"
         />
       </FilterGroup>
 

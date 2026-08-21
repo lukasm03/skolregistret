@@ -14,7 +14,11 @@ import { site } from "@/config/site";
  * The blocks stand where the real content will, so the page does not jump
  * when it arrives.
  */
-export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }) {
+export function DetailSkeleton({
+  section,
+}: {
+  section: "/skolor" | "/huvudman" | "/koncern";
+}) {
   // Each region breathes a beat after the one above it — in unison the whole
   // page reads as one flashing rectangle rather than something assembling.
   // The delay rides a custom property because those inherit and
@@ -28,12 +32,16 @@ export function DetailSkeleton({ section }: { section: "/skolor" | "/huvudman" }
       section={section}
       searchAction={section}
       searchPlaceholder={
-        section === "/skolor" ? site.search.skolor : site.search.huvudman
+        section === "/skolor"
+          ? site.search.skolor
+          : section === "/huvudman"
+            ? site.search.huvudman
+            : site.search.koncern
       }
     >
       <div aria-busy className="flex flex-col">
         <span className="sr-only" role="status">
-          Laddar
+          Laddar…
         </span>
 
         <header

@@ -36,6 +36,8 @@ export function AppShell({
       <input
         type="search"
         name="q"
+        autoComplete="off"
+        spellCheck={false}
         {...(onSearchChange
           ? {
               value: searchValue ?? "",
@@ -58,8 +60,18 @@ export function AppShell({
   return (
     <div className="flex min-h-screen justify-center">
       <div className="w-full bg-surface">
+        {/* One keystroke past the header, nav and search for keyboard users. */}
+        <a
+          href="#innehall"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:border focus:border-line focus:bg-surface focus:px-3 focus:py-2 focus:text-base"
+        >
+          Hoppa till innehållet
+        </a>
         <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft bg-surface-subtle px-3 py-2.5 sm:h-[52px] sm:flex-nowrap sm:gap-[18px] sm:px-[18px] sm:py-0">
-          <Link href="/skolor" className="flex items-center gap-[9px]">
+          <Link
+            href="/skolor"
+            className="flex items-center gap-[9px] transition-opacity hover:opacity-75"
+          >
             <span className="size-[18px] rounded-xs bg-accent" />
             <span className="text-lg font-semibold tracking-[-0.01em]">{site.brand}</span>
           </Link>
@@ -98,7 +110,7 @@ export function AppShell({
           )}
         </header>
 
-        {children}
+        <main id="innehall">{children}</main>
       </div>
     </div>
   );

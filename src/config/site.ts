@@ -27,9 +27,9 @@ export const site = {
   ],
 
   search: {
-    skolor: "Sök skolenhetsnamn",
-    huvudman: "Sök huvudman eller org.nr",
-    koncern: "Sök koncernnamn eller org.nr",
+    skolor: "Sök skolenhetsnamn…",
+    huvudman: "Sök huvudman eller org.nr…",
+    koncern: "Sök koncernnamn eller org.nr…",
   },
 
   /** Label for the "no skolform selected" state. */

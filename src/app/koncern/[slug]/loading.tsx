@@ -1,5 +1,5 @@
 import { DetailSkeleton } from "@/components/layout/DetailSkeleton";
 
 export default function Loading() {
-  return <DetailSkeleton section="/huvudman" />;
+  return <DetailSkeleton section="/koncern" />;
 }
