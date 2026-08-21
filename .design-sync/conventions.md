@@ -13,7 +13,7 @@ import { AppShell, DataGrid, Stat, StatGrid } from "skolregistret-ui";
     <Stat label="Elever" value="412" unit="st" />
     <Stat label="Meritvärde" value="228,4" />
   </StatGrid>
-</AppShell>
+</AppShell>;
 ```
 
 ### Styling idiom: Tailwind utilities over named CSS custom properties
@@ -25,15 +25,15 @@ utilities (`bg-surface`, `text-ink-muted`, `border-line`), never inline
 components, match that idiom — reach for the same utility families rather
 than introducing raw hex or one-off pixel values:
 
-| Family | Examples | Use for |
-|---|---|---|
-| Surface | `bg-surface`, `bg-surface-subtle`, `bg-surface-head`, `bg-surface-panel`, `bg-surface-segment` | panel/card backgrounds, layered by elevation |
-| Ink | `text-ink`, `text-ink-muted`, `text-ink-subtle`, `text-ink-faint`, `text-ink-ghost`, `text-ink-inverse` | body text down to disabled/decorative, darkest → lightest |
-| Line | `border-line`, `border-line-soft`, `border-line-softer`, `border-line-row`, `border-line-control`, `border-line-overlay` | dividers and borders, by how strong the separation should read |
-| Accent | `bg-accent`, `text-accent`, `border-accent-line`, `bg-accent-bg`, `text-accent-ink`, `text-accent-soft` | the one brand color — selection, links, primary emphasis |
-| Semantic | `over`/`under` (better/worse a metric compares), `ok`/`warn` (status), each with a `-bg`/`-line` pair | comparison and status coloring — never reach for accent here |
-| Type scale | `text-micro`, `text-sm`, `text-base`, `text-lg`; `font-mono` | `font-mono` is for aligned figures (nyckeltal, IDs) — everything else inherits the page's default sans body font, so it needs no utility |
-| Radius/shadow | `rounded-xs`/`sm`/`md`/`lg`; `shadow-raised`/`shadow-overlay` | never a bare `rounded` or `shadow` |
+| Family        | Examples                                                                                                                 | Use for                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Surface       | `bg-surface`, `bg-surface-subtle`, `bg-surface-head`, `bg-surface-panel`, `bg-surface-segment`                           | panel/card backgrounds, layered by elevation                                                                                             |
+| Ink           | `text-ink`, `text-ink-muted`, `text-ink-subtle`, `text-ink-faint`, `text-ink-ghost`, `text-ink-inverse`                  | body text down to disabled/decorative, darkest → lightest                                                                                |
+| Line          | `border-line`, `border-line-soft`, `border-line-softer`, `border-line-row`, `border-line-control`, `border-line-overlay` | dividers and borders, by how strong the separation should read                                                                           |
+| Accent        | `bg-accent`, `text-accent`, `border-accent-line`, `bg-accent-bg`, `text-accent-ink`, `text-accent-soft`                  | the one brand color — selection, links, primary emphasis                                                                                 |
+| Semantic      | `over`/`under` (better/worse a metric compares), `ok`/`warn` (status), each with a `-bg`/`-line` pair                    | comparison and status coloring — never reach for accent here                                                                             |
+| Type scale    | `text-micro`, `text-sm`, `text-base`, `text-lg`; `font-mono`                                                             | `font-mono` is for aligned figures (nyckeltal, IDs) — everything else inherits the page's default sans body font, so it needs no utility |
+| Radius/shadow | `rounded-xs`/`sm`/`md`/`lg`; `shadow-raised`/`shadow-overlay`                                                            | never a bare `rounded` or `shadow`                                                                                                       |
 
 Dark mode follows `prefers-color-scheme` automatically — every token above
 has a dark value baked into `styles.css`. Never branch on a manual dark

@@ -17,9 +17,7 @@ export const Default = () => {
             label={o.label}
             count={o.count}
             checked={!!checked[o.key]}
-            onToggle={() =>
-              setChecked((c) => ({ ...c, [o.key]: !c[o.key] }))
-            }
+            onToggle={() => setChecked((c) => ({ ...c, [o.key]: !c[o.key] }))}
           />
         ))}
       </div>

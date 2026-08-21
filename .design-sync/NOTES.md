@@ -85,7 +85,7 @@ UI kit** from the app first, then sync that kit — `shape: "package"`.
   a `.design-sync/previews/<Name>.tsx` file (e.g. `pt-[180px]`) is invisible
   to a stylesheet compiled earlier — the class renders inert, not missing
   outright, so it's easy to miss in a quick look. Re-run `node
-  .design-sync/kit/build.mjs` any time a preview introduces a class that
+.design-sync/kit/build.mjs` any time a preview introduces a class that
   isn't already used in `src/`, then rebuild the bundle.
 - **Grouping**: primitives/icons/`DataTable`/`DataGrid`/`TableScroller`/`Tabs`
   all live under `src/components/ui/`, which is a generic dir name the
@@ -103,7 +103,7 @@ UI kit** from the app first, then sync that kit — `shape: "package"`.
   `MultiSelectDropdown` and `PerPageControl` are `cardMode: "single"` with an
   explicit `viewport` **and `primaryStory` pinned to the "Open" export** — a
   bare `cardMode: "single"` with no `primaryStory` silently shows the
-  *first* alphabetical export, which was the boring "Closed" state for both;
+  _first_ alphabetical export, which was the boring "Closed" state for both;
   the popover the override exists to show never appeared until pinned.
   `PerPageControl`'s panel opens **upward** (`bottom-[calc(100%+4px)]`), so
   its preview wraps the demo in `pt-[180px]` to leave headroom above the

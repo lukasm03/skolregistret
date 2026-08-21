@@ -8,9 +8,7 @@
   "srcDir": "../../src",
   "cssEntry": "dist/styles.css",
   "readmeHeader": ".design-sync/conventions.md",
-  "extraFonts": [
-    "fonts/fonts.css"
-  ],
+  "extraFonts": ["fonts/fonts.css"],
   "componentSrcMap": {
     "Label": "../../src/components/ui/primitives.tsx",
     "SectionTitle": "../../src/components/ui/primitives.tsx",
@@ -91,8 +89,16 @@
     "DataGrid": { "cardMode": "column" },
     "TableScroller": { "cardMode": "column" },
     "AppShell": { "cardMode": "column" },
-    "MultiSelectDropdown": { "cardMode": "single", "viewport": "320x360", "primaryStory": "Open" },
-    "PerPageControl": { "cardMode": "single", "viewport": "220x260", "primaryStory": "Open" },
+    "MultiSelectDropdown": {
+      "cardMode": "single",
+      "viewport": "320x360",
+      "primaryStory": "Open"
+    },
+    "PerPageControl": {
+      "cardMode": "single",
+      "viewport": "220x260",
+      "primaryStory": "Open"
+    },
     "Sidebar": { "cardMode": "single", "viewport": "1100x320" }
   }
 }

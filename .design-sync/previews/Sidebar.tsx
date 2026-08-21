@@ -1,10 +1,5 @@
 import { useState } from "react";
-import {
-  CheckboxControl,
-  FilterGroup,
-  Sidebar,
-  SidebarFootnote,
-} from "skolregistret-ui";
+import { CheckboxControl, FilterGroup, Sidebar, SidebarFootnote } from "skolregistret-ui";
 
 export const Default = () => {
   const [checked, setChecked] = useState<Record<string, boolean>>({ gr: true });

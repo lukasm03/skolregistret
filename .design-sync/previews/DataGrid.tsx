@@ -17,8 +17,20 @@ const rows: Skola[] = [
 ];
 
 const columns: Column<Skola>[] = [
-  { key: "namn", header: "Skolenhet", strong: true, cell: (r) => r.namn, sortValue: (r) => r.namn },
-  { key: "kommun", header: "Kommun", muted: true, cell: (r) => r.kommun, sortValue: (r) => r.kommun },
+  {
+    key: "namn",
+    header: "Skolenhet",
+    strong: true,
+    cell: (r) => r.namn,
+    sortValue: (r) => r.namn,
+  },
+  {
+    key: "kommun",
+    header: "Kommun",
+    muted: true,
+    cell: (r) => r.kommun,
+    sortValue: (r) => r.kommun,
+  },
   {
     key: "elever",
     header: "Elever",

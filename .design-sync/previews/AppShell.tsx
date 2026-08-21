@@ -2,7 +2,11 @@ import { useState } from "react";
 import { AppShell } from "skolregistret-ui";
 
 export const Skolor = () => (
-  <AppShell section="/skolor" searchPlaceholder="Sök skolenhetsnamn" searchAction="/skolor">
+  <AppShell
+    section="/skolor"
+    searchPlaceholder="Sök skolenhetsnamn"
+    searchAction="/skolor"
+  >
     <div className="p-6 text-sm text-ink-muted">Innehåll för /skolor.</div>
   </AppShell>
 );

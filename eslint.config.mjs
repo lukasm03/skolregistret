@@ -17,6 +17,13 @@ export default defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // design-sync scaffolding (see .design-sync/NOTES.md): generated or
+    // vendored, so not held to the app's lint rules. ESLint does not read
+    // .gitignore, so the gitignored ones are repeated here.
+    ".ds-sync/**",
+    "ds-bundle/**",
+    ".design-sync/kit/dist/**",
   ]),
 
   {

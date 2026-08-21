@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { CheckboxControl } from "skolregistret-ui";
 
-function Row({ label, count, initial }: { label: string; count?: number; initial: boolean }) {
+function Row({
+  label,
+  count,
+  initial,
+}: {
+  label: string;
+  count?: number;
+  initial: boolean;
+}) {
   const [checked, setChecked] = useState(initial);
   return (
     <CheckboxControl
