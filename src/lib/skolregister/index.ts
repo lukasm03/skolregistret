@@ -44,6 +44,7 @@ export {
   ancestorPath,
   buildKoncernGroups,
   buildTrädFrånNoder,
+  koncernForHuvudmanIndex,
   type KoncernGroup,
 } from "./koncern";
 

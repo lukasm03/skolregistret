@@ -4,17 +4,8 @@ import { notFound } from "next/navigation";
 import { site } from "@/config/site";
 import { AppShell } from "@/components/layout/AppShell";
 import { DataTable } from "@/components/ui/DataTable";
-import {
-  BackLink,
-  ButtonLink,
-  FactList,
-  MetaField,
-  RailSection,
-  Stat,
-  StatFacts,
-  StatGrid,
-  StatusPill,
-} from "@/components/ui/primitives";
+import { BackLink, Dot, FactList, StatusPill } from "@/components/ui/primitives";
+import { Disclosure } from "@/components/detail/Disclosure";
 import { Tabs, type TabDef } from "@/components/ui/Tabs";
 import { BandLegend } from "@/components/detail/ComparisonBand";
 import { DokumentKälla, DokumentList } from "@/components/detail/DokumentList";
@@ -32,6 +23,7 @@ import { antalDokument, buildDokumentVyer } from "@/lib/dokument-view";
 import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
 import {
+  ancestorPath,
   getBeräknatRiksGenomsnitt,
   getKommunEnkätGenomsnitt,
   getKommunNyckeltalStats,
@@ -40,6 +32,7 @@ import {
   getSkola,
   getSkolenkät,
   getSkolinspektionDokument,
+  koncernForHuvudmanIndex,
   listSkolor,
   primärStatistikskolform,
   STATISTIKNYCKEL_NAMN,
@@ -127,9 +120,10 @@ export default async function SkolaPage({
   // now compares against `getBeräknatRiksGenomsnitt`'s self-computed average
   // — every card below is "(beräknat)".
   const primärSkolform = primärStatistikskolform(school.skolformer);
-  const [beräknatRiks, byggd] = await Promise.all([
+  const [beräknatRiks, byggd, koncernIndex] = await Promise.all([
     getBeräknatRiksGenomsnitt(),
     getRegisterByggd(),
+    koncernForHuvudmanIndex(),
   ]);
   const beräknatGr = beräknatRiks.perSkolform.get("gr");
   const beräknatÖvriga = primärSkolform
@@ -204,6 +198,20 @@ export default async function SkolaPage({
   const elevantal = school.antalElever;
   const statistikLäsår = senasteLäsår(nyckeltalRader.map((r) => r.läsår));
   const enkätLäsår = senasteLäsår(enkätGrupper.map((g) => g.läsår));
+  const eleverPerLärare =
+    nyckeltalRader.find((r) => r.key === "eleverPerLärare")?.value ?? DASH;
+
+  // Just the path from the koncernmoder down to the unit's huvudman — same
+  // idea as `/huvudman/[slug]`'s "Ägarstruktur", abbreviated here since the
+  // full tree belongs on `/koncern`.
+  const koncern = school.huvudmannaOrgnr
+    ? koncernIndex.get(school.huvudmannaOrgnr)
+    : undefined;
+  const kedja =
+    koncern && school.huvudmannaOrgnr
+      ? (ancestorPath(koncern.träd, school.huvudmannaOrgnr) ?? [])
+      : [];
+  const koncernSlug = koncern?.koncernNamn ? slugify(koncern.koncernNamn) : null;
 
   const tabs: TabDef[] = [
     {
@@ -336,6 +344,178 @@ export default async function SkolaPage({
           },
         ]
       : []),
+    {
+      id: "skoluppgifter",
+      label: "Skoluppgifter",
+      count: 4,
+      views: [
+        {
+          id: "lista",
+          label: "Lista",
+          hint: "Registeruppgifter, huvudman, kontakt och källor",
+          content: (
+            <div className="flex flex-col gap-6">
+              <Disclosure title="Skoluppgifter" count={10} defaultOpen>
+                <FactList
+                  twoColumn
+                  items={[
+                    [
+                      "Skolenhetskod",
+                      <span key="k" className="font-mono text-sm">
+                        {school.skolenhetskod}
+                      </span>,
+                    ],
+                    ["Kommun", school.kommun ?? DASH],
+                    [
+                      "Kommunkod",
+                      <span key="kk" className="font-mono text-sm">
+                        {school.kommunkod ?? DASH}
+                      </span>,
+                    ],
+                    ["Skolform", school.skolformer.join(", ") || site.allaSkolformer],
+                    ["Årskurser", formatYears(school.årskurser) || DASH],
+                    ["Status i registret", school.status],
+                    ["Rektor", school.rektor ?? DASH],
+                    [
+                      "Startdatum",
+                      <span key="s" className="font-mono text-sm">
+                        {school.startdatum ?? DASH}
+                      </span>,
+                    ],
+                    ["Elever", elevantal != null ? num(elevantal) : DASH],
+                    [
+                      "Elever per lärare",
+                      <span key="epl" className="font-mono text-sm">
+                        {eleverPerLärare}
+                      </span>,
+                    ],
+                  ]}
+                />
+              </Disclosure>
+
+              <Disclosure title="Huvudman" count={koncern ? kedja.length : 0}>
+                <div className="flex flex-col gap-4">
+                  <FactList
+                    twoColumn
+                    items={[
+                      [
+                        "Huvudman",
+                        <Link
+                          key="h"
+                          href={`/huvudman/${huvudmanSlug}`}
+                          className="font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                        >
+                          {school.huvudman}
+                        </Link>,
+                      ],
+                      ["Huvudmannatyp", school.huvudmannatyp],
+                    ]}
+                  />
+                  {kedja.length ? (
+                    <div className="flex flex-wrap items-baseline gap-1.5 text-base">
+                      <span className="text-ink-muted">
+                        {plural(kedja.length, "led", "led")}
+                      </span>
+                      {kedja.map((nod, i) => (
+                        <span key={nod.orgnr} className="flex items-center gap-1.5">
+                          {i > 0 && <span className="text-line-control">→</span>}
+                          <span>{nod.namn ?? nod.orgnr}</span>
+                        </span>
+                      ))}
+                      {koncernSlug && (
+                        <>
+                          <span className="text-line-control">·</span>
+                          <Link
+                            href={`/koncern/${koncernSlug}`}
+                            className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                          >
+                            Visa hela kedjan
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-base text-ink-muted">
+                      Inget koncernträd registrerat för huvudmannen.
+                    </p>
+                  )}
+                </div>
+              </Disclosure>
+
+              <Disclosure title="Kontakt" count={3}>
+                <FactList
+                  twoColumn
+                  items={[
+                    [
+                      "Besöksadress",
+                      school.besöksadress ? (
+                        <span key="a" className="block text-right">
+                          {school.besöksadress}
+                        </span>
+                      ) : (
+                        DASH
+                      ),
+                    ],
+                    [
+                      "Telefon",
+                      <span key="t" className="font-mono text-sm">
+                        {school.telefon ?? DASH}
+                      </span>,
+                    ],
+                    [
+                      "Webbplats",
+                      school.webbplats ? (
+                        <a
+                          key="u"
+                          href={school.webbplats}
+                          className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                        >
+                          Öppna
+                        </a>
+                      ) : (
+                        DASH
+                      ),
+                    ],
+                  ]}
+                />
+              </Disclosure>
+
+              <Disclosure
+                title="Källor"
+                count={2 + (hasEnkätData ? 1 : 0) + (antalDokumentTotalt > 0 ? 1 : 0)}
+              >
+                <FactList
+                  twoColumn
+                  items={[
+                    ["Registeruppgifter", "Skolverkets skolenhetsregister"],
+                    [
+                      "Nyckeltal",
+                      statistikLäsår === DASH
+                        ? "Skolverket"
+                        : `Skolverket, läsår ${statistikLäsår}`,
+                    ],
+                    ...(hasEnkätData
+                      ? ([
+                          [
+                            "Enkätsvar",
+                            `Skolinspektionens skolenkät, läsår ${enkätLäsår}`,
+                          ],
+                        ] as [string, string][])
+                      : []),
+                    ...(antalDokumentTotalt > 0
+                      ? ([["Dokument", "Skolinspektionens dokument-API"]] as [
+                          string,
+                          string,
+                        ][])
+                      : []),
+                  ]}
+                />
+              </Disclosure>
+            </div>
+          ),
+        },
+      ],
+    },
   ];
 
   return (
@@ -353,159 +533,55 @@ export default async function SkolaPage({
             </h1>
             <StatusPill>{school.status}</StatusPill>
           </div>
-          {/*
-            The fields that identify the unit, each under its own label. They
-            used to run together on one line separated by dots, which reads as
-            a sentence you have to parse rather than four facts you can find.
-          */}
-          <div className="flex flex-wrap gap-x-9 gap-y-3 pt-0.5">
-            <MetaField label="Huvudman">
-              <Link
-                href={`/huvudman/${huvudmanSlug}`}
-                className="font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-              >
-                {school.huvudman}
-              </Link>
-            </MetaField>
-            <MetaField label="Skolformer">
-              {school.skolformer.join(", ") || site.allaSkolformer}
-            </MetaField>
-            <MetaField label="Årskurser">
-              {formatYears(school.årskurser) || DASH}
-            </MetaField>
-            <MetaField label="Kommun">{school.kommun ?? DASH}</MetaField>
-            <MetaField label="Skolenhetskod">
-              <span className="font-mono text-sm">{school.skolenhetskod}</span>
-            </MetaField>
+          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+            <span className="text-base text-ink-muted">{school.kommun ?? DASH}</span>
+            <Dot />
+            <span className="text-base text-ink-muted">{school.huvudmannatyp}</span>
+            <Dot />
+            <span className="font-mono text-xs text-ink-subtle">
+              Skolenhetskod {school.skolenhetskod}
+            </span>
           </div>
         </header>
 
-        <StatGrid min={220}>
-          {/*
-            Some gymnasieskolor report no unit-wide elevantal but do report one
-            per programme; summing those beats a dash. When neither exists the
-            tile says so rather than captioning an empty figure with a note
-            about where it came from.
-          */}
-          <Stat
-            label="Elever"
-            value={elevantal != null ? num(elevantal) : DASH}
-            unit={elevantal != null ? "elever" : undefined}
-            note={
-              school.antalEleverKälla === "rapporterat"
-                ? "Avrundat av Skolverket. Fritidshem räknas inte in."
-                : school.antalEleverKälla === "summerat"
-                  ? "Summerat från programmens elevantal."
-                  : "Skolverket redovisar inget elevantal för enheten."
-            }
-          />
-          <StatFacts
-            label="Aktualitet"
-            items={[
-              ["Statistik", statistikLäsår === DASH ? DASH : `läsår ${statistikLäsår}`],
-              ...(hasEnkätData ? ([["Enkät", enkätLäsår]] as [string, string][]) : []),
-              ["Hämtat från API", byggd ? byggd.slice(0, 10) : DASH],
-            ]}
-          />
-          <Stat
-            label="Huvudmannatyp"
-            value={school.huvudmannatyp}
-            sans
-            note={`Driven av ${school.huvudman}`}
-          />
-        </StatGrid>
+        <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 border-b border-line-soft bg-surface-subtle px-4 py-2.5 sm:px-6">
+          <span className="text-base text-ink-muted">
+            <span className="font-mono text-md font-medium text-ink">
+              {elevantal != null ? num(elevantal) : DASH}
+            </span>{" "}
+            elever
+          </span>
+          <Dot />
+          <span className="text-base text-ink-muted">
+            {school.skolformer.join(" · ") || site.allaSkolformer}
+          </span>
+          <Dot />
+          <span className="text-base text-ink-muted">
+            Åk{" "}
+            <span className="font-mono text-md text-ink">
+              {formatYears(school.årskurser) || DASH}
+            </span>
+          </span>
+          <Dot />
+          <span className="text-base text-ink-muted">
+            {statistikLäsår === DASH ? DASH : `läsår ${statistikLäsår}`}
+          </span>
+          <div className="flex-1" />
+          <Link
+            href={`/huvudman/${huvudmanSlug}`}
+            className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+          >
+            Visa huvudmannen
+          </Link>
+        </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-stretch">
-          <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
-            <Tabs tabs={tabs} defaultTab={hasProgramStats ? "program" : "nyckeltal"} />
-          </div>
-
-          <aside className="flex w-full flex-col gap-[22px] border-t border-line-soft bg-surface-panel p-5 lg:w-[300px] lg:flex-none lg:border-t-0 lg:border-l">
-            <RailSection title="Så läser du sidan" divided={false}>
-              <p className="text-base leading-[1.55] text-ink-muted">
-                Varje tal är enhetens eget, rapporterat till Skolverket. Färgen visar bara
-                hur talet ligger mot riksgenomsnittet — den är inte ett betyg.
-              </p>
-              <p className="text-base leading-[1.55] text-ink-muted">
-                Byt till <strong className="font-semibold">Tabell</strong> för alla tal i
-                rutnät utan tolkning.
-              </p>
-            </RailSection>
-
-            <RailSection title="Registeruppgifter">
-              <FactList
-                items={[
-                  [
-                    "Skolenhetskod",
-                    <span key="k" className="font-mono text-sm">
-                      {school.skolenhetskod}
-                    </span>,
-                  ],
-                  [
-                    "Kommunkod",
-                    <span key="kk" className="font-mono text-sm">
-                      {school.kommunkod ?? DASH}
-                    </span>,
-                  ],
-                  ["Huvudmannatyp", school.huvudmannatyp],
-                  ["Status i registret", school.status],
-                  ["Rektor", school.rektor ?? DASH],
-                  [
-                    "Startdatum",
-                    <span key="s" className="font-mono text-sm">
-                      {school.startdatum ?? DASH}
-                    </span>,
-                  ],
-                ]}
-              />
-            </RailSection>
-
-            <RailSection title="Kontakt">
-              <FactList
-                items={[
-                  [
-                    "Besöksadress",
-                    school.besöksadress ? (
-                      <span key="a" className="block text-right">
-                        {school.besöksadress}
-                      </span>
-                    ) : (
-                      DASH
-                    ),
-                  ],
-                  [
-                    "Telefon",
-                    <span key="t" className="font-mono text-sm">
-                      {school.telefon ?? DASH}
-                    </span>,
-                  ],
-                  [
-                    "Webbplats",
-                    school.webbplats ? (
-                      <a
-                        key="u"
-                        href={school.webbplats}
-                        className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-                      >
-                        Öppna
-                      </a>
-                    ) : (
-                      DASH
-                    ),
-                  ],
-                ]}
-              />
-            </RailSection>
-
-            <div className="mt-auto flex flex-col gap-2">
-              <ButtonLink href={`/huvudman/${huvudmanSlug}`}>Visa huvudmannen</ButtonLink>
-              {byggd && (
-                <p className="text-center font-mono text-micro text-ink-faint">
-                  {`Data hämtat ${byggd.slice(0, 10)}`}
-                </p>
-              )}
-            </div>
-          </aside>
+        <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
+          <Tabs tabs={tabs} defaultTab={hasProgramStats ? "program" : "nyckeltal"} />
+          {byggd && (
+            <p className="font-mono text-micro text-ink-faint">
+              {`Data hämtat ${byggd.slice(0, 10)}`}
+            </p>
+          )}
         </div>
       </div>
     </AppShell>

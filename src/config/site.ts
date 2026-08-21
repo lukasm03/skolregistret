@@ -23,11 +23,13 @@ export const site = {
   nav: [
     { href: "/skolor", label: "Skolenheter", match: "/skolor" },
     { href: "/huvudman", label: "Huvudmän", match: "/huvudman" },
+    { href: "/koncern", label: "Koncerner", match: "/koncern" },
   ],
 
   search: {
     skolor: "Sök skolenhetsnamn",
     huvudman: "Sök huvudman eller org.nr",
+    koncern: "Sök koncernnamn eller org.nr",
   },
 
   /** Label for the "no skolform selected" state. */
@@ -64,5 +66,11 @@ export const baseSchoolSorts = [
 export const baseHuvudmanSorts = [
   { key: "elever", label: "Elever, flest först", desc: true },
   { key: "name", label: "Namn A–Ö", desc: false },
+  { key: "enheter", label: "Enheter, flest först", desc: true },
+] as const;
+
+export const baseKoncernSorts = [
+  { key: "elever", label: "Elever, flest först", desc: true },
+  { key: "namn", label: "Namn A–Ö", desc: false },
   { key: "enheter", label: "Enheter, flest först", desc: true },
 ] as const;

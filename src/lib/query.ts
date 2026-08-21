@@ -1,4 +1,9 @@
-import { baseHuvudmanSorts, baseSchoolSorts, site } from "@/config/site";
+import {
+  baseHuvudmanSorts,
+  baseKoncernSorts,
+  baseSchoolSorts,
+  site,
+} from "@/config/site";
 import { skolform, type SkolformDef } from "@/config/skolformer";
 import { normalizeKommunkod } from "@/data/kommuner";
 import {
@@ -232,6 +237,57 @@ export function parseHuvudmanQuery(params: RawParams): HuvudmanQuery {
     typ,
     skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
     koncernOnly: one(params.koncern) === "1",
+    sort: sort.key,
+    desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
+    page: Math.max(1, int(params.page) ?? 1),
+    perPage:
+      perPage && (site.pagination.perPageOptions as readonly number[]).includes(perPage)
+        ? perPage
+        : site.pagination.perPage,
+  };
+}
+
+export interface KoncernQuery {
+  q: string;
+  /** Restricts the list to koncerner with at least one huvudman in this skolform. */
+  skolform?: SkolformCode;
+  minEnheter?: number;
+  maxEnheter?: number;
+  minElever?: number;
+  maxElever?: number;
+  /** A column id: one of `baseKoncernSorts` or any sortable column header. */
+  sort: string;
+  desc: boolean;
+  page: number;
+  perPage: number;
+}
+
+/** Columns sortable by header click but absent from the toolbar's menu. */
+const EXTRA_KONCERN_SORTS: SortOption[] = [
+  { key: "huvudman", label: "Huvudmän, flest först", desc: true },
+  { key: "kommuner", label: "Kommuner, flest först", desc: true },
+];
+
+function resolveKoncernSort(sort: string | undefined): SortOption {
+  return (
+    baseKoncernSorts.find((s) => s.key === sort) ??
+    EXTRA_KONCERN_SORTS.find((s) => s.key === sort) ??
+    baseKoncernSorts[0]
+  );
+}
+
+export function parseKoncernQuery(params: RawParams): KoncernQuery {
+  const rawForm = one(params.skolform)?.toUpperCase();
+  const sort = resolveKoncernSort(one(params.sort));
+  const dir = one(params.dir);
+  const perPage = int(params.perPage);
+  return {
+    q: one(params.q) ?? "",
+    skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
+    minEnheter: int(params.minEnheter),
+    maxEnheter: int(params.maxEnheter),
+    minElever: int(params.minElever),
+    maxElever: int(params.maxElever),
     sort: sort.key,
     desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
     page: Math.max(1, int(params.page) ?? 1),

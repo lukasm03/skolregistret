@@ -47,6 +47,27 @@ never `allt.json`'s shapes directly. That boundary is what let this app's
 data source change once already without touching its comparison/view-model
 layer; keep it that way if it changes again.
 
+## Årsredovisningarna: a second, separate data source
+
+`data/arsredovisningar/` holds Bolagsverkets own filing packages, written by
+the same external collector as `allt.json` and just as uncommittable (112MB
+today): one directory per organisationsnummer, one
+`<räkenskapsårets slutdatum>-<paket-id>_paket.zip` per filed year. Each zip
+holds one or two iXBRL documents — the årsredovisning, whose entry name is
+the package id, and, when the bolag is audited, the revisionsberättelse.
+That naming _is_ the only thing telling the two apart; `paket.ts` says so
+where it keys off it.
+
+`src/lib/arsredovisning/` reads them (`SKOLREGISTER_ARSREDOVISNING_DIR`
+overrides the path, like `SKOLREGISTER_DATA_FILE`), the huvudman page lists
+them, and `/arsredovisning/[orgnr]/[id]` serves one document straight out of
+its zip — `?del=revision` for the revisionsberättelse. That route is third-
+party markup on our own origin, so it ships a `sandbox` CSP; don't loosen it
+without a reason the filings themselves give you.
+
+The two sources share no join beyond organisationsnummer, and nothing in
+`src/lib/skolregister/` knows this one exists.
+
 `allt.json` carries no bulk official riksgenomsnitt outside five
 gymnasieprogram measures — `getNationelltGenomsnitt`/
 `getNationelltProgramGenomsnitt` always return `null` now, so nearly every
@@ -65,15 +86,16 @@ messages are in English; domain nouns stay Swedish.
 
 ## Layout rules
 
-| Directory                | Rule                                                                                                        |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `src/lib/`               | Must stay server-safe and free of React. `skolregister/client.ts` reads the filesystem.                     |
-| `src/hooks/`             | Anything `"use client"`. The one hook lives here, not in `lib/`.                                            |
-| `src/config/`            | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
-| `src/components/tables/` | Column definitions. Route files should not declare columns.                                                 |
-| `src/components/detail/` | The skolenhet page's own panels — nyckeltalskort, enkätkort, dokumentlista, comparison band.                |
-| `src/lib/skolregister/`  | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                  |
-| `data/`                  | Just `allt.json`, gitignored — the app's data source, not committed.                                        |
+| Directory                 | Rule                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/lib/`                | Must stay server-safe and free of React. `skolregister/client.ts` reads the filesystem.                     |
+| `src/hooks/`              | Anything `"use client"`. The one hook lives here, not in `lib/`.                                            |
+| `src/config/`             | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
+| `src/components/tables/`  | Column definitions. Route files should not declare columns.                                                 |
+| `src/components/detail/`  | Detail-page panels — nyckeltalskort, enkätkort, dokumentlista, comparison band, årsredovisningslista.       |
+| `src/lib/skolregister/`   | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                  |
+| `data/`                   | `allt.json` and `arsredovisningar/`, both gitignored — the app's data, not committed.                       |
+| `src/lib/arsredovisning/` | Reads `data/arsredovisningar/`. Import from the barrel (`@/lib/arsredovisning`).                            |
 
 `src/config/skolformer.ts` is the registry that makes the app work for more
 than grundskolan — filter chips, columns, stat tiles, sort options and the
@@ -106,6 +128,9 @@ you add a form.
 - **`src/components/filters/controls.tsx` (373 lines, 11 exports)** and
   **`src/lib/query.ts` (336)** are large but cohesive. Not worth splitting
   unless you are already changing them.
+- **`src/lib/arsredovisning/paket.ts` has no tests**, for the same reason as
+  `client.ts` below: it is filesystem I/O over zips. The pure part —
+  filenames in, period labels out — is `format.ts`, and that is tested.
 - **`src/lib/skolregister/client.ts` and `resources.ts` have no tests.** They
   are I/O; testing them means mocking the filesystem or shipping a fixture
   `allt.json`. The pure logic around them — `normalize.ts`'s field readers,

@@ -99,14 +99,14 @@ export default async function KoncernPage({
 
   return (
     <AppShell
-      section="/huvudman"
-      searchAction="/huvudman"
-      searchPlaceholder={site.search.huvudman}
+      section="/koncern"
+      searchAction="/koncern"
+      searchPlaceholder={site.search.koncern}
     >
       <div className="flex flex-col">
         <header className="flex flex-wrap items-start gap-x-6 gap-y-4 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <div className="flex min-w-0 flex-col gap-2">
-            <BackLink href="/huvudman">Alla huvudmän</BackLink>
+            <BackLink href="/koncern">Alla koncerner</BackLink>
             <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
               {group.namn}
             </h1>

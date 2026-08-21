@@ -165,9 +165,22 @@ export function Dot() {
 }
 
 /** Key/value rows in the detail rails. */
-export function FactList({ items }: { items: [ReactNode, ReactNode][] }) {
+export function FactList({
+  items,
+  twoColumn,
+}: {
+  items: [ReactNode, ReactNode][];
+  /** Two columns above `md`, for a longer list inside a disclosure. */
+  twoColumn?: boolean;
+}) {
   return (
-    <dl className="flex flex-col gap-[7px]">
+    <dl
+      className={
+        twoColumn
+          ? "grid grid-cols-1 gap-x-14 gap-y-1 md:grid-cols-2"
+          : "flex flex-col gap-[7px]"
+      }
+    >
       {items.map(([k, v], i) => (
         <div key={i} className="flex justify-between gap-3">
           <dt className="text-base text-ink-muted">{k}</dt>

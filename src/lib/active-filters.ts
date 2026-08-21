@@ -1,5 +1,5 @@
 import { DEFAULT_STATUS, HUVUDMANTYP_ORDER, SKOLSTATUS_ORDER } from "./types";
-import type { HuvudmanQuery, SchoolQuery } from "./query";
+import type { HuvudmanQuery, KoncernQuery, SchoolQuery } from "./query";
 
 /**
  * What the list is currently narrowed by, as removable tokens.
@@ -81,7 +81,13 @@ function typFilter(typ: string[], label: string): ActiveFilter | null {
   };
 }
 
-function rangeFilter(min?: number, max?: number): ActiveFilter | null {
+function rangeFilter(
+  min: number | undefined,
+  max: number | undefined,
+  label: string,
+  key: string,
+  clear: ClearPatch,
+): ActiveFilter | null {
   if (min == null && max == null) return null;
   const value =
     min != null && max != null
@@ -89,12 +95,7 @@ function rangeFilter(min?: number, max?: number): ActiveFilter | null {
       : min != null
         ? `från ${min}`
         : `upp till ${max}`;
-  return {
-    key: "elever",
-    label: "Elever",
-    value,
-    clear: { min: null, max: null },
-  };
+  return { key, label, value, clear };
 }
 
 function searchFilter(q: string): ActiveFilter | null {
@@ -157,7 +158,10 @@ export function activeSchoolFilters(
         }
       : null,
     statusFilter(query.status),
-    rangeFilter(query.minElever, query.maxElever),
+    rangeFilter(query.minElever, query.maxElever, "Elever", "elever", {
+      min: null,
+      max: null,
+    }),
   ];
   return filters.filter((f): f is ActiveFilter => f != null);
 }
@@ -193,6 +197,32 @@ export function activeHuvudmanFilters(
           clear: { koncern: null },
         }
       : null,
+  ];
+  return filters.filter((f): f is ActiveFilter => f != null);
+}
+
+export function activeKoncernFilters(
+  query: KoncernQuery,
+  labels: FilterLabels = {},
+): ActiveFilter[] {
+  const filters: (ActiveFilter | null)[] = [
+    searchFilter(query.q),
+    query.skolform
+      ? {
+          key: "skolform",
+          label: "Skolform",
+          value: labels.skolform ?? query.skolform,
+          clear: CLEAR_FORM,
+        }
+      : null,
+    rangeFilter(query.minEnheter, query.maxEnheter, "Skolenheter", "enheter", {
+      minEnheter: null,
+      maxEnheter: null,
+    }),
+    rangeFilter(query.minElever, query.maxElever, "Elever", "elever", {
+      minElever: null,
+      maxElever: null,
+    }),
   ];
   return filters.filter((f): f is ActiveFilter => f != null);
 }
