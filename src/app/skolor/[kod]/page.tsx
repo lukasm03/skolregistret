@@ -15,32 +15,10 @@ import { SalsaCards, SalsaKälla } from "@/components/detail/SalsaCards";
 import { enkätColumns } from "@/components/tables/enkatColumns";
 import { nyckeltalColumns } from "@/components/tables/nyckeltalColumns";
 import { ProgramTable } from "@/components/tables/ProgramTable";
-import { buildProgramComparisons } from "@/lib/program-compare";
-import { buildEnkätComparisons } from "@/lib/enkat-compare";
-import { buildNyckeltalComparisons, type RiksNyckeltal } from "@/lib/nyckeltal-compare";
-import { buildSalsaComparisons } from "@/lib/salsa-compare";
-import { antalDokument, buildDokumentVyer } from "@/lib/dokument-view";
-import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
+import { getSkolaDetaljVy } from "@/lib/skola-detalj";
+import { DASH, kommunLong, num, plural } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
-import {
-  ancestorPath,
-  getBeräknatRiksGenomsnitt,
-  getKommunEnkätGenomsnitt,
-  getKommunNyckeltalStats,
-  getRegisterByggd,
-  getRiksEnkätGenomsnitt,
-  getSkola,
-  getSkolenkät,
-  getSkolinspektionDokument,
-  koncernForHuvudmanIndex,
-  listSkolor,
-  primärStatistikskolform,
-  STATISTIKNYCKEL_NAMN,
-  type EnkätGrupp,
-  type NationelltProgramGenomsnitt,
-  type Nyckeltal,
-  type Skolform,
-} from "@/lib/skolregister";
+import { getRegisterByggd, getSkola, listSkolor } from "@/lib/skolregister";
 
 /**
  * Statically generated for every skolenhetskod the register currently has,
@@ -82,16 +60,6 @@ export async function generateMetadata({
 
 const backHref = "/skolor";
 
-/** The most recent läsår among a set of them — they sort as they read. */
-function senasteLäsår(läsår: string[]): string {
-  return (
-    [...läsår]
-      .filter((l) => l !== DASH)
-      .sort()
-      .at(-1) ?? DASH
-  );
-}
-
 export default async function SkolaPage({
   params,
 }: {
@@ -101,117 +69,32 @@ export default async function SkolaPage({
   const school = await getSkola(kod);
   if (!school) notFound();
 
-  const huvudmanSlug = slugify(school.huvudman);
-
-  const kommunStats = school.kommunkod
-    ? await getKommunNyckeltalStats(school.kommunkod, school.skolenhetskod)
-    : [];
-
-  // meritvärde/andelGodkända always compare against grundskolans riks-
-  // genomsnitt; andelBehöriga/eleverPerLärare compare against whichever
-  // skolform the unit's own values are actually sourced from — see
-  // primärStatistikskolform. Skolverket has no official endpoint at all for
-  // "gy" (only per-program), and no figure ("saknas") for some skolform/
-  // nyckeltal combinations it does cover — beräknatRiks fills in an average
-  // computed from every unit's own reported nyckeltal for both cases instead
-  // of leaving a dash. Which of the two a figure came from is carried through
-  // to the page rather than smoothed over: the cards say "(beräknat)".
-  // `allt.json` carries no bulk official riksgenomsnitt, so every nyckeltal
-  // now compares against `getBeräknatRiksGenomsnitt`'s self-computed average
-  // — every card below is "(beräknat)".
-  const primärSkolform = primärStatistikskolform(school.skolformer);
-  const [beräknatRiks, byggd, koncernIndex] = await Promise.all([
-    getBeräknatRiksGenomsnitt(),
-    getRegisterByggd(),
-    koncernForHuvudmanIndex(),
-  ]);
-  const beräknatGr = beräknatRiks.perSkolform.get("gr");
-  const beräknatÖvriga = primärSkolform
-    ? beräknatRiks.perSkolform.get(primärSkolform)
-    : undefined;
-  const riksFör = (
-    beräknat: number | undefined,
-    skolform: Skolform | null,
-  ): RiksNyckeltal => ({
-    tal: beräknat ?? null,
-    beräknat: beräknat != null,
-    skolform: skolform ? STATISTIKNYCKEL_NAMN[skolform] : null,
-  });
-  const riksPerKey: Partial<Record<keyof Nyckeltal, RiksNyckeltal>> = {
-    meritvärdeÅrskurs9: riksFör(beräknatGr?.meritvärdeÅrskurs9, "gr"),
-    andelGodkändaÅrskurs9: riksFör(beräknatGr?.andelGodkändaÅrskurs9, "gr"),
-    andelBehörigaLärare: riksFör(beräknatÖvriga?.andelBehörigaLärare, primärSkolform),
-    eleverPerLärare: riksFör(beräknatÖvriga?.eleverPerLärare, primärSkolform),
-  };
-
-  // `allt.json` carries no bulk official program riksgenomsnitt either — every
-  // program comparison falls back to `beräknatRiks.perProgram` below.
-  const riksByProgramKod = new Map<string, NationelltProgramGenomsnitt>();
-
-  const hasProgramStats = school.program.length > 0;
-  const programComparisons = buildProgramComparisons(
-    school.program,
-    riksByProgramKod,
-    beräknatRiks.perProgram,
-  );
-
-  const [skolenkät, dokumentgrupper, kommunEnkätGrupper, riksEnkätGrupper] =
-    await Promise.all([
-      getSkolenkät(school.skolenhetskod),
-      getSkolinspektionDokument(school.skolenhetskod),
-      school.kommunkod
-        ? getKommunEnkätGenomsnitt(school.kommunkod)
-        : Promise.resolve(new Map<string, EnkätGrupp>()),
-      getRiksEnkätGenomsnitt(),
-    ]);
-  const enkätGrupper = buildEnkätComparisons(
-    skolenkät,
-    kommunEnkätGrupper,
-    riksEnkätGrupper,
-  );
-  const hasEnkätData = enkätGrupper.length > 0;
-
-  const dokumentVyer = buildDokumentVyer(dokumentgrupper);
-  const antalDokumentTotalt = antalDokument(dokumentVyer);
-
-  // The register never distinguishes "no årskurs 9" from "not reported" —
-  // both come back as a missing value with no läsår. That's the same signal
-  // either way says the same thing here: nothing to show for åk 9.
-  const merit = school.nyckeltal.meritvärdeÅrskurs9;
-  const noGrade9 = merit.status !== "finns" && merit.läsår == null;
-  const hideGrade9 = hasProgramStats || noGrade9;
-  const GRADE9_KEYS: (keyof Nyckeltal)[] = [
-    "meritvärdeÅrskurs9",
-    "andelGodkändaÅrskurs9",
-  ];
-
-  const nyckeltalRader = buildNyckeltalComparisons(
-    school.nyckeltal,
-    kommunStats,
-    riksPerKey,
-  ).filter((r) => !hideGrade9 || !GRADE9_KEYS.includes(r.key));
-  const harBeräknatRiks = nyckeltalRader.some((r) => r.beräknatRiks);
-
-  const salsaRader = buildSalsaComparisons(school.salsa);
-  const hasSalsaData = salsaRader.length > 0;
+  // Every comparison on the page — which riksgenomsnitt pairs with which
+  // nyckeltal, the "(beräknat)" caveat, the åk 9 hiding rule, the läsår
+  // lines, the koncern chain — is decided in `lib/skola-detalj.ts`. What is
+  // left here is lookup and layout.
+  const [vy, byggd] = await Promise.all([getSkolaDetaljVy(school), getRegisterByggd()]);
+  const {
+    nyckeltal: nyckeltalRader,
+    harBeräknatRiks,
+    program: programComparisons,
+    harProgram: hasProgramStats,
+    enkät: enkätGrupper,
+    harEnkät: hasEnkätData,
+    dokument: dokumentVyer,
+    antalDokumentTotalt,
+    salsa: salsaRader,
+    harSalsa: hasSalsaData,
+    statistikLäsår,
+    enkätLäsår,
+    eleverPerLärare,
+    huvudmanSlug,
+    koncern,
+    kedja,
+    koncernSlug,
+  } = vy;
 
   const elevantal = school.antalElever;
-  const statistikLäsår = senasteLäsår(nyckeltalRader.map((r) => r.läsår));
-  const enkätLäsår = senasteLäsår(enkätGrupper.map((g) => g.läsår));
-  const eleverPerLärare =
-    nyckeltalRader.find((r) => r.key === "eleverPerLärare")?.value ?? DASH;
-
-  // Just the path from the koncernmoder down to the unit's huvudman — same
-  // idea as `/huvudman/[slug]`'s "Ägarstruktur", abbreviated here since the
-  // full tree belongs on `/koncern`.
-  const koncern = school.huvudmannaOrgnr
-    ? koncernIndex.get(school.huvudmannaOrgnr)
-    : undefined;
-  const kedja =
-    koncern && school.huvudmannaOrgnr
-      ? (ancestorPath(koncern.träd, school.huvudmannaOrgnr) ?? [])
-      : [];
-  const koncernSlug = koncern?.koncernNamn ? slugify(koncern.koncernNamn) : null;
 
   const tabs: TabDef[] = [
     {
@@ -230,9 +113,9 @@ export default async function SkolaPage({
               <NyckeltalKälla beräknat={harBeräknatRiks} />
               {hasSalsaData && (
                 <>
-                  <h3 className="mt-2 text-base leading-[1.3] font-medium">
+                  <h2 className="mt-2 text-base leading-[1.3] font-medium">
                     SALSA — mot förväntat resultat
-                  </h3>
+                  </h2>
                   <SalsaCards rader={salsaRader} />
                   <SalsaKälla />
                 </>
@@ -528,7 +411,7 @@ export default async function SkolaPage({
         <header className="flex flex-col gap-2.5 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <BackLink href={backHref}>Alla skolenheter</BackLink>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="text-title leading-[1.1] font-semibold tracking-[-0.015em]">
+            <h1 className="text-title leading-[1.1] font-semibold tracking-[-0.015em] text-balance">
               {school.namn}
             </h1>
             <StatusPill>{school.status}</StatusPill>

@@ -84,10 +84,9 @@ let beräknatRiksGenomsnittCache: Promise<BeräknatRiksGenomsnitt> | null = null
 
 /**
  * Averages every unit's own reported nyckeltal into a nationwide figure, for
- * use wherever `getNationelltGenomsnitt`/`getNationelltProgramGenomsnitt`
- * comes back "saknas" for that particular metric — Skolverket's own
- * national-average endpoint doesn't always cover every metric it publishes
- * per unit. Computed once per process across every unit in the register
+ * use wherever Skolverket publishes no official rikstal for that particular
+ * skolform/metric pair — which with `allt.json` as the source is nearly
+ * always. Computed once per process across every unit in the register
  * (thousands of skoldetalj fetches, cached individually by `getSkola`) since
  * redoing that scan on every skoldetalj page would make them all slow —
  * the same tradeoff `getRiksEnkätGenomsnitt` makes for the skolenkät.
@@ -302,11 +301,10 @@ let riksEnkätCache: Promise<Map<string, EnkätGrupp>> | null = null;
 
 /**
  * Riksgenomsnitt for the skolenkät, computed once per process across every
- * unit in the register — there's no Skolverket/Skolinspektionen endpoint for
- * this the way `getNationelltGenomsnitt` used to have for nyckeltal. Fetches
- * every unit's enkät once and keeps the computed averages for the rest of
- * the process, since re-fetching ~6500 units per request would make every
- * skoldetalj page slow.
+ * unit in the register — no Skolverket/Skolinspektionen endpoint publishes
+ * it. Fetches every unit's enkät once and keeps the computed averages for
+ * the rest of the process, since re-fetching ~6500 units per request would
+ * make every skoldetalj page slow.
  */
 export async function getRiksEnkätGenomsnitt(): Promise<Map<string, EnkätGrupp>> {
   if (!riksEnkätCache) {

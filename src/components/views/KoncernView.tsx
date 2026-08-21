@@ -5,13 +5,10 @@ import { KoncernFilters } from "@/components/filters/KoncernFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
   FilterSummary,
-  ListFooter,
+  ListPane,
   ListToolbar,
   NoMatches,
-  Pagination,
-  PerPageControl,
 } from "@/components/list/ListChrome";
-import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import type { Column } from "@/components/ui/DataTable";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
@@ -49,10 +46,6 @@ export function KoncernView({
   const { rows, formCounts } = selection;
 
   const total = rows.length;
-  const totalPages = Math.max(1, Math.ceil(total / query.perPage));
-  const page = Math.min(query.page, totalPages);
-  const from = total ? (page - 1) * query.perPage + 1 : 0;
-  const to = Math.min(page * query.perPage, total);
 
   const filters = useMemo(
     () => activeKoncernFilters(query, { skolform: form?.label }),
@@ -150,51 +143,27 @@ export function KoncernView({
             />
           </ListToolbar>
 
-          {/* Same reasoning as `HuvudmanView`: reserve the space this page
-              of rows will occupy so the footer doesn't jump as you filter. */}
-          <div
-            style={{
-              minHeight:
-                HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
-            }}
-          >
-            <DataGrid
-              rows={rows}
-              rowKey={(r) => r.group.slug}
-              rowHref={(r) => `/koncern/${r.group.slug}`}
-              rowLabel={(r) => `Visa ${r.group.namn}`}
-              emptyMessage={
-                <NoMatches
-                  message="Inga koncerner matchar filtret."
-                  filters={filters}
-                  onClearAll={clearAll}
-                />
-              }
-              label="Koncerner"
-              columns={columns}
-              sort={{ id: query.sort, desc: query.desc }}
-              onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
-              pageIndex={page - 1}
-              pageSize={query.perPage}
-              onPageChange={(i) => patch({ page: i + 1 })}
-            />
-          </div>
-
-          <ListFooter>
-            <span className="text-sm text-ink-muted">
-              Visar {from}–{to} av {total}
-            </span>
-            <div className="flex-1" />
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onGoTo={(p) => patch({ page: p })}
-            />
-            <PerPageControl
-              perPage={query.perPage}
-              onChange={(perPage) => patch({ perPage, page: null })}
-            />
-          </ListFooter>
+          <ListPane
+            rows={rows}
+            columns={columns}
+            rowKey={(r) => r.group.slug}
+            rowHref={(r) => `/koncern/${r.group.slug}`}
+            rowLabel={(r) => `Visa ${r.group.namn}`}
+            emptyMessage={
+              <NoMatches
+                message="Inga koncerner matchar filtret."
+                filters={filters}
+                onClearAll={clearAll}
+              />
+            }
+            label="Koncerner"
+            sort={{ id: query.sort, desc: query.desc }}
+            onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
+            page={query.page}
+            perPage={query.perPage}
+            onPageChange={(p) => patch({ page: p })}
+            onPerPageChange={(perPage) => patch({ perPage, page: null })}
+          />
         </div>
       </div>
     </AppShell>

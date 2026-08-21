@@ -5,14 +5,11 @@ import { SchoolFilters } from "@/components/filters/SchoolFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
   FilterSummary,
-  ListFooter,
+  ListPane,
   ListToolbar,
   NoMatches,
-  Pagination,
-  PerPageControl,
 } from "@/components/list/ListChrome";
 import { schoolColumns } from "@/components/tables/schoolColumns";
-import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
 import { activeSchoolFilters, clearAllPatch } from "@/lib/active-filters";
@@ -76,10 +73,6 @@ export function SchoolsView({
   const clearAll = () => patch(clearAllPatch(filters));
 
   const total = selection.sorted.length;
-  const totalPages = Math.max(1, Math.ceil(total / query.perPage));
-  const page = Math.min(query.page, totalPages);
-  const from = total ? (page - 1) * query.perPage + 1 : 0;
-  const to = Math.min(page * query.perPage, total);
 
   const columns = useMemo(
     () => [
@@ -136,57 +129,28 @@ export function SchoolsView({
             />
           </ListToolbar>
 
-          {/*
-            Reserve the height this page will occupy, so the footer does not
-            jump as you page or filter. A full page of rows reserves a full
-            page; a filter that leaves three rows reserves three, rather than
-            the fixed 712px that used to leave most of a screen blank under
-            them.
-          */}
-          <div
-            style={{
-              minHeight:
-                HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
-            }}
-            className={`transition-opacity duration-150 ${stale ? "opacity-60 delay-200" : ""}`}
-          >
-            <DataGrid
-              rows={selection.sorted}
-              rowKey={(s) => s.kod}
-              rowHref={(s) => `/skolor/${s.kod}${searchString(params)}`}
-              rowLabel={(s) => `Visa ${s.name}`}
-              emptyMessage={
-                <NoMatches
-                  message="Inga skolenheter matchar filtret."
-                  filters={filters}
-                  onClearAll={clearAll}
-                />
-              }
-              label="Skolenheter"
-              columns={columns}
-              sort={{ id: query.sort, desc: query.desc }}
-              onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
-              pageIndex={page - 1}
-              pageSize={query.perPage}
-              onPageChange={(i) => patch({ page: i + 1 })}
-            />
-          </div>
-
-          <ListFooter>
-            <span className="text-sm text-ink-muted">
-              Visar {from}–{to} av {total}
-            </span>
-            <div className="flex-1" />
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onGoTo={(p) => patch({ page: p })}
-            />
-            <PerPageControl
-              perPage={query.perPage}
-              onChange={(perPage) => patch({ perPage, page: null })}
-            />
-          </ListFooter>
+          <ListPane
+            rows={selection.sorted}
+            columns={columns}
+            rowKey={(s) => s.kod}
+            rowHref={(s) => `/skolor/${s.kod}${searchString(params)}`}
+            rowLabel={(s) => `Visa ${s.name}`}
+            emptyMessage={
+              <NoMatches
+                message="Inga skolenheter matchar filtret."
+                filters={filters}
+                onClearAll={clearAll}
+              />
+            }
+            label="Skolenheter"
+            sort={{ id: query.sort, desc: query.desc }}
+            onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
+            page={query.page}
+            perPage={query.perPage}
+            onPageChange={(p) => patch({ page: p })}
+            onPerPageChange={(perPage) => patch({ perPage, page: null })}
+            stale={stale}
+          />
         </div>
       </div>
     </AppShell>

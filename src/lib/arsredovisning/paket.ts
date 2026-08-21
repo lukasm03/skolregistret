@@ -28,7 +28,7 @@ let katalogCache: string | undefined;
  * the packages are as uncommittable as `allt.json` and may live anywhere.
  * Resolved once per process, like `registerFilePath()`.
  */
-export function årsredovisningKatalog(): string {
+function årsredovisningKatalog(): string {
   if (katalogCache === undefined) {
     katalogCache = process.env.SKOLREGISTER_ARSREDOVISNING_DIR ?? STANDARDKATALOG;
   }

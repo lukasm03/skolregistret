@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
 import { DASH, num, plural, slugify } from "@/lib/format";
-import { buildKoncernGroups } from "@/lib/skolregister";
+import { buildKoncernGroups, getKoncernBySlug } from "@/lib/skolregister";
 import type { HuvudmanRad } from "@/lib/skolregister";
 
 const dotterbolagColumns: Column<HuvudmanRad>[] = [
@@ -64,7 +64,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const group = (await buildKoncernGroups()).find((g) => g.slug === slug);
+  const group = await getKoncernBySlug(slug);
   if (!group) return { title: "Koncernen finns inte" };
 
   const enheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
@@ -84,8 +84,7 @@ export default async function KoncernPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const groups = await buildKoncernGroups();
-  const group = groups.find((g) => g.slug === slug);
+  const group = await getKoncernBySlug(slug);
   if (!group) notFound();
 
   const antalEnheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
@@ -107,7 +106,7 @@ export default async function KoncernPage({
         <header className="flex flex-wrap items-start gap-x-6 gap-y-4 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <div className="flex min-w-0 flex-col gap-2">
             <BackLink href="/koncern">Alla koncerner</BackLink>
-            <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
+            <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em] text-balance">
               {group.namn}
             </h1>
             <div className="flex flex-wrap items-center gap-2.5">

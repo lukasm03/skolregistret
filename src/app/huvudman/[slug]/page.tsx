@@ -20,9 +20,12 @@ import {
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
 import { harÅrsredovisningskatalog, listÅrsredovisningar } from "@/lib/arsredovisning";
-import { dedupeHuvudmanRows, normalizeApiSchool } from "@/lib/api-normalize";
+import {
+  dedupeHuvudmanRows,
+  getHuvudmanBySlug,
+  normalizeApiSchool,
+} from "@/lib/api-normalize";
 import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
-import { href } from "@/lib/query";
 import { ancestorPath, listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**
@@ -42,8 +45,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const rows = dedupeHuvudmanRows(await listHuvudman());
-  const h = rows.find((row) => slugify(row.namn) === slug);
+  const h = await getHuvudmanBySlug(slug);
   if (!h) return { title: "Huvudmannen finns inte" };
 
   const var_ =
@@ -66,8 +68,7 @@ export default async function HuvudmanDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [huvudmanRows, skolor] = await Promise.all([listHuvudman(), listSkolor()]);
-  const h = dedupeHuvudmanRows(huvudmanRows).find((row) => slugify(row.namn) === slug);
+  const [h, skolor] = await Promise.all([getHuvudmanBySlug(slug), listSkolor()]);
   if (!h) notFound();
 
   const units = skolor.filter((s) => s.huvudman === h.namn).map(normalizeApiSchool);
@@ -251,7 +252,7 @@ export default async function HuvudmanDetailPage({
         <header className="flex flex-col gap-2.5 border-b border-line-soft px-4 pt-5 pb-[18px] sm:px-6">
           <BackLink href="/huvudman">Alla huvudmän</BackLink>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em]">
+            <h1 className="text-title leading-[1.15] font-semibold tracking-[-0.015em] text-balance">
               {h.namn}
             </h1>
             <StatusPill>{isKommunal ? "Kommunal verksamhet" : "Aktivt bolag"}</StatusPill>
@@ -303,7 +304,7 @@ export default async function HuvudmanDetailPage({
           )}
           <div className="flex-1" />
           <Link
-            href={href("/skolor", {}, { huvudman: slug })}
+            href={`/skolor?huvudman=${encodeURIComponent(slug)}`}
             className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
           >
             Visa enheterna i träfflistan

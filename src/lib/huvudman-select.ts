@@ -3,6 +3,7 @@ import { kommunName } from "@/data/kommuner";
 import { median } from "./format";
 import type { HuvudmanQuery } from "./query";
 import { metricNumberOf, studentsOf, type ListSchool } from "./school-fields";
+import { sortRows } from "./sort-rows";
 import type { KommunOption } from "./school-select";
 import {
   HUVUDMANTYP_ORDER,
@@ -181,20 +182,12 @@ export function selectHuvudman(
   const byName = (a: HuvudmanAggregate, b: HuvudmanAggregate) =>
     a.huvudman.name.localeCompare(b.huvudman.name, "sv");
 
-  const sorted = [...filtered].sort((a, b) => {
-    const av = huvudmanSortValue(a, query.sort);
-    const bv = huvudmanSortValue(b, query.sort);
-    if (av === undefined || bv === undefined) {
-      if (av === bv) return byName(a, b);
-      return av === undefined ? 1 : -1;
-    }
-    const cmp =
-      typeof av === "number" && typeof bv === "number"
-        ? av - bv
-        : String(av).localeCompare(String(bv), "sv");
-    if (cmp === 0) return byName(a, b);
-    return query.desc ? -cmp : cmp;
-  });
+  const sorted = sortRows(
+    filtered,
+    (r) => huvudmanSortValue(r, query.sort),
+    query.desc,
+    byName,
+  );
 
   return {
     rows: sorted,

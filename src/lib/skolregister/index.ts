@@ -30,8 +30,6 @@ export type * from "./types";
 export { ENKÄT_FRÅGOR } from "./types";
 
 export {
-  getNationelltGenomsnitt,
-  getNationelltProgramGenomsnitt,
   getRegisterByggd,
   getSkola,
   getSkolenkät,
@@ -44,6 +42,7 @@ export {
   ancestorPath,
   buildKoncernGroups,
   buildTrädFrånNoder,
+  getKoncernBySlug,
   koncernForHuvudmanIndex,
   type KoncernGroup,
 } from "./koncern";

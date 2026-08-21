@@ -3,6 +3,14 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { site } from "@/config/site";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
+import {
+  DataGrid,
+  HEADER_HEIGHT,
+  ROW_HEIGHT,
+  type GridSort,
+} from "@/components/ui/DataGrid";
+import type { Column } from "@/components/ui/DataTable";
+import type { RowData } from "@tanstack/react-table";
 import { ChevronDown, ChevronLeft, ChevronRight, Close } from "@/components/ui/icons";
 
 export function ListToolbar({
@@ -233,6 +241,7 @@ export function PerPageControl({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -240,7 +249,12 @@ export function PerPageControl({
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        // Focus was inside the popup that just unmounted; send it back to
+        // the trigger rather than dropping it on the body.
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -253,9 +267,9 @@ export function PerPageControl({
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
         aria-expanded={open}
         className="flex h-[27px] items-center gap-[7px] rounded-md border border-line px-2.5 text-sm text-ink-muted hover:border-ink-faint"
       >
@@ -263,20 +277,20 @@ export function PerPageControl({
         <ChevronDown size={10} className="text-ink-faint" />
       </button>
       {open && (
-        <ul
-          role="listbox"
-          aria-label="Rader per sida"
-          className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line-overlay bg-surface py-1 shadow-overlay"
-        >
+        // Plain buttons rather than a listbox: a listbox promises arrow-key
+        // navigation and typeahead, and a three-item picker reads better as
+        // a disclosure of ordinary buttons. `aria-pressed` carries which one
+        // is in force.
+        <ul className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line-overlay bg-surface py-1 shadow-overlay">
           {perPageOptions.map((option) => (
-            <li key={option} role="presentation">
+            <li key={option}>
               <button
                 type="button"
-                role="option"
-                aria-selected={option === perPage}
+                aria-pressed={option === perPage}
                 onClick={() => {
                   onChange(option);
                   setOpen(false);
+                  triggerRef.current?.focus();
                 }}
                 className={`flex h-[27px] w-full items-center whitespace-nowrap px-2.5 text-left text-sm hover:bg-surface-subtle ${
                   option === perPage ? "font-medium text-ink" : "text-ink-muted"
@@ -293,3 +307,136 @@ export function PerPageControl({
 }
 
 const perPageOptions = site.pagination.perPageOptions;
+
+/**
+ * The chrome around one list's rows: height reservation, the grid itself, and
+ * the footer with its "Visar X–Y av Z" line, pagination and per-page control.
+ *
+ * This is the one place the paging contract lives — clamping an out-of-range
+ * page, deriving `from`/`to`, wiring the grid's 0-based index to a 1-based
+ * page — so a change to any of it lands here rather than once per view. The
+ * views keep everything that genuinely differs between them: parser,
+ * selector, columns, filter panel, row hrefs, and how sort/page encode into
+ * their state (URL params on the list pages, local state on the huvudman
+ * detail tab).
+ *
+ * Pages are 1-based at this interface, matching the URL convention.
+ */
+export function ListPane<T extends RowData>({
+  rows,
+  columns,
+  rowKey,
+  rowHref,
+  rowLabel,
+  label,
+  emptyMessage,
+  sort,
+  onSortChange,
+  page,
+  perPage,
+  onPageChange,
+  onPerPageChange,
+  stale = false,
+  footerNote,
+  frameClassName,
+}: {
+  /** Filtered rows in tiebreak order — the pane sorts and pages them. */
+  rows: T[];
+  columns: Column<T>[];
+  rowKey: (row: T) => string;
+  rowHref?: (row: T) => string;
+  rowLabel?: (row: T) => string;
+  label?: string;
+  emptyMessage?: ReactNode;
+  sort: GridSort;
+  onSortChange: (sort: GridSort) => void;
+  /** 1-based; a value past the last page clamps here. */
+  page: number;
+  perPage: number;
+  /** Receives the 1-based page to show. */
+  onPageChange: (page: number) => void;
+  /** Receiving the new size; resetting the page stays the caller's job. */
+  onPerPageChange: (perPage: number) => void;
+  /** Fades the table while a deferred query is still catching up. */
+  stale?: boolean;
+  /** Extra footer content between the count and the pagination. */
+  footerNote?: ReactNode;
+  /**
+   * When set, grid and footer are wrapped in one element with these classes —
+   * the framed look the huvudman detail tab uses. Unset, the footer sits
+   * outside the reserved-height block as its own sibling, pushed to the
+   * bottom of the column by `mt-auto`.
+   */
+  frameClassName?: string;
+}) {
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const currentPage = Math.min(page, totalPages);
+  const from = total ? (currentPage - 1) * perPage + 1 : 0;
+  const to = Math.min(currentPage * perPage, total);
+
+  const grid = (
+    <DataGrid
+      rows={rows}
+      rowKey={rowKey}
+      rowHref={rowHref}
+      rowLabel={rowLabel}
+      emptyMessage={emptyMessage}
+      label={label}
+      columns={columns}
+      sort={sort}
+      onSortChange={onSortChange}
+      pageIndex={currentPage - 1}
+      pageSize={perPage}
+      onPageChange={(i) => onPageChange(i + 1)}
+    />
+  );
+
+  const footer = (
+    <ListFooter>
+      <span className="text-sm text-ink-muted">
+        Visar {from}–{to} av {total}
+      </span>
+      <div className="flex-1" />
+      {footerNote}
+      <Pagination page={currentPage} totalPages={totalPages} onGoTo={onPageChange} />
+      <PerPageControl perPage={perPage} onChange={onPerPageChange} />
+    </ListFooter>
+  );
+
+  if (frameClassName) {
+    return (
+      <div
+        style={{
+          minHeight: HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(perPage, total)),
+        }}
+        className={frameClassName}
+      >
+        {grid}
+        {footer}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/*
+        Reserve the height this page will occupy, so the footer does not jump
+        as you page or filter. A full page of rows reserves a full page; a
+        filter that leaves three rows reserves three, rather than the fixed
+        712px that used to leave most of a screen blank under them.
+      */}
+      <div
+        style={{
+          minHeight: HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(perPage, total)),
+        }}
+        className={`transition-opacity duration-150 ${
+          stale ? "opacity-60 delay-200" : ""
+        }`}
+      >
+        {grid}
+      </div>
+      {footer}
+    </>
+  );
+}

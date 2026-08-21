@@ -48,14 +48,9 @@ const FLEX_COLUMN_MIN = 200;
  * the name — until it is a few characters wide. Derived from the columns
  * themselves so a new column moves the floor with it.
  */
-export function tableMinWidth<T>(columns: Column<T>[], selectable = false): number {
+export function tableMinWidth<T>(columns: Column<T>[]): number {
   const spacer = 24;
-  const checkbox = selectable ? 30 : 0;
-  return (
-    columns.reduce((sum, col) => sum + (col.width ?? FLEX_COLUMN_MIN), 0) +
-    spacer +
-    checkbox
-  );
+  return columns.reduce((sum, col) => sum + (col.width ?? FLEX_COLUMN_MIN), 0) + spacer;
 }
 
 /**
@@ -92,8 +87,6 @@ interface Props<T> {
   rowHref?: (row: T) => string;
   /** Accessible label for the row link (defaults to the first cell's text). */
   rowLabel?: (row: T) => string;
-  /** Renders the leading checkbox column from the design. */
-  selectable?: boolean;
   rowHeight?: number;
   emptyMessage?: ReactNode;
   /** Names the scroll region for assistive tech. */
@@ -106,17 +99,15 @@ export function DataTable<T>({
   rowKey,
   rowHref,
   rowLabel,
-  selectable,
   rowHeight = 34,
   emptyMessage = "Inga träffar.",
   label = "Tabell",
 }: Props<T>) {
   return (
-    <TableScroller minWidth={tableMinWidth(columns, selectable)} label={label}>
+    <TableScroller minWidth={tableMinWidth(columns)} label={label}>
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr className="bg-surface-head">
-            {selectable && <th className="h-[30px] w-[30px] border-b border-line px-2" />}
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -138,7 +129,7 @@ export function DataTable<T>({
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={columns.length + (selectable ? 1 : 0) + 1}
+                colSpan={columns.length + 1}
                 className="h-[64px] px-2 text-base text-ink-muted"
               >
                 {emptyMessage}
@@ -153,11 +144,6 @@ export function DataTable<T>({
                 rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
               }`}
             >
-              {selectable && (
-                <td className="px-2 align-middle">
-                  <span className="block size-[12px] rounded-xs border border-line-control bg-surface" />
-                </td>
-              )}
               {columns.map((col, i) => (
                 <td key={col.key} className={cellClass(col)}>
                   {rowHref ? (

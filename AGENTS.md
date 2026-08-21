@@ -20,9 +20,12 @@ bun run check      # typecheck + lint + test
 bun run format     # prettier
 ```
 
-`bun run build` is the strongest check. It reads `data/allt.json`, which is
-**not committed** — see below — so a fresh clone needs its own copy before
-`bun run build` (or `bun dev`) will produce anything.
+**Never run `bun run build`.** The user has explicitly forbidden it — it
+generates ~7700 static pages and runs far too long. `bun run check` is the
+verification gate; let the user build in their own terminal if they want to.
+It reads `data/allt.json`, which is **not committed** — see below — so a
+fresh clone needs its own copy before any build (or `bun dev`) produces
+anything.
 
 ## Just the Next app, reading a bigger file than it used to
 
@@ -69,9 +72,9 @@ The two sources share no join beyond organisationsnummer, and nothing in
 `src/lib/skolregister/` knows this one exists.
 
 `allt.json` carries no bulk official riksgenomsnitt outside five
-gymnasieprogram measures — `getNationelltGenomsnitt`/
-`getNationelltProgramGenomsnitt` always return `null` now, so nearly every
-nyckeltal card reads "(beräknat)". That's expected, not a bug to chase.
+gymnasieprogram measures, so nearly every nyckeltal card reads "(beräknat)"
+— self-computed by `getBeräknatRiksGenomsnitt` from every unit's own
+reported figures. That's expected, not a bug to chase.
 
 ## Language
 

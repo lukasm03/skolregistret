@@ -299,31 +299,6 @@ export function parseKoncernQuery(params: RawParams): KoncernQuery {
 }
 
 /**
- * Build a href from the current params plus a patch. `null` removes a key.
- * Used by every filter control, which keeps the whole list UI as plain links
- * — server-rendered, shareable, and working without client JavaScript.
- */
-export function href(
-  pathname: string,
-  current: RawParams,
-  patch: Record<string, string | number | null | undefined>,
-): string {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(current)) {
-    const s = one(v);
-    if (s) sp.set(k, s);
-  }
-  for (const [k, v] of Object.entries(patch)) {
-    if (v === null || v === undefined || v === "") sp.delete(k);
-    else sp.set(k, String(v));
-  }
-  // Any change to a filter puts you back on the first page.
-  if (!("page" in patch)) sp.delete("page");
-  const qs = sp.toString();
-  return qs ? `${pathname}?${qs}` : pathname;
-}
-
-/**
  * Toggle one value inside a comma-separated multi-select param. Unchecking
  * the last remaining value drops the param (meaning "not set", i.e. "all")
  * unless `keepEmpty` is set, in which case it stays an explicit empty string

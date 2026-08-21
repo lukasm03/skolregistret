@@ -65,54 +65,6 @@ export function Stat({
 }
 
 /**
- * A stat tile whose content is a handful of dates rather than one figure —
- * how current the page's numbers are. Same footprint as `Stat` so it sits in
- * the same row without breaking the grid's rhythm.
- */
-export function StatFacts({
-  label,
-  items,
-}: {
-  label: ReactNode;
-  items: [ReactNode, ReactNode][];
-}) {
-  return (
-    <div className="flex flex-col gap-2 bg-surface px-4 py-3.5 sm:px-6 sm:py-4">
-      <Label>{label}</Label>
-      <dl className="flex flex-col gap-1">
-        {items.map(([k, v], i) => (
-          <div key={i} className="flex justify-between gap-3">
-            <dt className="text-xs text-ink-muted">{k}</dt>
-            <dd className="m-0 font-mono text-xs">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-/**
- * A labelled fact in the page header — the handful of fields that identify the
- * unit, set in a row above the figures rather than run together on one line
- * with dots between them. Four short columns are scannable; one long sentence
- * of them is not.
- */
-export function MetaField({
-  label,
-  children,
-}: {
-  label: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-[3px]">
-      <Label>{label}</Label>
-      <div className="text-base">{children}</div>
-    </div>
-  );
-}
-
-/**
  * As many tiles per row as fit, which is all of them on a wide screen and two
  * on a phone — `auto-fit` collapses the tracks it doesn't fill, so a row of
  * four still divides the full width evenly.

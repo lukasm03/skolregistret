@@ -345,26 +345,6 @@ async function byggSkola(kod: string): Promise<SkolaDetalj | null> {
   };
 }
 
-/**
- * `allt.json` carries no bulk official riksgenomsnitt for fsk/gr/gran/gyan —
- * Skolverket's own average is gone from this source except for five
- * gymnasieprogram measures (a `_riket`-suffixed variant, unused by this app
- * so far). Every unit-level nyckeltal now falls back to
- * `getBeräknatRiksGenomsnitt`'s self-computed average instead — confirmed
- * acceptable for this migration. Signature kept (ignoring its argument)
- * rather than deleted, so call sites don't need to change.
- */
-export async function getNationelltGenomsnitt(_skolform?: string): Promise<null> {
-  return null;
-}
-
-/** Same reasoning as `getNationelltGenomsnitt`, for gymnasieprogram. */
-export async function getNationelltProgramGenomsnitt(
-  _programkod?: string,
-): Promise<null> {
-  return null;
-}
-
 const FRÅGEOMRÅDE_TILL_APP_NYCKEL = {
   satisfaction: "nöjdhet",
   security: "trygghet",

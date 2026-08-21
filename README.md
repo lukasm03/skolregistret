@@ -33,7 +33,7 @@ somewhere other than `data/allt.json`.
 | `bun run typecheck`               | `tsc --noEmit`                                                                               |
 | `bun run lint` / `lint:fix`       | ESLint (flat config; Next 16 removed `next lint`)                                            |
 | `bun run format` / `format:check` | Prettier                                                                                     |
-| `bun test` / `test:watch`         | 254 tests over the pure logic                                                                |
+| `bun test` / `test:watch`         | 292 tests over the pure logic                                                                |
 
 ## The data
 
@@ -91,10 +91,12 @@ and every later filter change agree by construction.
 | `src/config/site.ts`                             | Brand, läsår, pagination, nav, footnotes                                                                                                                       |
 | `src/config/skolformer.ts`                       | **The skolform registry.** Chips, columns, stat tiles, sort options and comparisons are generated from it — adding a skolform means adding an entry here       |
 | `src/lib/skolregister/`                          | Data layer — `types` · `normalize` · `client` · `resources` · `huvudman` · `koncern` · `statistics` · `skolform`. Import from the barrel, `@/lib/skolregister` |
-| `src/lib/api-normalize.ts`                       | API shapes → the app's own view models                                                                                                                         |
-| `src/lib/query.ts`                               | URL ⇄ typed query, plus the href/patch helpers                                                                                                                 |
+| `src/lib/api-normalize.ts`                       | API shapes → the app's own view models, plus the huvudman slug resolver                                                                                        |
+| `src/lib/query.ts`                               | URL ⇄ typed query, plus the patch helpers                                                                                                                      |
 | `src/lib/school-select.ts`, `huvudman-select.ts` | Filtering, counting, aggregation — pure                                                                                                                        |
 | `src/lib/school-fields.ts`                       | Skolform-qualified accessors and sorting                                                                                                                       |
+| `src/lib/skola-detalj.ts`                        | The `/skolor/[kod]` view model — comparison policy, åk 9 rule, läsår lines, koncern chain                                                                      |
+| `src/lib/sort-rows.ts`                           | The one missing-value-aware comparator: a blank sorts last, never first                                                                                        |
 | `src/lib/format.ts`                              | Swedish number/date/slug formatting                                                                                                                            |
 | `src/hooks/use-query-params.ts`                  | The URL-state hook (the only one)                                                                                                                              |
 | `src/components/tables/`                         | Column definitions, one file per table                                                                                                                         |

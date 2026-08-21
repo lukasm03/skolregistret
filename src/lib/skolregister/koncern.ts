@@ -94,6 +94,17 @@ export function buildKoncernGroups(): Promise<KoncernGroup[]> {
   return koncernGroupsCache;
 }
 
+/**
+ * The one place a `/koncern/[slug]` URL resolves to its group —
+ * `generateMetadata` and the page both resolve through this, so a title can
+ * never describe a different koncern than the one rendered. `null` when no
+ * group carries the slug, which the route answers with not-found.
+ */
+export async function getKoncernBySlug(slug: string): Promise<KoncernGroup | null> {
+  const groups = await buildKoncernGroups();
+  return groups.find((g) => g.slug === slug) ?? null;
+}
+
 let koncernForHuvudmanCache: Promise<Map<string, HuvudmanKoncern>> | null = null;
 
 /**

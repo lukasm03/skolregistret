@@ -23,7 +23,6 @@ export {
   harÅrsredovisningskatalog,
   listÅrsredovisningar,
   läsHandling,
-  årsredovisningKatalog,
   type Handling,
   type Handlingsdel,
   type Årsredovisning,

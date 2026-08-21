@@ -1,7 +1,7 @@
 import { skolformer } from "@/config/skolformer";
 import { slugify } from "@/lib/format";
 import type { ListSchool } from "@/lib/school-fields";
-import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
+import { listHuvudman, type HuvudmanRad, type SkolorRad } from "@/lib/skolregister";
 import { formatYears } from "@/lib/skolverket/parse";
 import type {
   HuvudmanTyp,
@@ -136,6 +136,17 @@ export function dedupeHuvudmanRows(rows: HuvudmanRad[]): HuvudmanRad[] {
     result.push(row);
   }
   return result;
+}
+
+/**
+ * The one place a `/huvudman/[slug]` URL resolves to its row — `generateMetadata`
+ * and the page both resolve through this, so a title can never describe a
+ * different huvudman than the one rendered. `null` when no row carries the
+ * slug, which the route answers with not-found.
+ */
+export async function getHuvudmanBySlug(slug: string): Promise<HuvudmanRad | null> {
+  const rows = dedupeHuvudmanRows(await listHuvudman());
+  return rows.find((row) => slugify(row.namn) === slug) ?? null;
 }
 
 export function normalizeApiHuvudmanList(rows: HuvudmanRad[]): Huvudman[] {

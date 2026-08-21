@@ -1,6 +1,7 @@
 import { skolformer } from "@/config/skolformer";
 import type { KoncernQuery } from "./query";
 import type { KoncernGroup } from "@/lib/skolregister";
+import { sortRows } from "./sort-rows";
 import type { SkolformCode } from "./types";
 
 /** `HuvudmanRad.skolformer` carries the label (`"Grundskola"`), not the code. */
@@ -106,20 +107,12 @@ export function selectKoncern(
   const byName = (a: KoncernAggregate, b: KoncernAggregate) =>
     a.group.namn.localeCompare(b.group.namn, "sv");
 
-  const sorted = [...filtered].sort((a, b) => {
-    const av = koncernSortValue(a, query.sort);
-    const bv = koncernSortValue(b, query.sort);
-    if (av === undefined || bv === undefined) {
-      if (av === bv) return byName(a, b);
-      return av === undefined ? 1 : -1;
-    }
-    const cmp =
-      typeof av === "number" && typeof bv === "number"
-        ? av - bv
-        : String(av).localeCompare(String(bv), "sv");
-    if (cmp === 0) return byName(a, b);
-    return query.desc ? -cmp : cmp;
-  });
+  const sorted = sortRows(
+    filtered,
+    (r) => koncernSortValue(r, query.sort),
+    query.desc,
+    byName,
+  );
 
   return { rows: sorted, formCounts, total: all.length };
 }

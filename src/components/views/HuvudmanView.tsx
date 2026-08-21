@@ -5,13 +5,10 @@ import { HuvudmanFilters } from "@/components/filters/HuvudmanFilters";
 import { AppShell } from "@/components/layout/AppShell";
 import {
   FilterSummary,
-  ListFooter,
+  ListPane,
   ListToolbar,
   NoMatches,
-  Pagination,
-  PerPageControl,
 } from "@/components/list/ListChrome";
-import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import type { Column } from "@/components/ui/DataTable";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
@@ -66,10 +63,6 @@ export function HuvudmanView({
   );
 
   const total = list.rows.length;
-  const totalPages = Math.max(1, Math.ceil(total / query.perPage));
-  const page = Math.min(query.page, totalPages);
-  const from = total ? (page - 1) * query.perPage + 1 : 0;
-  const to = Math.min(page * query.perPage, total);
 
   const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
@@ -191,66 +184,39 @@ export function HuvudmanView({
             />
           </ListToolbar>
 
-          {/*
-            Reserve the height this page will occupy, so the footer does not
-            jump as you page or filter. A full page of rows reserves a full
-            page; a filter that leaves three rows reserves three, rather than
-            the fixed 712px that used to leave most of a screen blank under
-            them.
-          */}
-          <div
-            style={{
-              minHeight:
-                HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(query.perPage, total)),
-            }}
-            className={`transition-opacity duration-150 ${stale ? "opacity-60 delay-200" : ""}`}
-          >
-            <DataGrid
-              rows={list.rows}
-              rowKey={(r) => r.huvudman.slug}
-              rowHref={(r) =>
-                `/huvudman/${r.huvudman.slug}${searchString({
-                  ...(query.skolform ? { skolform: query.skolform } : {}),
-                  ...(query.kommun ? { kommun: query.kommun } : {}),
-                })}`
-              }
-              rowLabel={(r) => `Visa ${r.huvudman.name}`}
-              emptyMessage={
-                <NoMatches
-                  message="Inga huvudmän matchar filtret."
-                  filters={filters}
-                  onClearAll={clearAll}
-                />
-              }
-              label="Huvudmän"
-              columns={columns}
-              sort={{ id: query.sort, desc: query.desc }}
-              onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
-              pageIndex={page - 1}
-              pageSize={query.perPage}
-              onPageChange={(i) => patch({ page: i + 1 })}
-            />
-          </div>
-
-          <ListFooter>
-            <span className="text-sm text-ink-muted">
-              Visar {from}–{to} av {total}
-            </span>
-            <div className="flex-1" />
-            <span className="text-sm text-ink-subtle">
-              Andel av {kommun ? "kommunens" : "rikets"} {num(list.kommunElever)} elever i
-              urvalet
-            </span>
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onGoTo={(p) => patch({ page: p })}
-            />
-            <PerPageControl
-              perPage={query.perPage}
-              onChange={(perPage) => patch({ perPage, page: null })}
-            />
-          </ListFooter>
+          <ListPane
+            rows={list.rows}
+            columns={columns}
+            rowKey={(r) => r.huvudman.slug}
+            rowHref={(r) =>
+              `/huvudman/${r.huvudman.slug}${searchString({
+                ...(query.skolform ? { skolform: query.skolform } : {}),
+                ...(query.kommun ? { kommun: query.kommun } : {}),
+              })}`
+            }
+            rowLabel={(r) => `Visa ${r.huvudman.name}`}
+            emptyMessage={
+              <NoMatches
+                message="Inga huvudmän matchar filtret."
+                filters={filters}
+                onClearAll={clearAll}
+              />
+            }
+            label="Huvudmän"
+            sort={{ id: query.sort, desc: query.desc }}
+            onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
+            page={query.page}
+            perPage={query.perPage}
+            onPageChange={(p) => patch({ page: p })}
+            onPerPageChange={(perPage) => patch({ perPage, page: null })}
+            stale={stale}
+            footerNote={
+              <span className="text-sm text-ink-subtle">
+                Andel av {kommun ? "kommunens" : "rikets"} {num(list.kommunElever)} elever
+                i urvalet
+              </span>
+            }
+          />
         </div>
       </div>
     </AppShell>

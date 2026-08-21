@@ -1,3 +1,4 @@
+import { sortRows } from "./sort-rows";
 import type {
   HuvudmanTyp,
   MetricValue,
@@ -81,8 +82,6 @@ export function metricNumberOf(
   return metricValue(school, form, key)?.value ?? null;
 }
 
-const byName = (a: ListSchool, b: ListSchool) => a.name.localeCompare(b.name, "sv");
-
 /**
  * What a list column sorts on, by column key. This is the single definition:
  * the table columns hand it to TanStack Table in the browser, and
@@ -110,27 +109,16 @@ export function schoolSortValue(
   }
 }
 
-function compareValues(a: string | number, b: string | number): number {
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  return String(a).localeCompare(String(b), "sv");
-}
-
 export function sortSchools<T extends ListSchool>(
   rows: T[],
   sort: string,
   form?: SkolformCode,
   desc = false,
 ): T[] {
-  return [...rows].sort((a, b) => {
-    const av = schoolSortValue(a, sort, form);
-    const bv = schoolSortValue(b, sort, form);
-    // Units with no value sort last either way — a blank is not a low score.
-    if (av === undefined || bv === undefined) {
-      if (av === bv) return byName(a, b);
-      return av === undefined ? 1 : -1;
-    }
-    const cmp = compareValues(av, bv);
-    if (cmp === 0) return byName(a, b);
-    return desc ? -cmp : cmp;
-  });
+  return sortRows(
+    rows,
+    (s) => schoolSortValue(s, sort, form),
+    desc,
+    (a, b) => a.name.localeCompare(b.name, "sv"),
+  );
 }

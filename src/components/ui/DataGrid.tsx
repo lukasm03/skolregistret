@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
+import { compareValues } from "@/lib/sort-rows";
 import { SortArrow } from "./icons";
 import {
   TableScroller,
@@ -48,7 +49,8 @@ const features = tableFeatures({
   columnMeta: {} as GridColumnMeta,
 });
 
-interface GridSort {
+/** Sort state as the grid holds it: one column key plus direction. */
+export interface GridSort {
   /** Column key, matching `Column.key`. */
   id: string;
   desc: boolean;
@@ -76,15 +78,11 @@ interface Props<T> {
 }
 
 /**
- * Numbers compare numerically, text with Swedish collation. Values that are
- * absent never reach this — `sortUndefined: "last"` settles them first, in
- * both directions, so a school with no reported meritvärde is not the worst
- * one.
+ * Numbers compare numerically, text with Swedish collation — the same rule
+ * as everywhere else in the app (`lib/sort-rows.ts`). Values that are absent
+ * never reach this — `sortUndefined: "last"` settles them first, in both
+ * directions, so a school with no reported meritvärde is not the worst one.
  */
-function compareValues(a: unknown, b: unknown): number {
-  if (typeof a === "number" && typeof b === "number") return a - b;
-  return String(a).localeCompare(String(b), "sv");
-}
 
 export function DataGrid<T extends RowData>({
   columns,

@@ -1,15 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  FilterSummary,
-  ListFooter,
-  NoMatches,
-  Pagination,
-  PerPageControl,
-} from "@/components/list/ListChrome";
+import { FilterSummary, ListPane, NoMatches } from "@/components/list/ListChrome";
 import { schoolColumns } from "@/components/tables/schoolColumns";
-import { DataGrid, HEADER_HEIGHT, ROW_HEIGHT } from "@/components/ui/DataGrid";
 import { SelectField } from "@/components/filters/controls";
 import { site } from "@/config/site";
 import { skolform, skolformer } from "@/config/skolformer";
@@ -61,12 +54,6 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
     });
   }, [units, q, kommun, form]);
 
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const page = Math.min(pageIndex + 1, totalPages);
-  const from = total ? (page - 1) * perPage + 1 : 0;
-  const to = Math.min(page * perPage, total);
-
   // `clear` mirrors the query-param convention the top-level lists use
   // (`ClearPatch`, applied via `href`/`patch`), just against local state
   // here instead of the URL.
@@ -99,13 +86,15 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-[30px] max-w-[280px] min-w-[200px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5">
+        <div className="flex h-[30px] max-w-[280px] min-w-[200px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent">
           <span
             aria-hidden
             className="size-[11px] flex-none rounded-full border-[1.5px] border-ink-faint"
           />
           <input
             type="search"
+            autoComplete="off"
+            spellCheck={false}
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
@@ -145,57 +134,37 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
         <FilterSummary filters={filters} onClear={applyClear} onClearAll={clearAll} />
       </div>
 
-      <div
-        style={{
-          minHeight: HEADER_HEIGHT + ROW_HEIGHT * Math.max(1, Math.min(perPage, total)),
+      <ListPane
+        rows={filtered}
+        columns={[
+          schoolColumns.name(),
+          schoolColumns.status(),
+          schoolColumns.kommun(),
+          schoolColumns.skolformer(),
+          schoolColumns.elever(),
+        ]}
+        rowKey={(s) => s.kod}
+        rowHref={(s) => `/skolor/${s.kod}`}
+        rowLabel={(s) => `Visa ${s.name}`}
+        emptyMessage={
+          <NoMatches
+            message="Inga skolenheter matchar filtret."
+            filters={filters}
+            onClearAll={clearAll}
+          />
+        }
+        label="Skolenheter under huvudmannen"
+        sort={sort}
+        onSortChange={setSort}
+        page={pageIndex + 1}
+        perPage={perPage}
+        onPageChange={(p) => setPageIndex(p - 1)}
+        onPerPageChange={(n) => {
+          setPerPage(n);
+          setPageIndex(0);
         }}
-        className="overflow-hidden rounded-lg border border-line-soft"
-      >
-        <DataGrid
-          rows={filtered}
-          rowKey={(s) => s.kod}
-          rowHref={(s) => `/skolor/${s.kod}`}
-          rowLabel={(s) => `Visa ${s.name}`}
-          emptyMessage={
-            <NoMatches
-              message="Inga skolenheter matchar filtret."
-              filters={filters}
-              onClearAll={clearAll}
-            />
-          }
-          label="Skolenheter under huvudmannen"
-          columns={[
-            schoolColumns.name(),
-            schoolColumns.status(),
-            schoolColumns.kommun(),
-            schoolColumns.skolformer(),
-            schoolColumns.elever(),
-          ]}
-          sort={sort}
-          onSortChange={setSort}
-          pageIndex={pageIndex}
-          pageSize={perPage}
-          onPageChange={setPageIndex}
-        />
-        <ListFooter>
-          <span className="text-sm text-ink-muted">
-            Visar {from}–{to} av {total}
-          </span>
-          <div className="flex-1" />
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onGoTo={(p) => setPageIndex(p - 1)}
-          />
-          <PerPageControl
-            perPage={perPage}
-            onChange={(n) => {
-              setPerPage(n);
-              setPageIndex(0);
-            }}
-          />
-        </ListFooter>
-      </div>
+        frameClassName="overflow-hidden rounded-lg border border-line-soft"
+      />
 
       <p className="max-w-[760px] text-xs leading-[1.55] text-ink-faint">
         {site.footnotes.elevantal}
