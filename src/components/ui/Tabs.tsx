@@ -1,6 +1,14 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 
 export interface TabView {
   /** Shared across tabs: picking a view on one keeps it on the next. */
@@ -35,7 +43,20 @@ export interface TabDef {
  * within it, Tab to leave it for the panel. Selection follows focus, which is
  * the recommended behaviour when switching panels is cheap — and here it is a
  * re-render of rows that are already in the payload.
+ *
+ * Both choices are written to the query string, as `?flik=` and `?vy=`. Which
+ * tab of a skolenhet you are reading is as much a part of where you are as
+ * which skolenhet it is, and holding it in component state alone meant a
+ * shared link always opened on the first tab and the back button walked
+ * straight off the page. The detail routes are prerendered, so the URL cannot
+ * be read while rendering without a hydration mismatch — it is read on mount
+ * and on every `popstate` instead, exactly as `useQueryParams` does for the
+ * list pages. Whatever else is in the query string (the filter a reader
+ * arrived with) is left alone.
  */
+const TAB_PARAM = "flik";
+const VIEW_PARAM = "vy";
+
 export function Tabs({
   tabs,
   defaultTab,
@@ -45,10 +66,52 @@ export function Tabs({
   defaultTab?: string;
   defaultView?: string;
 }) {
-  const [active, setActive] = useState(defaultTab ?? tabs[0]?.id);
-  const [view, setView] = useState(defaultView ?? tabs[0]?.views[0]?.id);
+  const fallbackTab = defaultTab ?? tabs[0]?.id;
+  const fallbackView = defaultView ?? tabs[0]?.views[0]?.id;
+  const [active, setActive] = useState(fallbackTab);
+  const [view, setView] = useState(fallbackView);
   const base = useId();
   const stripRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sync = () => {
+      const params = new URLSearchParams(window.location.search);
+      // An unknown value needs no guarding here: `current`/`currentView`
+      // below already fall back to the first tab and the first view.
+      setActive(params.get(TAB_PARAM) ?? fallbackTab);
+      setView(params.get(VIEW_PARAM) ?? fallbackView);
+    };
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, [fallbackTab, fallbackView]);
+
+  const write = useCallback((key: string, value: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    // The hash is part of where the reader is — a deep link to a section of
+    // the panel survives switching tabs.
+    window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
+  const selectTab = useCallback(
+    (id: string) => {
+      setActive(id);
+      // Re-clicking the tab you are already on is not a navigation — pushing
+      // an identical entry would make the back button undo nothing, once per
+      // idle click.
+      if (id !== active) write(TAB_PARAM, id);
+    },
+    [write, active],
+  );
+
+  const selectView = useCallback(
+    (id: string) => {
+      setView(id);
+      if (id !== view) write(VIEW_PARAM, id);
+    },
+    [write, view],
+  );
 
   const current = tabs.find((t) => t.id === active) ?? tabs[0];
   // A tab that does not offer the chosen view falls back to its first, rather
@@ -74,7 +137,7 @@ export function Tabs({
     e.preventDefault();
     const tab = tabs[next];
     if (!tab) return;
-    setActive(tab.id);
+    selectTab(tab.id);
     // The newly selected tab is the only one in the tab order, so focus has
     // to follow it or the next Tab press would leave the strip entirely.
     stripRef.current
@@ -97,7 +160,7 @@ export function Tabs({
                 aria-selected={selected}
                 aria-controls={panelId(tab.id)}
                 tabIndex={selected ? 0 : -1}
-                onClick={() => setActive(tab.id)}
+                onClick={() => selectTab(tab.id)}
                 className={`-mb-px flex items-center gap-[7px] border-b-2 px-3 py-2 text-base font-medium transition-colors ${
                   selected
                     ? "border-accent text-ink"
@@ -134,8 +197,12 @@ export function Tabs({
                   <button
                     key={v.id}
                     type="button"
-                    onClick={() => setView(v.id)}
+                    onClick={() => selectView(v.id)}
+                    // `title` is a mouse affordance and only that — it never
+                    // opens for a keyboard or a touch. The same sentence is
+                    // carried as a description so everyone else gets it too.
                     title={v.hint}
+                    aria-describedby={`${base}-hint-${v.id}`}
                     aria-pressed={selected}
                     className={`rounded-xs px-2.5 py-[3px] text-xs font-medium transition-colors ${
                       selected
@@ -148,6 +215,11 @@ export function Tabs({
                 );
               })}
             </div>
+            {current.views.map((v) => (
+              <span key={v.id} id={`${base}-hint-${v.id}`} className="sr-only">
+                {v.hint}
+              </span>
+            ))}
           </div>
         )}
       </div>

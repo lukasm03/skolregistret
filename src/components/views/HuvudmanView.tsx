@@ -14,15 +14,24 @@ import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
 import { kommunName } from "@/data/kommuner";
 import { activeHuvudmanFilters, clearAllPatch } from "@/lib/active-filters";
-import { normalizeApiHuvudmanList, normalizeApiSchool } from "@/lib/api-normalize";
-import { DASH, dec, metricNumber, num, plural } from "@/lib/format";
+import {
+  normalizeApiHuvudmanList,
+  normalizeApiSchool,
+  type ListHuvudmanPayload,
+  type ListSchoolPayload,
+} from "@/lib/api-normalize";
+import { DASH, dec, num, plural } from "@/lib/format";
 import {
   huvudmanSortValue,
   selectHuvudman,
   type HuvudmanAggregate,
 } from "@/lib/huvudman-select";
-import { parseHuvudmanQuery, searchString, type RawParams } from "@/lib/query";
-import type { HuvudmanRad, SkolorRad } from "@/lib/skolregister";
+import {
+  parseHuvudmanQuery,
+  patchParams,
+  searchString,
+  type RawParams,
+} from "@/lib/query";
 import { useQueryParams } from "@/hooks/use-query-params";
 
 const PATH = "/huvudman";
@@ -37,14 +46,15 @@ export function HuvudmanView({
   schools,
   initialParams,
 }: {
-  huvudman: HuvudmanRad[];
-  schools: SkolorRad[];
+  /** Register rows already trimmed to what this view reads — see `toListHuvudmanPayload`. */
+  huvudman: ListHuvudmanPayload[];
+  /** Unit rows already trimmed to what this view reads — see `toListSchoolPayload`. */
+  schools: ListSchoolPayload[];
   initialParams: RawParams;
 }) {
   const [params, patch] = useQueryParams(initialParams);
   const query = useMemo(() => parseHuvudmanQuery(params), [params]);
   const form = query.skolform ? skolform(query.skolform) : undefined;
-  const primary = form?.metrics.find((m) => m.key === form.headline[0]);
 
   const normalizedHuvudman = useMemo(
     () => normalizeApiHuvudmanList(huvudman),
@@ -129,23 +139,14 @@ export function HuvudmanView({
         sortValue: (r) => huvudmanSortValue(r, "andel"),
         descFirst: true,
       },
-      // Only comparable within one skolform, so the column appears with one.
-      ...(primary
-        ? [
-            {
-              key: "metric",
-              header: `${primary.short}, median`,
-              width: 128,
-              align: "right" as const,
-              mono: true,
-              cell: (r: HuvudmanAggregate) => metricNumber(r.metric, primary.unit),
-              sortValue: (r: HuvudmanAggregate) => huvudmanSortValue(r, "metric"),
-              descFirst: primary.higherIsBetter !== false,
-            },
-          ]
-        : []),
+      /*
+       * No median-of-measure column here, though the skolenhet page has its
+       * measures: a median needs each unit's nyckeltal, and shipping those
+       * for every unit would roughly double a payload that was only just
+       * cut in half. The huvudman detail page carries the figures instead.
+       */
     ],
-    [primary],
+    [],
   );
 
   return (
@@ -156,6 +157,9 @@ export function HuvudmanView({
       searchValue={query.q}
       onSearchChange={(q) => patch({ q: q || null }, true)}
     >
+      {/* See `SchoolsView` — the list pages carry their heading for the
+          outline rather than for the eye. */}
+      <h1 className="sr-only">Huvudmän i {site.riket.toLowerCase()}</h1>
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <HuvudmanFilters
           query={query}
@@ -209,6 +213,7 @@ export function HuvudmanView({
             perPage={query.perPage}
             onPageChange={(p) => patch({ page: p })}
             onPerPageChange={(perPage) => patch({ perPage, page: null })}
+            pageHref={(p) => searchString(patchParams(params, { page: p })) || PATH}
             stale={stale}
             footerNote={
               <span className="text-sm text-ink-subtle">

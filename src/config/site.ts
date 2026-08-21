@@ -9,6 +9,16 @@
 export const site = {
   brand: "Skolregistret",
 
+  /**
+   * Absolute origin the site is served from. Everything that must emit a
+   * full URL resolves against this: `metadataBase` (canonical + Open Graph),
+   * `robots.txt`'s sitemap pointer and every `<loc>` in `sitemap.xml`.
+   * `NEXT_PUBLIC_SITE_URL` overrides it where the site is actually deployed;
+   * the localhost default keeps local runs honest rather than pointing at a
+   * domain that isn't ours.
+   */
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+
   /** Läsår the views prefer when a metric reports several. */
   period: "2025/26",
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { HuvudmanView } from "@/components/views/HuvudmanView";
 import { site } from "@/config/site";
+import { toListHuvudmanPayload, toListSchoolPayload } from "@/lib/api-normalize";
 import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
 export const metadata: Metadata = {
@@ -21,5 +22,15 @@ export const metadata: Metadata = {
 export default async function HuvudmanListPage() {
   const [huvudman, schools] = await Promise.all([listHuvudman(), listSkolor()]);
 
-  return <HuvudmanView huvudman={huvudman} schools={schools} initialParams={{}} />;
+  // Both lists are trimmed before they cross to the browser — the huvudman
+  // rows in particular, whose full shape carries a whole ownership tree per
+  // row that this page never renders. See `toListHuvudmanPayload` /
+  // `toListSchoolPayload`.
+  return (
+    <HuvudmanView
+      huvudman={toListHuvudmanPayload(huvudman)}
+      schools={toListSchoolPayload(schools)}
+      initialParams={{}}
+    />
+  );
 }

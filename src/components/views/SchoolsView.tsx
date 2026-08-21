@@ -13,11 +13,10 @@ import { schoolColumns } from "@/components/tables/schoolColumns";
 import { site } from "@/config/site";
 import { skolform } from "@/config/skolformer";
 import { activeSchoolFilters, clearAllPatch } from "@/lib/active-filters";
-import { normalizeApiSchool } from "@/lib/api-normalize";
+import { normalizeApiSchool, type ListSchoolPayload } from "@/lib/api-normalize";
 import { plural } from "@/lib/format";
-import { parseSchoolQuery, searchString, type RawParams } from "@/lib/query";
+import { parseSchoolQuery, patchParams, searchString, type RawParams } from "@/lib/query";
 import { selectSchools } from "@/lib/school-select";
-import type { SkolorRad } from "@/lib/skolregister";
 import { useQueryParams } from "@/hooks/use-query-params";
 import { kommunName } from "@/data/kommuner";
 
@@ -33,7 +32,8 @@ export function SchoolsView({
   initialParams,
   huvudmanNames,
 }: {
-  schools: SkolorRad[];
+  /** The register already trimmed to what this view reads — see `toListSchoolPayload`. */
+  schools: ListSchoolPayload[];
   initialParams: RawParams;
   huvudmanNames: Record<string, string>;
 }) {
@@ -97,6 +97,13 @@ export function SchoolsView({
       searchValue={query.q}
       onSearchChange={(q) => patch({ q: q || null }, true)}
     >
+      {/*
+        The page's own heading. It has no visible title — the toolbar's count
+        is the closest thing, and it changes with every filter — but a
+        document that starts at `h2` has no top to its outline, and "skip to
+        content" lands somewhere unnamed.
+      */}
+      <h1 className="sr-only">Skolenheter i {site.riket.toLowerCase()}</h1>
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <SchoolFilters
           query={query}
@@ -149,6 +156,7 @@ export function SchoolsView({
             perPage={query.perPage}
             onPageChange={(p) => patch({ page: p })}
             onPerPageChange={(perPage) => patch({ perPage, page: null })}
+            pageHref={(p) => searchString(patchParams(params, { page: p })) || PATH}
             stale={stale}
           />
         </div>

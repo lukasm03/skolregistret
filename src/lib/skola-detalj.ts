@@ -1,3 +1,4 @@
+import { huvudmanSlugar } from "./api-normalize";
 import { buildEnkätComparisons, type EnkätJämförelse } from "./enkat-compare";
 import { antalDokument, buildDokumentVyer, type DokumentgruppVy } from "./dokument-view";
 import { DASH, slugify } from "./format";
@@ -17,6 +18,7 @@ import {
   getSkolenkät,
   getSkolinspektionDokument,
   koncernForHuvudmanIndex,
+  listHuvudman,
   primärStatistikskolform,
   STATISTIKNYCKEL_NAMN,
   type BeräknatRiksGenomsnitt,
@@ -78,6 +80,12 @@ export interface SkolaDetaljIndata {
   dokumentgrupper: SkolinspektionDokumentgrupp[];
   kommunEnkätGrupper: Map<string, EnkätGrupp>;
   riksEnkätGrupper: Map<string, EnkätGrupp>;
+  /**
+   * Huvudmannamn → the address `/huvudman/[slug]` answers on. Passed in
+   * rather than slugified here, because two huvudmän can slug alike and only
+   * the full list knows which of them got the suffix — see `huvudmanSlugar`.
+   */
+  huvudmanSlugFörNamn: Map<string, string>;
 }
 
 /** The most recent läsår among a set of them — they sort as they read. */
@@ -193,7 +201,8 @@ export function buildSkolaDetaljVy(
     enkätLäsår: senasteLäsår(enkät.map((grupp) => grupp.läsår)),
     eleverPerLärare:
       nyckeltal.find((rad) => rad.key === "eleverPerLärare")?.value ?? DASH,
-    huvudmanSlug: slugify(school.huvudman),
+    huvudmanSlug:
+      indata.huvudmanSlugFörNamn.get(school.huvudman) ?? slugify(school.huvudman),
     koncern,
     kedja,
     koncernSlug: koncern?.koncernNamn ? slugify(koncern.koncernNamn) : null,
@@ -214,6 +223,7 @@ export async function getSkolaDetaljVy(school: SkolaDetalj): Promise<SkolaDetalj
     dokumentgrupper,
     kommunEnkätGrupper,
     riksEnkätGrupper,
+    huvudmanSlugFörNamn,
   ] = await Promise.all([
     school.kommunkod
       ? getKommunNyckeltalStats(school.kommunkod, school.skolenhetskod)
@@ -226,6 +236,7 @@ export async function getSkolaDetaljVy(school: SkolaDetalj): Promise<SkolaDetalj
       ? getKommunEnkätGenomsnitt(school.kommunkod)
       : Promise.resolve(new Map<string, EnkätGrupp>()),
     getRiksEnkätGenomsnitt(),
+    listHuvudman().then(huvudmanSlugar),
   ]);
 
   return buildSkolaDetaljVy(school, {
@@ -236,5 +247,6 @@ export async function getSkolaDetaljVy(school: SkolaDetalj): Promise<SkolaDetalj
     dokumentgrupper,
     kommunEnkätGrupper,
     riksEnkätGrupper,
+    huvudmanSlugFörNamn,
   });
 }

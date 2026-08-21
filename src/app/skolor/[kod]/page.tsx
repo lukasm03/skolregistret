@@ -16,7 +16,7 @@ import { enkätColumns } from "@/components/tables/enkatColumns";
 import { nyckeltalColumns } from "@/components/tables/nyckeltalColumns";
 import { ProgramTable } from "@/components/tables/ProgramTable";
 import { getSkolaDetaljVy } from "@/lib/skola-detalj";
-import { DASH, kommunLong, num, plural } from "@/lib/format";
+import { DASH, isoDate, kommunLong, num, plural } from "@/lib/format";
 import { formatYears } from "@/lib/skolverket/parse";
 import { getRegisterByggd, getSkola, listSkolor } from "@/lib/skolregister";
 
@@ -244,14 +244,19 @@ export default async function SkolaPage({
                   items={[
                     [
                       "Skolenhetskod",
-                      <span key="k" className="font-mono text-sm">
+                      // `translate="no"` on every identifier on the page: a
+                      // skolenhetskod, a kommunkod, an organisationsnummer
+                      // are keys you look things up by, and an auto-translate
+                      // pass that "helpfully" reformats their digits hands
+                      // the reader a number that matches nothing.
+                      <span key="k" translate="no" className="font-mono text-sm">
                         {school.skolenhetskod}
                       </span>,
                     ],
                     ["Kommun", school.kommun ?? DASH],
                     [
                       "Kommunkod",
-                      <span key="kk" className="font-mono text-sm">
+                      <span key="kk" translate="no" className="font-mono text-sm">
                         {school.kommunkod ?? DASH}
                       </span>,
                     ],
@@ -341,7 +346,7 @@ export default async function SkolaPage({
                     ],
                     [
                       "Telefon",
-                      <span key="t" className="font-mono text-sm">
+                      <span key="t" translate="no" className="font-mono text-sm">
                         {school.telefon ?? DASH}
                       </span>,
                     ],
@@ -351,6 +356,9 @@ export default async function SkolaPage({
                         <a
                           key="u"
                           href={school.webbplats}
+                          // "Öppna" alone is a link name that says nothing
+                          // once it is read out of the row it sits in.
+                          aria-label={`Öppna webbplatsen för ${school.namn}`}
                           className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
                         >
                           Öppna
@@ -421,7 +429,7 @@ export default async function SkolaPage({
             <Dot />
             <span className="text-base text-ink-muted">{school.huvudmannatyp}</span>
             <Dot />
-            <span className="font-mono text-xs text-ink-subtle">
+            <span translate="no" className="font-mono text-xs text-ink-subtle">
               Skolenhetskod {school.skolenhetskod}
             </span>
           </div>
@@ -462,7 +470,7 @@ export default async function SkolaPage({
           <Tabs tabs={tabs} defaultTab={hasProgramStats ? "program" : "nyckeltal"} />
           {byggd && (
             <p className="font-mono text-micro text-ink-faint">
-              {`Data hämtat ${byggd.slice(0, 10)}`}
+              {`Data hämtat ${isoDate(byggd)}`}
             </p>
           )}
         </div>

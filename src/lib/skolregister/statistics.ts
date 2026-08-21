@@ -4,8 +4,9 @@
  *
  * The register publishes no bulk endpoint for any of these, so each one scans
  * many per-unit records. The expensive ones (`getBeräknatRiksGenomsnitt`,
- * `getRiksEnkätGenomsnitt`) memoize per process, since recomputing them on
- * every detail page would make all of them slow.
+ * `getRiksEnkätGenomsnitt`, and the two per-kommun scans) memoize per
+ * process, since recomputing them on every detail page would make all of
+ * them slow.
  */
 
 import { getSkola, getSkolenkät, listSkolor } from "./resources";
@@ -36,46 +37,85 @@ const NYCKELTAL_BÄTTRE_RIKTNING: Record<keyof Nyckeltal, "hög" | "låg"> = {
 };
 
 /**
+ * The kommun-wide part of `getKommunNyckeltalStats`, memoized per kommunkod.
+ *
+ * Every unit's detail page asks for its kommun's stats, so during a build
+ * each of a kommun's units re-derived the same averages and rankings from
+ * the same cached details — pure recomputation, ~5 s across the whole build.
+ * Grouping the derivation under one promise per kommun means each kommun's
+ * scan runs once; the asking unit's own rank is read off the shared result.
+ */
+const kommunNyckeltalCache = new Map<string, Promise<KommunNyckeltalGrund[]>>();
+
+/** One nyckeltal's kommun-wide figures, before any single unit's rank is read off. */
+interface KommunNyckeltalGrund {
+  key: keyof Nyckeltal;
+  genomsnitt: number | null;
+  antalMedVärde: number;
+  /** Every unit in the kommun carrying a value, in ranking order — best first. */
+  rankadeKoder: string[];
+}
+
+function kommunNyckeltalGrund(kommunkod: string): Promise<KommunNyckeltalGrund[]> {
+  let memo = kommunNyckeltalCache.get(kommunkod);
+  if (!memo) {
+    memo = (async () => {
+      const skolor = await listSkolor();
+      const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
+      const detaljer = await Promise.all(
+        kommunSkolor.map((s) => getSkola(s.skolenhetskod)),
+      );
+
+      const keys = Object.keys(NYCKELTAL_BÄTTRE_RIKTNING) as (keyof Nyckeltal)[];
+      return keys.map((key) => {
+        const värden = detaljer
+          .filter((d): d is SkolaDetalj => d != null)
+          .map((d) => ({ kod: d.skolenhetskod, v: d.nyckeltal[key] }))
+          .filter(
+            (x): x is { kod: string; v: Extract<NyckeltalVärde, { status: "finns" }> } =>
+              x.v.status === "finns",
+          );
+
+        const riktning = NYCKELTAL_BÄTTRE_RIKTNING[key];
+        const rankade = [...värden].sort((a, b) =>
+          riktning === "låg" ? a.v.tal - b.v.tal : b.v.tal - a.v.tal,
+        );
+
+        return {
+          key,
+          genomsnitt: värden.length
+            ? värden.reduce((sum, x) => sum + x.v.tal, 0) / värden.length
+            : null,
+          antalMedVärde: värden.length,
+          rankadeKoder: rankade.map((x) => x.kod),
+        };
+      });
+    })();
+    kommunNyckeltalCache.set(kommunkod, memo);
+  }
+  return memo;
+}
+
+/**
  * Kommun average and this unit's ranking for each nyckeltal, computed across
  * every other unit in the same kommun. The register has no bulk nyckeltal
- * endpoint, so this fetches every kommun-mate's detail record — each one
- * cached by `getSkola`'s revalidate window, so repeat calls for the same
- * kommun (e.g. across its units' detail pages) stay cheap.
+ * endpoint, so this reads every kommun-mate's detail record — each one built
+ * once per process by `getSkola`'s cache, and the kommun-wide aggregation on
+ * top of them memoized per kommunkod above.
  */
 export async function getKommunNyckeltalStats(
   kommunkod: string,
   skolenhetskod: string,
 ): Promise<KommunNyckeltalStat[]> {
-  const skolor = await listSkolor();
-  const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
-  const detaljer = await Promise.all(kommunSkolor.map((s) => getSkola(s.skolenhetskod)));
-
-  const keys = Object.keys(NYCKELTAL_BÄTTRE_RIKTNING) as (keyof Nyckeltal)[];
-  return keys.map((key) => {
-    const värden = detaljer
-      .filter((d): d is SkolaDetalj => d != null)
-      .map((d) => ({ kod: d.skolenhetskod, v: d.nyckeltal[key] }))
-      .filter(
-        (x): x is { kod: string; v: Extract<NyckeltalVärde, { status: "finns" }> } =>
-          x.v.status === "finns",
-      );
-
-    const genomsnitt = värden.length
-      ? värden.reduce((sum, x) => sum + x.v.tal, 0) / värden.length
-      : null;
-
-    const riktning = NYCKELTAL_BÄTTRE_RIKTNING[key];
-    const rankade = [...värden].sort((a, b) =>
-      riktning === "låg" ? a.v.tal - b.v.tal : b.v.tal - a.v.tal,
-    );
-    const index = rankade.findIndex((x) => x.kod === skolenhetskod);
-
+  const grund = await kommunNyckeltalGrund(kommunkod);
+  return grund.map((g) => {
+    const index = g.rankadeKoder.indexOf(skolenhetskod);
     return {
-      key,
-      genomsnitt,
-      antalMedVärde: värden.length,
+      key: g.key,
+      genomsnitt: g.genomsnitt,
+      antalMedVärde: g.antalMedVärde,
       rank: index === -1 ? null : index + 1,
-      antalRankade: rankade.length,
+      antalRankade: g.rankadeKoder.length,
     };
   });
 }
@@ -285,16 +325,29 @@ function averageEnkäter(enkäter: Skolenkät[]): Map<string, EnkätGrupp> {
  * register has no bulk enkät endpoint to read a real average from. Grouped
  * by `enkätGruppKey` — a straight average across skolformer or årskurser
  * wouldn't mean anything.
+ *
+ * Memoized per kommunkod: every unit's page in the kommun asks for the same
+ * map, and without the memo each of them re-fetched and re-averaged its
+ * neighbours' enkäter.
  */
-export async function getKommunEnkätGenomsnitt(
+const kommunEnkätCache = new Map<string, Promise<Map<string, EnkätGrupp>>>();
+
+export function getKommunEnkätGenomsnitt(
   kommunkod: string,
 ): Promise<Map<string, EnkätGrupp>> {
-  const skolor = await listSkolor();
-  const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
-  const enkäter = await Promise.all(
-    kommunSkolor.map((s) => getSkolenkät(s.skolenhetskod)),
-  );
-  return averageEnkäter(enkäter);
+  let memo = kommunEnkätCache.get(kommunkod);
+  if (!memo) {
+    memo = (async () => {
+      const skolor = await listSkolor();
+      const kommunSkolor = skolor.filter((s) => s.kommunkod === kommunkod);
+      const enkäter = await Promise.all(
+        kommunSkolor.map((s) => getSkolenkät(s.skolenhetskod)),
+      );
+      return averageEnkäter(enkäter);
+    })();
+    kommunEnkätCache.set(kommunkod, memo);
+  }
+  return memo;
 }
 
 let riksEnkätCache: Promise<Map<string, EnkätGrupp>> | null = null;

@@ -54,8 +54,14 @@ export function AppShell({
   );
   // Below sm the field takes a line of its own — brand, nav and a 300px
   // search do not fit across a phone.
+  //
+  // The input drops its own outline so the ring sits on the whole field
+  // rather than inside its border, and the wrapper draws it back: the border
+  // firms up for any focus, and `has-[:focus-visible]` repeats the global
+  // 2px accent outline for the keyboard only — the same rule globals.css
+  // applies everywhere else, which a bare border-colour swap did not meet.
   const searchClass =
-    "flex h-[30px] w-full flex-1 basis-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent sm:w-auto sm:max-w-[300px] sm:basis-auto";
+    "flex h-[30px] w-full flex-1 basis-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-accent sm:w-auto sm:max-w-[300px] sm:basis-auto";
 
   return (
     <div className="flex min-h-screen justify-center">
@@ -72,8 +78,11 @@ export function AppShell({
             href="/skolor"
             className="flex items-center gap-[9px] transition-opacity hover:opacity-75"
           >
-            <span className="size-[18px] rounded-xs bg-accent" />
-            <span className="text-lg font-semibold tracking-[-0.01em]">{site.brand}</span>
+            <span aria-hidden className="size-[18px] rounded-xs bg-accent" />
+            {/* A brand name, not a word — auto-translate garbles it otherwise. */}
+            <span translate="no" className="text-lg font-semibold tracking-[-0.01em]">
+              {site.brand}
+            </span>
           </Link>
 
           <span className="hidden h-5 w-px bg-line-soft sm:block" />

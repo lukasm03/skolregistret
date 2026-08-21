@@ -28,10 +28,17 @@ export function ArsredovisningList({
             <span className="flex-none rounded-xl border border-ok-line bg-ok-bg px-2.5 py-[2px] text-mono font-medium text-ok">
               {p.etikett}
             </span>
+            {/*
+              The visible label repeats down the list because the year is the
+              pill beside it. Read out of that context — in a screen reader's
+              list of links — ten rows all called "Årsredovisning" tell you
+              nothing, so the announced name takes the year with it.
+            */}
             <a
               href={`/arsredovisning/${orgnr}/${p.id}`}
               target="_blank"
               rel="noreferrer"
+              aria-label={`Årsredovisning ${p.etikett}`}
               className="text-base font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
             >
               Årsredovisning
@@ -41,6 +48,7 @@ export function ArsredovisningList({
                 href={`/arsredovisning/${orgnr}/${p.id}?del=revision`}
                 target="_blank"
                 rel="noreferrer"
+                aria-label={`Revisionsberättelse ${p.etikett}`}
                 className="text-base text-ink-muted underline decoration-line-control underline-offset-2 hover:text-ink hover:decoration-ink-faint"
               >
                 Revisionsberättelse

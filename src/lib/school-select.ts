@@ -83,11 +83,13 @@ export function selectSchools<T extends ListSchool>(
       !query.program.length || query.program.some((p) => s.programmes.includes(p)),
   };
 
-  /** Apply every test but one, so that filter's own counts stay meaningful. */
+  /** Apply every test but one, so that filter's own counts stay meaningful.
+   *  The entries are hoisted out of the callback: this filter runs once per
+   *  row per pass over the whole register, and rebuilding the entries inside
+   *  it allocated tens of thousands of throwaway arrays per selection. */
+  const testEntries = Object.entries(tests);
   const applyExcept = (except?: keyof typeof tests) =>
-    all.filter((s) =>
-      Object.entries(tests).every(([k, test]) => k === except || test(s)),
-    );
+    all.filter((s) => testEntries.every(([k, test]) => k === except || test(s)));
 
   // Counts next to the type checkboxes reflect what is still available, so
   // they don't collapse to zero as soon as you narrow the type.

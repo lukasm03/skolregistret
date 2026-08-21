@@ -11,9 +11,31 @@ export function num(n: number | null | undefined): string {
 }
 
 /** One decimal, Swedish comma. */
+const decFormat = new Intl.NumberFormat("sv-SE", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 export function dec(n: number | null | undefined): string {
   if (n == null) return DASH;
-  return n.toFixed(1).replace(".", ",");
+  return decFormat.format(n);
+}
+
+/**
+ * An ISO timestamp as a plain Swedish date.
+ *
+ * `timeZone: "UTC"` on purpose: these are dates the collector stamped on a
+ * file, not moments in the reader's own day, and letting the rendering
+ * machine's zone carry one across midnight would misreport when the register
+ * was built. A value that does not parse is passed through rather than shown
+ * as "Invalid Date".
+ */
+const dateFormat = new Intl.DateTimeFormat("sv-SE", { timeZone: "UTC" });
+
+export function isoDate(value: string | null | undefined): string {
+  if (!value) return DASH;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : dateFormat.format(parsed);
 }
 
 function pct(n: number | null | undefined): string {
@@ -92,11 +114,32 @@ export function median(xs: number[]): number | null {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
+/**
+ * A name as it appears in a URL: lowercased, accents folded away, everything
+ * else collapsed to single hyphens.
+ *
+ * The fold is Unicode decomposition (NFD) with the combining marks dropped,
+ * which is what gives å/ä → `a` and ö → `o` — the spelling Swedish sites use
+ * for a slug. Doing it that way rather than with a three-character lookup is
+ * what keeps `é` from becoming a hyphen: `FREINÉTSKOLAN` used to slug as
+ * `frein-tskolan`, and five huvudmän in the register carry an acute.
+ *
+ * A few letters are not decomposable and still need spelling out — `ø` and
+ * `æ` carry their stroke and ligature inside the code point, so NFD leaves
+ * them whole and the non-alphanumeric sweep would eat them.
+ *
+ * Distinct names can still land on the same slug (`HÅBO`/`HABO` both give
+ * `habo-kommun`), so a caller that needs a unique address per row has to
+ * disambiguate — see `huvudmanSlugar` in `api-normalize.ts`.
+ */
 export function slugify(input: string): string {
   return input
     .toLowerCase()
-    .replace(/[åä]/g, "a")
-    .replace(/ö/g, "o")
+    .replace(/ø/g, "o")
+    .replace(/æ/g, "ae")
+    .replace(/ß/g, "ss")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }

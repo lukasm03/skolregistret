@@ -1,8 +1,6 @@
-import { skolform } from "@/config/skolformer";
 import { kommunName } from "@/data/kommuner";
-import { median } from "./format";
 import type { HuvudmanQuery } from "./query";
-import { metricNumberOf, studentsOf, type ListSchool } from "./school-fields";
+import { studentsOf, type ListSchool } from "./school-fields";
 import { sortRows } from "./sort-rows";
 import type { KommunOption } from "./school-select";
 import {
@@ -24,8 +22,6 @@ export type HuvudmanAggregate = {
   units: ListSchool[];
   enheter: number;
   elever: number;
-  /** Median on the selected skolform's leading measure; null without a form. */
-  metric: number | null;
   /** Share of the kommun's pupils, in percent. */
   andel: number | null;
 };
@@ -51,43 +47,47 @@ function totalStudents(
   );
 }
 
-/** Every kommun with units, for the dropdown. */
+/** Every kommun with units, for the dropdown.
+ *
+ *  Memoized on the array itself: it reads nothing but the unit list, so it is
+ *  the same answer for the same array — yet `selectHuvudman` runs per
+ *  keystroke, and without the memo each one re-scanned and re-sorted all
+ *  ~6 500 units just to rebuild a dropdown that never depends on the query.
+ *  A `WeakMap` needs no invalidation — a new array is a new answer. */
+const kommunOptionsPerList = new WeakMap<ListSchool[], KommunOption[]>();
+
 function listKommunOptions(all: ListSchool[]): KommunOption[] {
+  const memo = kommunOptionsPerList.get(all);
+  if (memo) return memo;
+
   const counts = new Map<string, number>();
   for (const s of all) {
     if (!s.kommunkod) continue;
     counts.set(s.kommunkod, (counts.get(s.kommunkod) ?? 0) + 1);
   }
-  return [...counts.entries()]
+  const options = [...counts.entries()]
     .map(([kod, count]) => ({ kod, name: kommunName(kod) ?? kod, count }))
     .sort((a, b) => a.name.localeCompare(b.name, "sv"));
+  kommunOptionsPerList.set(all, options);
+  return options;
 }
 
 function aggregateHuvudman(
   h: Huvudman,
-  all: ListSchool[],
+  namedUnits: ListSchool[],
   total: number,
   form?: SkolformCode,
 ): HuvudmanAggregate {
-  const units = all.filter(
-    (s) =>
-      s.huvudman === h.name && s.status === "Aktiv" && (!form || s.forms.includes(form)),
+  const units = namedUnits.filter(
+    (s) => s.status === "Aktiv" && (!form || s.forms.includes(form)),
   );
   const elever = sumStudents(units, form);
-  const def = form ? skolform(form) : undefined;
-  const primaryKey = def?.headline[0];
-  const values = primaryKey
-    ? units
-        .map((u) => metricNumberOf(u, form, primaryKey))
-        .filter((m): m is number => m != null)
-    : [];
 
   return {
     huvudman: h,
     units,
     enheter: units.length,
     elever,
-    metric: primaryKey ? median(values) : null,
     andel: elever && total ? (elever / total) * 100 : null,
   };
 }
@@ -111,8 +111,6 @@ export function huvudmanSortValue(
       return r.enheter;
     case "andel":
       return r.andel ?? undefined;
-    case "metric":
-      return r.metric ?? undefined;
     default:
       return r.elever;
   }
@@ -148,18 +146,32 @@ export function selectHuvudman(
     : everyHuvudman;
 
   const kommunElever = totalStudents(everySchool, form, query.kommun);
-  const rows = all.map((h) => aggregateHuvudman(h, schools, kommunElever, form));
+
+  // Units grouped by huvudman name in one pass. Both consumers below join on
+  // that name — the aggregation and the form counts — and without the map
+  // each did a full scan of the unit list per huvudman, ~13 M string
+  // comparisons per keystroke across the two of them.
+  const unitsByName = new Map<string, ListSchool[]>();
+  for (const s of schools) {
+    const group = unitsByName.get(s.huvudman);
+    if (group) group.push(s);
+    else unitsByName.set(s.huvudman, [s]);
+  }
+
+  const rows = all.map((h) =>
+    aggregateHuvudman(h, unitsByName.get(h.name) ?? [], kommunElever, form),
+  );
 
   const counts = Object.fromEntries(
     HUVUDMANTYP_ORDER.map((t) => [t, all.filter((h) => h.typ === t).length]),
   ) as Record<HuvudmanTyp, number>;
 
-  // How many huvudmän would remain per skolform — the chip counts.
+  // How many huvudmän would remain per skolform — the chip counts. Reads the
+  // same `unitsByName` groups the aggregation built, instead of re-scanning
+  // the unit list once per huvudman.
   const formCounts = new Map<SkolformCode, number>();
   for (const h of all) {
-    const forms = new Set(
-      schools.filter((s) => s.huvudman === h.name).flatMap((s) => s.forms),
-    );
+    const forms = new Set((unitsByName.get(h.name) ?? []).flatMap((s) => s.forms));
     for (const f of forms) formCounts.set(f, (formCounts.get(f) ?? 0) + 1);
   }
 

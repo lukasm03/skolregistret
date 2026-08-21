@@ -68,11 +68,6 @@ describe("aggregation", () => {
     // 300 of 600 total.
     expect(a.andel).toBeCloseTo(50);
   });
-
-  test("metric is null without a skolform, since medians need one", () => {
-    const rows = selectHuvudman(hs, schools, query()).rows;
-    expect(rows.every((r) => r.metric === null)).toBe(true);
-  });
 });
 
 describe("filtering", () => {
@@ -145,7 +140,6 @@ describe("huvudmanSortValue", () => {
     units: [],
     enheter: 2,
     elever: 100,
-    metric: null,
     andel: null,
   };
 
@@ -158,7 +152,6 @@ describe("huvudmanSortValue", () => {
   test("missing figures are undefined so they sort last, not first", () => {
     expect(huvudmanSortValue(row, "koncern")).toBeUndefined();
     expect(huvudmanSortValue(row, "andel")).toBeUndefined();
-    expect(huvudmanSortValue(row, "metric")).toBeUndefined();
   });
 
   test("an unknown key falls back to elever", () => {

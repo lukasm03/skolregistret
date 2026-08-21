@@ -22,11 +22,17 @@ const mono = IBM_Plex_Mono({
  * is what a bookmark, a tab strip and a shared link all show.
  */
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: {
     default: `${site.brand} · ${site.riket}`,
     template: `%s · ${site.brand}`,
   },
   description: `Skolenheter och huvudmän i hela riket.`,
+  openGraph: {
+    type: "website",
+    siteName: site.brand,
+    locale: "sv_SE",
+  },
 };
 
 /**

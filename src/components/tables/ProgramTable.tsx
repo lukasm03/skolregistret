@@ -110,7 +110,13 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
                     <button
                       type="button"
                       onClick={() => setSort(nextProgramSort(sort, m.key))}
+                      // The header is abbreviated to fit the column, so the
+                      // hint is the only place the measure is spelled out.
+                      // `title` shows it to a mouse; the description carries
+                      // it to a keyboard and a screen reader, which a
+                      // tooltip never reaches.
                       title={m.hint}
+                      aria-describedby={`${baseId}-hint-${m.key}`}
                       className={`flex w-full items-center justify-center gap-1 uppercase hover:text-ink ${
                         active ? "text-ink" : ""
                       }`}
@@ -122,6 +128,11 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
                         className={active ? "text-ink" : "text-ink-faint"}
                       />
                     </button>
+                    {/* Outside the button on purpose: text inside it would
+                        join the button's own name rather than describe it. */}
+                    <span id={`${baseId}-hint-${m.key}`} className="sr-only">
+                      {m.hint}
+                    </span>
                   </th>
                 );
               })}
@@ -181,7 +192,7 @@ function ProgramRows({
           it would be the one cell that does not light up.
         */}
         <td
-          className={`sticky left-0 px-2 py-2 align-middle ${rowBg} ${
+          className={`sticky left-0 z-10 px-2 py-2 align-middle ${rowBg} ${
             isOpen ? "" : "group-hover:bg-row-hover"
           }`}
         >

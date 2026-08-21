@@ -21,8 +21,8 @@ import {
 import { site } from "@/config/site";
 import { harÅrsredovisningskatalog, listÅrsredovisningar } from "@/lib/arsredovisning";
 import {
-  dedupeHuvudmanRows,
   getHuvudmanBySlug,
+  huvudmanRadFörSlug,
   normalizeApiSchool,
 } from "@/lib/api-normalize";
 import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
@@ -34,8 +34,10 @@ import { ancestorPath, listHuvudman, listSkolor } from "@/lib/skolregister";
  * its default (`true`), so a huvudman added after the build still resolves.
  */
 export async function generateStaticParams() {
-  const rows = dedupeHuvudmanRows(await listHuvudman());
-  return rows.map((h) => ({ slug: slugify(h.namn) }));
+  // `huvudmanRadFörSlug` is the same index `getHuvudmanBySlug` resolves
+  // through, so every param generated here is one the page can look up —
+  // including the orgnr-suffixed address a name collision earns.
+  return [...huvudmanRadFörSlug(await listHuvudman()).keys()].map((slug) => ({ slug }));
 }
 
 /** The register list is parsed once per process — see `/skolor/[kod]`. */
@@ -121,7 +123,13 @@ export default async function HuvudmanDetailPage({
                 <FactList
                   twoColumn
                   items={[
-                    ["Org.nr", h.organisationsnummer],
+                    [
+                      "Org.nr",
+                      // An identifier, not prose — see `/skolor/[kod]`.
+                      <span key="orgnr" translate="no">
+                        {h.organisationsnummer}
+                      </span>,
+                    ],
                     ["Typ", h.typ],
                     ["Bolagsform", h.bolagsform ?? DASH],
                     ["Kommuner", h.kommuner.join(", ") || DASH],
@@ -162,7 +170,7 @@ export default async function HuvudmanDetailPage({
                         ],
                         [
                           "Koncernens org.nr",
-                          <span key="korgnr" className="font-mono text-sm">
+                          <span key="korgnr" translate="no" className="font-mono text-sm">
                             {h.koncern?.koncernOrgNr ?? DASH}
                           </span>,
                         ],
@@ -265,7 +273,7 @@ export default async function HuvudmanDetailPage({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-            <span className="font-mono text-xs text-ink-subtle">
+            <span translate="no" className="font-mono text-xs text-ink-subtle">
               Org.nr {h.organisationsnummer}
             </span>
             <Dot />

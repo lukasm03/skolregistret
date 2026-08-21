@@ -19,7 +19,12 @@ import {
   type KoncernAggregate,
 } from "@/lib/koncern-select";
 import { DASH, num, plural } from "@/lib/format";
-import { parseKoncernQuery, type RawParams } from "@/lib/query";
+import {
+  parseKoncernQuery,
+  patchParams,
+  searchString,
+  type RawParams,
+} from "@/lib/query";
 import type { KoncernGroup } from "@/lib/skolregister";
 import { useQueryParams } from "@/hooks/use-query-params";
 
@@ -123,6 +128,9 @@ export function KoncernView({
       searchValue={query.q}
       onSearchChange={(q) => patch({ q: q || null }, true)}
     >
+      {/* See `SchoolsView` — the list pages carry their heading for the
+          outline rather than for the eye. */}
+      <h1 className="sr-only">Skolkoncerner i {site.riket.toLowerCase()}</h1>
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <KoncernFilters
           query={query}
@@ -163,6 +171,7 @@ export function KoncernView({
             perPage={query.perPage}
             onPageChange={(p) => patch({ page: p })}
             onPerPageChange={(perPage) => patch({ perPage, page: null })}
+            pageHref={(p) => searchString(patchParams(params, { page: p })) || PATH}
           />
         </div>
       </div>

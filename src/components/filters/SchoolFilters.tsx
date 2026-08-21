@@ -182,6 +182,7 @@ export function SchoolFilters({
         label={form ? `Antal elever i ${form.short.toLowerCase()}` : "Antal elever"}
       >
         <RangeField
+          name="elever"
           min={query.minElever}
           max={query.maxElever}
           onChange={(bound, value) =>

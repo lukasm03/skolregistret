@@ -36,29 +36,17 @@ export function registerFilePath(): string {
 let registerFileCache: Promise<AlltFile> | null = null;
 
 /**
- * Strips every `raw` field recursively — the doc for `allt.json` measures it
- * at roughly half the parsed file's size, and nothing downstream ever reads
- * it. Done once, right after parse, so the rest of the process holds the
- * smaller tree rather than repeating the strip per read.
- */
-function omitRaw(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(omitRaw);
-  if (value !== null && typeof value === "object") {
-    const result: Record<string, unknown> = {};
-    for (const [key, v] of Object.entries(value)) {
-      if (key === "raw") continue;
-      result[key] = omitRaw(v);
-    }
-    return result;
-  }
-  return value;
-}
-
-/**
  * Reads and parses `allt.json` once per process, caching the result. Fails
  * loudly and immediately if the file is missing — there is nothing left to
  * fall back to, so a clear "file not found" beats every page failing one at
  * a time with a confusing downstream error.
+ *
+ * The `raw` fields are dropped in a `JSON.parse` reviver rather than by
+ * walking the parsed tree afterwards: a post-parse walk builds a complete
+ * second tree before handing it back, so peak memory was the 226 MB source
+ * string plus two full trees (~874 MB RSS). A reviver runs bottom-up as the
+ * one tree is being built — each `raw` value is discarded before its parent
+ * object ever holds it.
  */
 export function readAlltFile(path: string): Promise<AlltFile> {
   if (!registerFileCache) {
@@ -70,7 +58,8 @@ export function readAlltFile(path: string): Promise<AlltFile> {
       );
     }
     registerFileCache = readFile(path, "utf8").then(
-      (text) => omitRaw(JSON.parse(text)) as AlltFile,
+      (text) =>
+        JSON.parse(text, (key, value) => (key === "raw" ? undefined : value)) as AlltFile,
     );
   }
   return registerFileCache;

@@ -8,6 +8,7 @@ import { site } from "@/config/site";
 import { skolform, skolformer } from "@/config/skolformer";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
 import type { ListSchool } from "@/lib/school-fields";
+import { plural } from "@/lib/format";
 import type { SkolformCode } from "@/lib/types";
 
 /**
@@ -100,13 +101,14 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-[30px] max-w-[280px] min-w-[200px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent">
+        <div className="flex h-[30px] max-w-[280px] min-w-[200px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-accent">
           <span
             aria-hidden
             className="size-[11px] flex-none rounded-full border-[1.5px] border-ink-faint"
           />
           <input
             type="search"
+            name="q"
             autoComplete="off"
             spellCheck={false}
             value={q}
@@ -145,6 +147,14 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
             options={formOptions}
           />
         </div>
+        {/*
+          Filtering here happens in the browser with no navigation, same as on
+          the list pages — and same as there, the count is the one thing that
+          has to be said out loud when the table changes under it.
+        */}
+        <span aria-live="polite" aria-atomic className="text-base font-medium">
+          {plural(filtered.length, "skolenhet", "skolenheter")}
+        </span>
         <FilterSummary filters={filters} onClear={applyClear} onClearAll={clearAll} />
       </div>
 

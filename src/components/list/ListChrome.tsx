@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { site } from "@/config/site";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
 import {
@@ -152,23 +152,35 @@ export function Pagination({
   page,
   totalPages,
   onGoTo,
+  pageHref,
 }: {
   page: number;
   totalPages: number;
   onGoTo: (page: number) => void;
+  /**
+   * Where a given page lives, when the list keeps its page in the URL. With
+   * it every number is a real link — Cmd-click and middle-click open page 7
+   * in a tab, which a `<button>` can never do. Without it (the huvudman
+   * detail tab, whose paging is local state) the numbers stay buttons,
+   * because there is no address to give them.
+   */
+  pageHref?: (page: number) => string;
 }) {
   const box =
     "flex h-[27px] min-w-[27px] items-center justify-center rounded-md px-1 font-mono text-sm";
 
   return (
     <nav aria-label="Sidnavigering" className="flex items-center gap-1.5">
-      <PageArrow
-        onGoTo={() => onGoTo(page - 1)}
+      <PageStep
+        page={page - 1}
+        onGoTo={onGoTo}
+        pageHref={pageHref}
         disabled={page <= 1}
         label="Föregående sida"
+        className="flex size-[27px] items-center justify-center rounded-md border border-line text-mono"
       >
         <ChevronLeft />
-      </PageArrow>
+      </PageStep>
       {pageWindow(page, totalPages).map((p, i) =>
         p === "gap" ? (
           <span
@@ -183,51 +195,97 @@ export function Pagination({
             {p}
           </span>
         ) : (
-          <button
+          <PageStep
             key={p}
-            type="button"
-            onClick={() => onGoTo(p)}
-            aria-label={`Sida ${p}`}
-            className={`${box} border border-line text-ink-muted hover:border-ink-faint`}
+            page={p}
+            onGoTo={onGoTo}
+            pageHref={pageHref}
+            disabled={false}
+            label={`Sida ${p}`}
+            className={`${box} border border-line text-ink-muted`}
           >
             {p}
-          </button>
+          </PageStep>
         ),
       )}
-      <PageArrow
-        onGoTo={() => onGoTo(page + 1)}
+      <PageStep
+        page={page + 1}
+        onGoTo={onGoTo}
+        pageHref={pageHref}
         disabled={page >= totalPages}
         label="Nästa sida"
+        className="flex size-[27px] items-center justify-center rounded-md border border-line text-mono"
       >
         <ChevronRight />
-      </PageArrow>
+      </PageStep>
     </nav>
   );
 }
 
-function PageArrow({
+/**
+ * One step of the pager: an anchor where there is an address for it, a button
+ * where there is not, and a disabled button at either end.
+ *
+ * The anchor still pages in place — the click handler bows out for any
+ * modified click, so the browser keeps its own meaning for Cmd, Ctrl, Shift
+ * and the middle button and we only intercept the plain one.
+ */
+function PageStep({
+  page,
   onGoTo,
+  pageHref,
   disabled,
   label,
+  className,
   children,
 }: {
-  onGoTo: () => void;
+  page: number;
+  onGoTo: (page: number) => void;
+  pageHref?: (page: number) => string;
   disabled: boolean;
   label: string;
+  className: string;
   children: ReactNode;
 }) {
-  const cls =
-    "flex size-[27px] items-center justify-center rounded-md border border-line text-mono";
+  if (disabled) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-label={label}
+        className={`${className} text-ink-ghost`}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  if (!pageHref) {
+    return (
+      <button
+        type="button"
+        onClick={() => onGoTo(page)}
+        aria-label={label}
+        className={`${className} hover:border-ink-faint`}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onGoTo}
-      disabled={disabled}
+    <a
+      href={pageHref(page)}
       aria-label={label}
-      className={`${cls} ${disabled ? "text-ink-ghost" : "hover:border-ink-faint"}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        onGoTo(page);
+      }}
+      className={`${className} hover:border-ink-faint`}
     >
       {children}
-    </button>
+    </a>
   );
 }
 
@@ -240,6 +298,7 @@ export function PerPageControl({
   onChange: (perPage: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -271,6 +330,7 @@ export function PerPageControl({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
         className="flex h-[27px] items-center gap-[7px] rounded-md border border-line px-2.5 text-sm text-ink-muted hover:border-ink-faint"
       >
         <span>{perPage} per sida</span>
@@ -281,7 +341,10 @@ export function PerPageControl({
         // navigation and typeahead, and a three-item picker reads better as
         // a disclosure of ordinary buttons. `aria-pressed` carries which one
         // is in force.
-        <ul className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line-overlay bg-surface py-1 shadow-overlay">
+        <ul
+          id={panelId}
+          className="absolute bottom-[calc(100%+4px)] right-0 z-10 min-w-full overflow-hidden rounded-md border border-line-overlay bg-surface py-1 shadow-overlay"
+        >
           {perPageOptions.map((option) => (
             <li key={option}>
               <button
@@ -336,6 +399,7 @@ export function ListPane<T extends RowData>({
   perPage,
   onPageChange,
   onPerPageChange,
+  pageHref,
   stale = false,
   footerNote,
   frameClassName,
@@ -357,6 +421,8 @@ export function ListPane<T extends RowData>({
   onPageChange: (page: number) => void;
   /** Receiving the new size; resetting the page stays the caller's job. */
   onPerPageChange: (perPage: number) => void;
+  /** Passed through to `Pagination` — see the note on its own prop. */
+  pageHref?: (page: number) => string;
   /** Fades the table while a deferred query is still catching up. */
   stale?: boolean;
   /** Extra footer content between the count and the pagination. */
@@ -394,12 +460,19 @@ export function ListPane<T extends RowData>({
 
   const footer = (
     <ListFooter>
-      <span className="text-sm text-ink-muted">
+      {/* Tabular figures: paging changes all three numbers at once, and
+          proportional digits shift the line's width as it goes. */}
+      <span className="text-sm text-ink-muted tabular-nums">
         Visar {from}–{to} av {total}
       </span>
       <div className="flex-1" />
       {footerNote}
-      <Pagination page={currentPage} totalPages={totalPages} onGoTo={onPageChange} />
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onGoTo={onPageChange}
+        pageHref={pageHref}
+      />
       <PerPageControl perPage={perPage} onChange={onPerPageChange} />
     </ListFooter>
   );

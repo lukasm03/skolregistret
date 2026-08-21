@@ -57,6 +57,7 @@ export function KoncernFilters({
 
       <FilterGroup label="Antal skolenheter">
         <RangeField
+          name="enheter"
           min={query.minEnheter}
           max={query.maxEnheter}
           onChange={(bound, value) =>
@@ -77,6 +78,7 @@ export function KoncernFilters({
 
       <FilterGroup label="Antal elever">
         <RangeField
+          name="elever"
           min={query.minElever}
           max={query.maxElever}
           onChange={(bound, value) =>

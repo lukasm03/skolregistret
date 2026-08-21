@@ -3,6 +3,7 @@ import {
   DASH,
   bytes,
   dec,
+  isoDate,
   kommunLong,
   median,
   num,
@@ -70,6 +71,32 @@ describe("bytes", () => {
 
   test("dashes on missing", () => {
     expect(bytes(null)).toBe(DASH);
+  });
+});
+
+describe("isoDate", () => {
+  test("renders a Swedish date, not a raw timestamp", () => {
+    expect(isoDate("2026-08-05T09:31:00Z")).toBe("2026-08-05");
+    expect(isoDate("2026-08-05")).toBe("2026-08-05");
+  });
+
+  // These stamps say which day a file was collected, not a moment in anyone's
+  // day. Formatting in the rendering machine's zone would slide a late-evening
+  // UTC stamp onto the next date west of Greenwich and report the wrong day.
+  test("reads the stamp in UTC rather than the server's zone", () => {
+    expect(isoDate("2026-08-05T23:59:59Z")).toBe("2026-08-05");
+    expect(isoDate("2026-08-05T00:00:00Z")).toBe("2026-08-05");
+  });
+
+  test("passes an unparseable value through rather than showing Invalid Date", () => {
+    expect(isoDate("okänt")).toBe("okänt");
+  });
+
+  test("dashes on missing", () => {
+    expect(isoDate(null)).toBe(DASH);
+    expect(isoDate(undefined)).toBe(DASH);
+    // An empty string is no date either, and must not reach the formatter.
+    expect(isoDate("")).toBe(DASH);
   });
 });
 
@@ -145,8 +172,23 @@ describe("slugify", () => {
     expect(slugify(once)).toBe(once);
   });
 
-  test("distinct names can collide, which is why callers dedupe", () => {
-    // Documented behaviour, not an accident: see dedupeHuvudmanRows.
+  // The fold is Unicode decomposition, so every accent goes the same way and
+  // none of them turns into a hyphen. `frein-tskolan` was a real slug.
+  test("folds accents rather than punching holes in the name", () => {
+    expect(slugify("FREINÉTSKOLAN BILD & FORM")).toBe("freinetskolan-bild-form");
+    expect(slugify("LYCÉE FRANCAIS SAINT-LOUIS")).toBe("lycee-francais-saint-louis");
+    expect(slugify("Banérskolan AB")).toBe("banerskolan-ab");
+  });
+
+  // These carry their stroke or ligature inside the code point, so NFD leaves
+  // them whole and the non-alphanumeric sweep would otherwise eat them.
+  test("spells out the letters decomposition cannot reach", () => {
+    expect(slugify("Nørre Æbleø Straße")).toBe("norre-aebleo-strasse");
+  });
+
+  test("distinct names can still collide, which is why callers disambiguate", () => {
+    // Two real kommuner. `huvudmanSlugar` is what keeps both reachable.
+    expect(slugify("HÅBO KOMMUN")).toBe(slugify("HABO KOMMUN"));
     expect(slugify("Vittra AB")).toBe(slugify("Vittra, AB"));
   });
 });

@@ -79,6 +79,7 @@ function indata(overrides: Partial<SkolaDetaljIndata> = {}): SkolaDetaljIndata {
     dokumentgrupper: [],
     kommunEnkätGrupper: new Map(),
     riksEnkätGrupper: new Map(),
+    huvudmanSlugFörNamn: new Map(),
     ...overrides,
   };
 }

@@ -14,8 +14,9 @@ import {
   StatGrid,
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
-import { DASH, num, plural, slugify } from "@/lib/format";
-import { buildKoncernGroups, getKoncernBySlug } from "@/lib/skolregister";
+import { DASH, isoDate, num, plural, slugify } from "@/lib/format";
+import { huvudmanSlugar } from "@/lib/api-normalize";
+import { buildKoncernGroups, getKoncernBySlug, listHuvudman } from "@/lib/skolregister";
 import type { HuvudmanRad } from "@/lib/skolregister";
 
 const dotterbolagColumns: Column<HuvudmanRad>[] = [
@@ -87,6 +88,10 @@ export default async function KoncernPage({
   const group = await getKoncernBySlug(slug);
   if (!group) notFound();
 
+  // The dotterbolag rows link to `/huvudman/[slug]`, and two huvudmän can
+  // slug alike — only the full list knows which of them took the suffix.
+  const huvudmanSlugFörNamn = huvudmanSlugar(await listHuvudman());
+
   const antalEnheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
   const antalElever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
   const kommuner = [...new Set(group.dotterbolag.flatMap((d) => d.kommuner))].sort(
@@ -112,7 +117,7 @@ export default async function KoncernPage({
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-base text-ink-muted">Koncern</span>
               <Dot />
-              <span className="font-mono text-xs text-ink-subtle">
+              <span translate="no" className="font-mono text-xs text-ink-subtle">
                 Org.nr {group.orgNr}
               </span>
               <Dot />
@@ -155,7 +160,9 @@ export default async function KoncernPage({
               <DataTable
                 rows={group.dotterbolag}
                 rowKey={(d) => d.organisationsnummer}
-                rowHref={(d) => `/huvudman/${slugify(d.namn)}`}
+                rowHref={(d) =>
+                  `/huvudman/${huvudmanSlugFörNamn.get(d.namn) ?? slugify(d.namn)}`
+                }
                 rowLabel={(d) => `Visa ${d.namn}`}
                 emptyMessage="Inga huvudmän registrerade för den här koncernen."
                 columns={dotterbolagColumns}
@@ -179,7 +186,13 @@ export default async function KoncernPage({
             <RailSection title="Uppgifter" divided={false}>
               <FactList
                 items={[
-                  ["Org.nr", group.orgNr],
+                  [
+                    "Org.nr",
+                    // An identifier, not prose — see `/skolor/[kod]`.
+                    <span key="orgnr" translate="no">
+                      {group.orgNr}
+                    </span>,
+                  ],
                   [
                     "Bolag i koncernen",
                     group.antalFöretag != null ? num(group.antalFöretag) : DASH,
@@ -203,7 +216,7 @@ export default async function KoncernPage({
                   : "Alla bolag i koncernen är huvudmän i registret."}
               </Note>
               {group.asof && (
-                <Note>{`Dun & Bradstreets ägaruppgifter är från ${group.asof}.`}</Note>
+                <Note>{`Dun & Bradstreets ägaruppgifter är från ${isoDate(group.asof)}.`}</Note>
               )}
               {group.inaktuellt && (
                 <Note>

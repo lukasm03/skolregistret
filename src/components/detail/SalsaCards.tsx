@@ -26,7 +26,9 @@ function SalsaCard({ r }: { r: SalsaJämförelse }) {
     <article className="flex flex-col gap-2.5 rounded-lg border border-line-soft bg-surface p-3.5 pb-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-[3px]">
-          <h2 className="text-base leading-[1.3] font-medium">{r.label}</h2>
+          {/* `h3`: these sit under the "SALSA" heading the skolenhet page
+              puts above them, not beside it. */}
+          <h3 className="text-base leading-[1.3] font-medium">{r.label}</h3>
           <p className="text-xs text-ink-faint">
             {r.läsår !== DASH ? `läsår ${r.läsår} · ` : ""}avvikelse mot SALSA:s modell
           </p>

@@ -33,9 +33,15 @@ export function Disclosure({
           <span className="flex text-ink-faint transition-transform group-open:rotate-90">
             <CaretRight size={11} />
           </span>
-          <span className="text-micro font-semibold tracking-[0.08em] text-ink-subtle uppercase">
+          {/*
+            A heading, not a styled span. These are the sections a detail page
+            is made of — "Skoluppgifter", "Huvudman", "Kontakt", "Källor" —
+            and a reader moving by heading found none of them. `<summary>`
+            takes heading content, so the disclosure keeps working as it did.
+          */}
+          <h2 className="text-micro font-semibold tracking-[0.08em] text-ink-subtle uppercase">
             {title}
-          </span>
+          </h2>
           {count != null && (
             <span className="font-mono text-micro text-ink-faint">{count}</span>
           )}

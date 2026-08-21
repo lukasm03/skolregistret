@@ -67,7 +67,9 @@ export function CheckboxControl({
           className="pointer-events-none hidden text-accent-ink peer-checked:block"
         />
       </span>
-      <span className="min-w-0 truncate text-base group-hover:text-accent">{label}</span>
+      <span className="min-w-0 truncate text-base group-hover:text-accent group-has-[:focus-visible]:text-accent">
+        {label}
+      </span>
       {count != null && (
         <span className="ml-auto font-mono text-mono text-ink-faint">{count}</span>
       )}
@@ -106,7 +108,7 @@ export function RadioControl({
         />
       </span>
       <span
-        className={`min-w-0 truncate text-base group-hover:text-accent ${checked ? "font-medium" : ""}`}
+        className={`min-w-0 truncate text-base group-hover:text-accent group-has-[:focus-visible]:text-accent ${checked ? "font-medium" : ""}`}
       >
         {label}
       </span>
@@ -159,7 +161,9 @@ export function Toggle({
       onClick={onToggle}
       className="group flex items-center justify-between"
     >
-      <span className="text-base group-hover:text-accent">{label}</span>
+      <span className="text-base group-hover:text-accent group-focus-visible:text-accent">
+        {label}
+      </span>
       <span
         aria-hidden
         className={`flex h-[17px] w-[30px] flex-none rounded-full p-0.5 ${
@@ -200,11 +204,17 @@ export function SelectField({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="h-[30px] w-full min-w-0 rounded-md border border-line bg-surface px-2 text-[16px] sm:text-base"
+      // Both halves of the colour are spelled out, on the control and on the
+      // options: Windows draws a native dropdown's list with its own system
+      // colours unless the page says otherwise, which in dark mode put dark
+      // text on our dark surface.
+      className="h-[30px] w-full min-w-0 rounded-md border border-line bg-surface px-2 text-[16px] text-ink sm:text-base"
     >
-      <option value="">{allLabel}</option>
+      <option value="" className="bg-surface text-ink">
+        {allLabel}
+      </option>
       {options.map((o) => (
-        <option key={o.value} value={o.value}>
+        <option key={o.value} value={o.value} className="bg-surface text-ink">
           {o.count != null ? `${o.label} (${o.count})` : o.label}
         </option>
       ))}
@@ -217,6 +227,7 @@ export function SelectField({
  * unparseable or empty field simply drops that bound.
  */
 export function RangeField({
+  name,
   min,
   max,
   onChange,
@@ -225,6 +236,12 @@ export function RangeField({
   minLabel,
   maxLabel,
 }: {
+  /**
+   * Names the pair. A field with no `name` is a field a password manager
+   * feels free to guess at, and these two are the only bare number inputs on
+   * the page.
+   */
+  name: string;
   min?: number;
   max?: number;
   onChange: (bound: "min" | "max", value: string) => void;
@@ -241,9 +258,13 @@ export function RangeField({
       <input
         type="number"
         inputMode="numeric"
+        name={`${name}-min`}
+        autoComplete="off"
         value={min ?? ""}
         onChange={(e) => onChange("min", e.target.value)}
-        placeholder={`Från ${num(placeholderMin)}`}
+        // The figure is an example of what belongs here, not a default that
+        // is already in force — the ellipsis is what says so.
+        placeholder={`Från ${num(placeholderMin)}…`}
         aria-label={minLabel}
         className={field}
       />
@@ -253,9 +274,11 @@ export function RangeField({
       <input
         type="number"
         inputMode="numeric"
+        name={`${name}-max`}
+        autoComplete="off"
         value={max ?? ""}
         onChange={(e) => onChange("max", e.target.value)}
-        placeholder={`Till ${num(placeholderMax)}`}
+        placeholder={`Till ${num(placeholderMax)}…`}
         aria-label={maxLabel}
         className={field}
       />
@@ -283,6 +306,7 @@ export function MultiSelectDropdown({
   onToggle: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -323,6 +347,7 @@ export function MultiSelectDropdown({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
         // The announced name carries the selection the visible summary
         // shows — a static label would hide "3 program valda" from
         // assistive tech.
@@ -338,6 +363,7 @@ export function MultiSelectDropdown({
         // A listbox's members are options, and these are checkboxes — the
         // roles have to agree with what is actually in the panel.
         <div
+          id={panelId}
           role="group"
           aria-label={label}
           className="absolute top-[calc(100%+4px)] left-0 z-10 max-h-[280px] w-full min-w-[220px] overflow-y-auto overscroll-contain rounded-md border border-line-overlay bg-surface p-2 shadow-overlay"
