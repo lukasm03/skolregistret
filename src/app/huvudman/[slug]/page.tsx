@@ -74,12 +74,14 @@ export default async function HuvudmanDetailPage({
   const units = skolor.filter((s) => s.huvudman === h.namn).map(normalizeApiSchool);
   // Keyed by organisationsnummer, which is also how the packages are filed —
   // a huvudman without one (the name-keyed fallback rows) simply has none.
-  const årsredovisningar = await listÅrsredovisningar(h.organisationsnummer);
+  const [årsredovisningar, harKatalog] = await Promise.all([
+    listÅrsredovisningar(h.organisationsnummer),
+    harÅrsredovisningskatalog(),
+  ]);
   // An empty list means two different things, and the empty box says which:
   // no packages collected for this bolag, or no package directory at all
   // (a fresh clone — the packages are supplied locally, see AGENTS.md).
-  const saknarPaketkatalog =
-    årsredovisningar.length === 0 && !(await harÅrsredovisningskatalog());
+  const saknarPaketkatalog = årsredovisningar.length === 0 && !harKatalog;
 
   const isKommunal = h.typ === "Kommunal";
   // Just the path from the koncernmoder down to this huvudman — the full

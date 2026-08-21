@@ -83,6 +83,20 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
   };
   const clearAll = () => applyClear({ q: null, kommun: null, skolform: null });
 
+  // Stable identity: DataGrid rebuilds its TanStack column defs whenever the
+  // columns prop changes, so a fresh array per render would redo that work on
+  // every keystroke.
+  const columns = useMemo(
+    () => [
+      schoolColumns.name(),
+      schoolColumns.status(),
+      schoolColumns.kommun(),
+      schoolColumns.skolformer(),
+      schoolColumns.elever(),
+    ],
+    [],
+  );
+
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -136,13 +150,7 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
 
       <ListPane
         rows={filtered}
-        columns={[
-          schoolColumns.name(),
-          schoolColumns.status(),
-          schoolColumns.kommun(),
-          schoolColumns.skolformer(),
-          schoolColumns.elever(),
-        ]}
+        columns={columns}
         rowKey={(s) => s.kod}
         rowHref={(s) => `/skolor/${s.kod}`}
         rowLabel={(s) => `Visa ${s.name}`}
