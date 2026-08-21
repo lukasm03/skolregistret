@@ -9,6 +9,7 @@
 import { readAlltFile, registerFilePath } from "./client";
 import { koncernForHuvudmanIndex } from "./koncern";
 import { listSkolor } from "./resources";
+import { huvudmanRadFörSlug } from "@/lib/huvudman-slugs";
 import type { HuvudmanRad, SkolorRad } from "./types";
 
 async function alltFile() {
@@ -67,4 +68,17 @@ export function buildHuvudmanRows(): Promise<HuvudmanRad[]> {
     })();
   }
   return huvudmanRowsCache;
+}
+
+/**
+ * The one place a `/huvudman/[slug]` URL resolves to its row —
+ * `generateMetadata` and the page both resolve through this, so a title can
+ * never describe a different huvudman than the one rendered. `null` when no
+ * row carries the slug, which the route answers with not-found.
+ *
+ * Lives here rather than in `api-normalize.ts` because it reads the list:
+ * that module runs in the browser and must not reach this barrel at runtime.
+ */
+export async function getHuvudmanBySlug(slug: string): Promise<HuvudmanRad | null> {
+  return huvudmanRadFörSlug(await buildHuvudmanRows()).get(slug) ?? null;
 }

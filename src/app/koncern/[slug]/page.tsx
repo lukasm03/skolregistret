@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
 import { DASH, isoDate, num, plural, slugify } from "@/lib/format";
-import { huvudmanSlugar } from "@/lib/api-normalize";
+import { huvudmanSlugar } from "@/lib/huvudman-slugs";
 import { buildKoncernGroups, getKoncernBySlug, listHuvudman } from "@/lib/skolregister";
 import type { HuvudmanRad } from "@/lib/skolregister";
 

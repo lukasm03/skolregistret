@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { site } from "@/config/site";
-import { huvudmanRadFörSlug } from "@/lib/api-normalize";
+import { huvudmanRadFörSlug } from "@/lib/huvudman-slugs";
 import { buildKoncernGroups, listHuvudman, listSkolor } from "@/lib/skolregister";
 
 /**

@@ -1,4 +1,4 @@
-import { huvudmanSlugar } from "./api-normalize";
+import { huvudmanSlugar } from "./huvudman-slugs";
 import { buildEnkätComparisons, type EnkätJämförelse } from "./enkat-compare";
 import { antalDokument, buildDokumentVyer, type DokumentgruppVy } from "./dokument-view";
 import { DASH, slugify } from "./format";

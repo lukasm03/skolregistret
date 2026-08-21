@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { SchoolsView } from "@/components/views/SchoolsView";
 import { site } from "@/config/site";
-import { huvudmanRadFörSlug, toListSchoolPayload } from "@/lib/api-normalize";
+import { toListSchoolPayload } from "@/lib/api-normalize";
+import { huvudmanRadFörSlug } from "@/lib/huvudman-slugs";
 import { listHuvudman, listSkolor } from "@/lib/skolregister";
 
 export const metadata: Metadata = {

@@ -20,13 +20,15 @@ import {
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
 import { harÅrsredovisningskatalog, listÅrsredovisningar } from "@/lib/arsredovisning";
-import {
-  getHuvudmanBySlug,
-  huvudmanRadFörSlug,
-  normalizeApiSchool,
-} from "@/lib/api-normalize";
+import { normalizeApiSchool } from "@/lib/api-normalize";
+import { huvudmanRadFörSlug } from "@/lib/huvudman-slugs";
 import { DASH, kommunLong, num, plural, slugify } from "@/lib/format";
-import { ancestorPath, listHuvudman, listSkolor } from "@/lib/skolregister";
+import {
+  ancestorPath,
+  getHuvudmanBySlug,
+  listHuvudman,
+  listSkolor,
+} from "@/lib/skolregister";
 
 /**
  * Statically generated for every huvudman the register currently has, the

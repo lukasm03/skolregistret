@@ -38,6 +38,8 @@ export {
   listSkolor,
 } from "./resources";
 
+export { getHuvudmanBySlug } from "./huvudman";
+
 export {
   ancestorPath,
   buildKoncernGroups,

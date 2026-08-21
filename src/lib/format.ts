@@ -130,7 +130,7 @@ export function median(xs: number[]): number | null {
  *
  * Distinct names can still land on the same slug (`HÅBO`/`HABO` both give
  * `habo-kommun`), so a caller that needs a unique address per row has to
- * disambiguate — see `huvudmanSlugar` in `api-normalize.ts`.
+ * disambiguate — see `huvudmanSlugar` in `huvudman-slugs.ts`.
  */
 export function slugify(input: string): string {
   return input
