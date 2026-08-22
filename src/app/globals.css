@@ -7,154 +7,153 @@
 
    The palette lives on `:root` as plain custom properties and is mapped into
    Tailwind through `@theme inline` below. `@theme` on its own bakes each
-   value into the utilities that use it, so a media query could never reach
-   them; `inline` emits `var(--surface)` instead, and the override further
-   down is what the browser resolves at paint time.
+   value into the utilities that use it, so an appearance change could never
+   reach them; `inline` emits `var(--surface)` instead, and `light-dark()`
+   is what the browser resolves at paint time.
 
-   Dark follows the system setting and nothing else. A manual switch would
-   need a class or attribute on `<html>`, a place to persist the choice, and
-   an inline script to apply it before first paint — worth doing only once
-   somebody asks for the choice.
+   Each token carries both appearances in one `light-dark()` pair rather than
+   in two blocks a hundred lines apart. That is what lets the appearance be
+   switched by `color-scheme` alone — see `[data-theme]` below — and what
+   stops the two halves of a token drifting out of step.
 --------------------------------------------------------------------------- */
 :root {
   /* Tells the browser to draw its own furniture — scrollbars, form controls,
-     the canvas behind the page — to match. */
+     the canvas behind the page — to match, and tells `light-dark()` below
+     which half of every pair to resolve to. Both keywords means "follow the
+     system"; `[data-theme]` narrows it to one. */
   color-scheme: light dark;
 
   /* Surfaces */
-  --canvas: #edede9;
-  --surface: #ffffff;
-  --surface-subtle: #fbfbf9;
-  --surface-panel: #fdfdfb;
-  --surface-head: #f7f7f5;
-  --surface-segment: #efefeb;
+  --canvas: light-dark(#edede9, #0e1013);
+  --surface: light-dark(#ffffff, #16181c);
+  --surface-subtle: light-dark(#fbfbf9, #121418);
+  --surface-panel: light-dark(#fdfdfb, #141619);
+  --surface-head: light-dark(#f7f7f5, #1c1f24);
+  --surface-segment: light-dark(#efefeb, #212429);
 
   /* Lines */
-  --line: #dcdcd6;
-  --line-soft: #e3e3df;
-  --line-softer: #e9e9e5;
-  --line-row: #f0f0ec;
+  --line: light-dark(#dcdcd6, #2b2f36);
+  --line-soft: light-dark(#e3e3df, #252930);
+  --line-softer: light-dark(#e9e9e5, #202329);
+  --line-row: light-dark(#f0f0ec, #1e2127);
   /* Borders of controls — the unchecked box, the radio ring, the switch's
      off track. WCAG asks 3:1 of a component boundary against what surrounds
      it, and the old #d2d2cc managed 1.52 on white: technically a border,
-     practically invisible. Measures 3.29 / 3.23 on surface / panel. */
-  --line-control: #8e8e88;
+     practically invisible. Measures 3.29 / 3.23 on light surface / panel,
+     and 4.3 against the dark surface. */
+  --line-control: light-dark(#8e8e88, #767d88);
 
   /* Ink
-     The app's smallest text — 10.5px uppercase labels, column headers, filter
+     The app's smallest text — 11px uppercase labels, column headers, filter
      counts, stat notes — is drawn in the lower three steps, so each one has to
      clear WCAG AA (4.5:1) on the lightest surface it lands on. Measured
-     against `--surface` / `--surface-head`:
+     against `--surface` / `--surface-head` in light:
 
        muted  6.72 / 6.26     subtle  5.58 / 5.20     faint  4.76 / 4.44
+
+     and against the dark `--surface`: ink 14.8, muted 7.9, subtle 6.4,
+     faint 5.0.
 
      `faint`'s 4.44 on `surface-head` is only ever the sort glyph, which is
      aria-hidden decoration held to the 3:1 non-text bar. Lightening any of
      these again puts real text below AA — check before you do. */
-  --ink: #14161a;
-  --ink-muted: #585c63;
-  --ink-subtle: #65686f;
-  --ink-faint: #6f737b;
+  --ink: light-dark(#14161a, #e9eaec);
+  --ink-muted: light-dark(#585c63, #a8adb5);
+  --ink-subtle: light-dark(#65686f, #959ba4);
+  --ink-faint: light-dark(#6f737b, #828892);
   /* Disabled controls only (the paging arrows at either end), which WCAG
      exempts — dark enough to read as present, light enough to read as inert. */
-  --ink-ghost: #9ea1a7;
+  --ink-ghost: light-dark(#9ea1a7, #5f656e);
   /* Text drawn on top of `--ink` itself, e.g. the current page number. */
-  --ink-inverse: #ffffff;
+  --ink-inverse: light-dark(#ffffff, #0e1013);
 
-  /* Accent */
-  --accent: #24457a;
-  --accent-bg: #eef2fa;
-  --accent-line: #c3d0e4;
+  /* Accent. Flips from a dark blue on white to a light blue on near-black,
+     so the marks drawn on top of it flip with it. */
+  --accent: light-dark(#24457a, #8db4f2);
+  --accent-bg: light-dark(#eef2fa, #1a2231);
+  --accent-line: light-dark(#c3d0e4, #2f3f5c);
   /* The ✕ on a removable filter token — a control affordance, so 3:1 on
      `accent-bg` rather than the 4.5:1 text bar. Measures 3.37. */
-  --accent-soft: #6d84ad;
+  --accent-soft: light-dark(#6d84ad, #7b93bb);
   /* Marks drawn on top of `--accent`: the checkmark, the radio dot. */
-  --accent-ink: #ffffff;
-  --row-hover: #f3f5fa;
+  --accent-ink: light-dark(#ffffff, #0e1013);
+  --row-hover: light-dark(#f3f5fa, #1b1f27);
 
   /* Comparison against riket, in the programtabell. A pair of their own
      rather than `ok`/`warn`: those two say "this is fine" / "look at this",
      while these say only which side of the average a figure falls on.
-     6.49 and 6.93 on `--surface`. */
-  --over: #1b6b46;
-  --under: #a3312b;
+     6.49 / 6.93 on the light `--surface`, 8.28 / 6.69 on the dark one. */
+  --over: light-dark(#1b6b46, #6cc294);
+  --under: light-dark(#a3312b, #e8827a);
   /* The same pair as a fill, behind the figure rather than on it: the filled
      part of a comparison band. Held far enough back that the markers drawn on
      top of it — the unit's own, kommunens, rikets — stay the thing you see. */
-  --over-bg: #dcebe3;
-  --under-bg: #f4dedc;
+  --over-bg: light-dark(#dcebe3, #1a2c23);
+  --under-bg: light-dark(#f4dedc, #2d1d1c);
 
   /* Status */
-  --ok: #2f6b4f;
-  --ok-bg: #f1f7f3;
-  --ok-line: #cbddd2;
-  --warn: #8a5a22;
-  --warn-bg: #faf7f2;
-  --warn-line: #e0d3be;
+  --ok: light-dark(#2f6b4f, #6cc294);
+  --ok-bg: light-dark(#f1f7f3, #152019);
+  --ok-line: light-dark(#cbddd2, #26402f);
+  --warn: light-dark(#8a5a22, #d7a35d);
+  --warn-bg: light-dark(#faf7f2, #221c12);
+  --warn-line: light-dark(#e0d3be, #443521);
 
-  --selection: #dce3f0;
+  --selection: light-dark(#dce3f0, #2a3854);
 
   /* Elevation. A popup's edge is carried by its shadow in light and by its
      border in dark, where a black shadow is no shadow at all — so the border
-     lightens there and the shadow deepens, and both tokens change together. */
-  --line-overlay: #dcdcd6;
+     lightens there and the shadow deepens. `light-dark()` takes colours and
+     not whole shadow values, so the geometry is switched below instead. */
+  --line-overlay: light-dark(#dcdcd6, #3b414a);
   --elevation-overlay: 0 4px 12px rgb(20 22 26 / 0.1);
   /* The nav's active chip and the switch knob: lifted off their own track. */
   --elevation-raised: 0 1px 2px rgb(20 22 26 / 0.14);
+
+  /* The rule cast over a table's scrolling edge, saying there are columns
+     past it. Ink rather than a surface colour, because it falls across three
+     different backgrounds — header, row, hovered row — on its way down. */
+  --edge-shadow: light-dark(rgb(20 22 26 / 0.13), rgb(0 0 0 / 0.55));
+
+  /* How far down the viewport a sticky element has to sit to clear the app
+     header. The header only sticks from `sm` up — two wrapped rows of it is
+     too much of a phone to give away permanently — so below that this is 0.
+
+     `--stuck-top` is what a sticky element actually reads. It starts equal to
+     `--app-top` and is deepened by anything that stacks under the header:
+     `Tabs` sets it to clear its own strip for everything inside the panel. */
+  --app-top: 0px;
+  --stuck-top: var(--app-top);
 }
 
-/* The same roles, re-measured rather than mechanically inverted. Every text
-   step clears AA on the surface it lands on — ink 14.8, muted 7.9, subtle
-   6.4, faint 5.0 against `--surface` — and `--line-control` clears the 3:1
-   boundary bar at 4.3. The accent flips from a dark blue on white to a light
-   blue on near-black, so the marks drawn on top of it flip with it. */
+/* The dark shadows, which `light-dark()` cannot carry: it interpolates
+   colours, and these differ in their geometry too. Both selectors have to be
+   spelled out — a media query and an attribute cannot share a selector list. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --canvas: #0e1013;
-    --surface: #16181c;
-    --surface-subtle: #121418;
-    --surface-panel: #141619;
-    --surface-head: #1c1f24;
-    --surface-segment: #212429;
-
-    --line: #2b2f36;
-    --line-soft: #252930;
-    --line-softer: #202329;
-    --line-row: #1e2127;
-    --line-control: #767d88;
-
-    --ink: #e9eaec;
-    --ink-muted: #a8adb5;
-    --ink-subtle: #959ba4;
-    --ink-faint: #828892;
-    --ink-ghost: #5f656e;
-    --ink-inverse: #0e1013;
-
-    --accent: #8db4f2;
-    --accent-bg: #1a2231;
-    --accent-line: #2f3f5c;
-    --accent-soft: #7b93bb;
-    --accent-ink: #0e1013;
-    --row-hover: #1b1f27;
-
-    /* 8.28 and 6.69 on the dark `--surface`. */
-    --over: #6cc294;
-    --under: #e8827a;
-    --over-bg: #1a2c23;
-    --under-bg: #2d1d1c;
-
-    --ok: #6cc294;
-    --ok-bg: #152019;
-    --ok-line: #26402f;
-    --warn: #d7a35d;
-    --warn-bg: #221c12;
-    --warn-line: #443521;
-
-    --selection: #2a3854;
-
-    --line-overlay: #3b414a;
+  :root:not([data-theme="light"]) {
     --elevation-overlay: 0 6px 16px rgb(0 0 0 / 0.55);
     --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+}
+:root[data-theme="dark"] {
+  --elevation-overlay: 0 6px 16px rgb(0 0 0 / 0.55);
+  --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+/* The manual appearance choice. Narrowing `color-scheme` to a single keyword
+   is the whole mechanism: every token above resolves through `light-dark()`,
+   and the browser's own furniture follows the same property. `ThemeToggle`
+   writes the attribute and `layout.tsx` replays it before first paint. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --app-top: 52px;
   }
 }
 
@@ -205,14 +204,23 @@
 }
 
 @theme {
-  /* Type scale — small, dense, data-dashboard sizes */
-  --text-micro: 10.5px;
-  --text-mono: 11px;
-  --text-xs: 11.5px;
-  --text-sm: 12px;
-  --text-base: 12.5px;
-  --text-md: 13px;
-  --text-lg: 14px;
+  /* Type scale — four steps, and each one is a step you can see.
+
+     This used to be seven, spanning 10.5px to 14px: `micro` 10.5, `mono` 11,
+     `xs` 11.5, `sm` 12, `base` 12.5, `md` 13, `lg` 14. Three of those —
+     11.5, 12, 12.5 — carried two thirds of every use in the app inside a
+     single pixel, which is not a hierarchy anyone perceives. It was three
+     tokens doing one token's work, and every new component had to guess
+     which. What actually separates the strata here is weight and the
+     `--ink-*` ramp, and both still do.
+
+     `base` also went up a point. This is a public register read by people
+     who did not choose the density, and 12.5px was mean to them; the tables
+     are `table-fixed` on explicit px widths, so nothing reflowed for it. */
+  --text-micro: 11px; /* uppercase labels, column headers, mono footnotes */
+  --text-sm: 12px; /* secondary prose, muted cells, source notes */
+  --text-base: 13.5px; /* body */
+  --text-lg: 15px; /* the figure on a row, the brand */
   --text-title: 26px;
   --text-stat: 28px;
 
@@ -259,6 +267,13 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+  }
+
+  /* Anything that pins itself below the header — a tab strip, a column
+     header — has to leave room for whatever else is already pinned there.
+     Scrolling an anchor into view has the same problem, and the same answer. */
+  :root {
+    scroll-padding-top: calc(var(--stuck-top) + 8px);
   }
 
   /* Touch defaults for everything clickable. `manipulation` drops the

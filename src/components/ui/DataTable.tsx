@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { TableScroller } from "./TableScroller";
 
 export interface Column<T> {
   key: string;
@@ -35,8 +36,26 @@ export function cellClass<T>(col: Column<T>): string {
     .join(" ");
 }
 
+/**
+ * A column header, and the rules that let it pin.
+ *
+ * Two things here are not what they look like. The bottom rule is an inset
+ * shadow rather than a border, because `border-collapse: collapse` hands the
+ * borders to the table and a sticky cell then leaves its own behind; and the
+ * background sits on the cell rather than on the `<tr>`, because a row's
+ * background does not travel with a cell that has pinned itself.
+ *
+ * `sticky` is off until `TableScroller` says the table fits — inside a
+ * horizontal scroller it would pin to a box that never scrolls. `--stuck-top`
+ * is how far down the viewport is already spoken for: the app header from
+ * `sm` up, plus a tab strip where there is one.
+ */
 export const headerClass =
-  "h-[30px] border-b border-line px-2 text-micro font-semibold tracking-[0.07em] text-ink-subtle uppercase";
+  "h-[30px] bg-surface-head px-2 text-micro font-semibold tracking-[0.07em] text-ink-subtle uppercase shadow-[inset_0_-1px_0_var(--line)] group-data-[pinned]/scroll:sticky group-data-[pinned]/scroll:top-[var(--stuck-top)] group-data-[pinned]/scroll:z-20";
+
+/** The trailing spacer cell, which has to pin with the rest of the row. */
+export const headerSpacerClass =
+  "w-6 bg-surface-head shadow-[inset_0_-1px_0_var(--line)] group-data-[pinned]/scroll:sticky group-data-[pinned]/scroll:top-[var(--stuck-top)] group-data-[pinned]/scroll:z-20";
 
 /** What the one flexible column needs before its content stops being readable. */
 const FLEX_COLUMN_MIN = 200;
@@ -51,32 +70,6 @@ const FLEX_COLUMN_MIN = 200;
 export function tableMinWidth<T>(columns: Column<T>[]): number {
   const spacer = 24;
   return columns.reduce((sum, col) => sum + (col.width ?? FLEX_COLUMN_MIN), 0) + spacer;
-}
-
-/**
- * Wraps a table in its sideways scroller. It is a tab stop with a name: a
- * region that scrolls has to be reachable by keyboard, and on the detail
- * tables — which have no row links — there is nothing else inside to focus.
- */
-export function TableScroller({
-  minWidth,
-  label,
-  children,
-}: {
-  minWidth: number;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      role="region"
-      aria-label={label}
-      tabIndex={0}
-      className="w-full overflow-x-auto outline-offset-[-2px]"
-    >
-      <div style={{ minWidth }}>{children}</div>
-    </div>
-  );
 }
 
 interface Props<T> {
@@ -122,7 +115,7 @@ export function DataTable<T>({
             ))}
             {/* Trailing spacer so the last column isn't flush against the
               scroll edge. */}
-            <th aria-hidden className="w-6 border-b border-line" />
+            <th aria-hidden className={headerSpacerClass} />
           </tr>
         </thead>
         <tbody>

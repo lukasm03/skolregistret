@@ -62,7 +62,7 @@ export function FilterSummary({
           key={f.key}
           type="button"
           onClick={() => onClear(f.clear)}
-          className="flex max-w-[260px] items-center gap-1.5 rounded-sm border border-accent-line bg-accent-bg px-2 py-[3px] text-xs hover:border-accent"
+          className="flex max-w-[260px] items-center gap-1.5 rounded-sm border border-accent-line bg-accent-bg px-2 py-[3px] text-sm hover:border-accent"
         >
           <span className="flex-none text-ink-muted">{f.label}</span>
           <span className="truncate font-medium text-accent">{f.value}</span>
@@ -73,7 +73,7 @@ export function FilterSummary({
       <button
         type="button"
         onClick={onClearAll}
-        className="rounded-sm px-1 py-[3px] text-xs text-ink-muted underline decoration-line-control underline-offset-2 hover:text-ink hover:decoration-ink-faint"
+        className="rounded-sm px-1 py-[3px] text-sm text-ink-muted underline decoration-line-control underline-offset-2 hover:text-ink hover:decoration-ink-faint"
       >
         Rensa filter
       </button>
@@ -177,7 +177,7 @@ export function Pagination({
         pageHref={pageHref}
         disabled={page <= 1}
         label="Föregående sida"
-        className="flex size-[27px] items-center justify-center rounded-md border border-line text-mono"
+        className="flex size-[27px] items-center justify-center rounded-md border border-line text-micro"
       >
         <ChevronLeft />
       </PageStep>
@@ -214,7 +214,7 @@ export function Pagination({
         pageHref={pageHref}
         disabled={page >= totalPages}
         label="Nästa sida"
-        className="flex size-[27px] items-center justify-center rounded-md border border-line text-mono"
+        className="flex size-[27px] items-center justify-center rounded-md border border-line text-micro"
       >
         <ChevronRight />
       </PageStep>

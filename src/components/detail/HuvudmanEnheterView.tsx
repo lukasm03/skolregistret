@@ -181,10 +181,13 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
           setPerPage(n);
           setPageIndex(0);
         }}
-        frameClassName="overflow-hidden rounded-lg border border-line-soft"
+        // `overflow-clip` rather than `hidden`: both round off the grid's
+        // corners, but `hidden` makes this a scroll container, and a column
+        // header that pins inside one pins to a box that never scrolls.
+        frameClassName="overflow-clip rounded-lg border border-line-soft"
       />
 
-      <p className="max-w-[760px] text-xs leading-[1.55] text-ink-faint">
+      <p className="max-w-[760px] text-sm leading-[1.55] text-ink-faint">
         {site.footnotes.elevantal}
       </p>
     </section>

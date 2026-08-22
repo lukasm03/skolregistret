@@ -126,6 +126,34 @@ why grundskolan has no `"F"` chip — förskoleklass years belong to `FKLASS`.
 declare, so the parser and the chips stay in agreement; keep it that way when
 you add a form.
 
+## What pins to the top, and what that costs
+
+Four things stick, and they stack in a fixed order: the app header (from `sm`
+up only — on a phone it wraps to two rows and is not worth the viewport), a
+detail page's tab strip, a table's column headers, and the filter rail.
+
+They coordinate through one inherited custom property. `globals.css` sets
+`--app-top` to the header's own height at each breakpoint and seeds
+`--stuck-top` from it; `Tabs` is the only thing that deepens it, writing
+`calc(var(--app-top) + <measured strip height>)` onto its panel so everything
+inside starts below the strip rather than under it. Anything else that learns
+to pin should read `--stuck-top` and leave it alone.
+
+**A table can have a pinned header or a sideways scroll, never both.**
+`overflow-x: auto` forces the computed `overflow-y` up from `visible`, which
+makes the scroller the scrollport for everything in it — so a sticky header
+inside one pins to a box that never scrolls vertically. `TableScroller`
+measures its own width against the `minWidth` the columns declare and picks:
+wide enough, and the overflow goes back to `visible` and the header pins;
+narrower, and it stays a scroller and shades the edge it can scroll towards.
+`headerClass` is off unless the scroller says `data-pinned`, which is what
+that attribute is for.
+
+The corollary is that **an `overflow-hidden` wrapper anywhere above a table
+silently kills its pinned header**. Use `overflow-clip` where you only meant
+to round off corners — it clips identically without becoming a scroll
+container. `HuvudmanEnheterView`'s frame says so where it does it.
+
 ## Deliberately left as-is
 
 - **`src/components/filters/controls.tsx` (373 lines, 11 exports)** and

@@ -29,7 +29,7 @@ function SalsaCard({ r }: { r: SalsaJämförelse }) {
           {/* `h3`: these sit under the "SALSA" heading the skolenhet page
               puts above them, not beside it. */}
           <h3 className="text-base leading-[1.3] font-medium">{r.label}</h3>
-          <p className="text-xs text-ink-faint">
+          <p className="text-sm text-ink-faint">
             {r.läsår !== DASH ? `läsår ${r.läsår} · ` : ""}avvikelse mot SALSA:s modell
           </p>
         </div>
@@ -43,18 +43,18 @@ function SalsaCard({ r }: { r: SalsaJämförelse }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`rounded-xl border px-2.5 py-[2px] text-xs font-medium ${pillTone[r.riktning]}`}
+          className={`rounded-xl border px-2.5 py-[2px] text-sm font-medium ${pillTone[r.riktning]}`}
         >
           {r.omdöme}
         </span>
-        <span className="text-xs text-ink-muted">faktiskt: {r.faktisk}</span>
+        <span className="text-sm text-ink-muted">faktiskt: {r.faktisk}</span>
       </div>
 
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-[7px] border-t border-line-row pt-2.5 text-xs text-accent marker:content-none [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-[7px] border-t border-line-row pt-2.5 text-sm text-accent marker:content-none [&::-webkit-details-marker]:hidden">
           Vad är SALSA?
         </summary>
-        <p className="mt-2 animate-[reveal_150ms_ease-out] text-xs leading-[1.5] text-ink-muted">
+        <p className="mt-2 animate-[reveal_150ms_ease-out] text-sm leading-[1.5] text-ink-muted">
           {r.förklaring}
         </p>
       </details>
@@ -65,7 +65,7 @@ function SalsaCard({ r }: { r: SalsaJämförelse }) {
 /** Read out under the SALSA section — the caveat applies to every card. */
 export function SalsaKälla() {
   return (
-    <p className="text-xs leading-[1.55] text-ink-faint">
+    <p className="text-sm leading-[1.55] text-ink-faint">
       Källa: Skolverkets SALSA-modell, läsår 2024/25. Avvikelsen är skolans faktiska
       resultat minus vad elevsammansättningen statistiskt förutsäger — inte en jämförelse
       mot kommunen eller riket.

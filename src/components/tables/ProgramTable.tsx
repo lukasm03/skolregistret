@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { TableScroller, headerClass } from "@/components/ui/DataTable";
+import { headerClass } from "@/components/ui/DataTable";
+import { TableScroller } from "@/components/ui/TableScroller";
 import { CaretRight, SortArrow } from "@/components/ui/icons";
 import { barTone, valueTone } from "@/components/detail/tone";
 import { programgrupper, programmetriker } from "@/config/programmetriker";
@@ -45,14 +46,14 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-2">
-        <p className="text-xs text-ink-subtle">
+        <p className="text-sm text-ink-subtle">
           {sort
             ? `Sorterat efter ${(
                 programmetriker.find((m) => m.key === sort.key)?.label ?? ""
               ).toLowerCase()}, ${sort.dir === "desc" ? "högst" : "lägst"} först`
             : "Sorterat efter hur programmet ligger mot riket"}
         </p>
-        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-ink-muted">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-sm text-ink-muted">
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="size-[8px] rounded-full bg-under" />
             under riket
@@ -72,7 +73,12 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
         <table className="w-full table-fixed border-collapse">
           <thead>
             <tr className="bg-surface-head">
-              <td className="border-b border-line-row" />
+              {/* Holds the left edge with the name cells below it — the
+                  figures scroll under both. */}
+              <td
+                style={{ zIndex: 25 }}
+                className="sticky left-0 border-b border-line-row bg-surface-head"
+              />
               {programgrupper.map((g, i) => (
                 <th
                   key={g.grupp}
@@ -87,10 +93,18 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
               ))}
             </tr>
             <tr className="bg-surface-head">
+              {/*
+                Sticky both ways, and the only cell that is. Sideways it holds
+                the left edge over the name column below it, which was already
+                pinned and had no header staying with it; downwards it comes
+                along when `TableScroller` says the header can pin at all.
+                The z-index is inline because it has to beat both the rest of
+                its own row and the name cells it passes over.
+              */}
               <th
                 scope="col"
-                style={{ width: 280 }}
-                className={`${headerClass} text-left`}
+                style={{ width: 280, zIndex: 25 }}
+                className={`${headerClass} sticky left-0 text-left`}
               >
                 Program
               </th>
@@ -156,7 +170,7 @@ export function ProgramTable({ rows }: { rows: ProgramComparison[] }) {
         </table>
       </TableScroller>
 
-      <p className="text-xs leading-[1.55] text-ink-faint">
+      <p className="text-sm leading-[1.55] text-ink-faint">
         Jämförelsen sker mot samma program i hela riket, inte mot skolans övriga program.
         Öppna en rad för avvikelser och riksvärden.
       </p>
@@ -209,7 +223,7 @@ function ProgramRows({
               size={11}
               className={`text-ink-faint transition-transform ${isOpen ? "rotate-90" : ""}`}
             />
-            <span className="min-w-0 flex-1 truncate text-md font-medium">
+            <span className="min-w-0 flex-1 truncate text-base font-medium">
               {row.namn}
             </span>
           </button>
@@ -266,7 +280,7 @@ function ProgramRows({
                 <ProgramDeviation key={cell.metrik.key} cell={cell} />
               ))}
             </div>
-            <p className="mt-3 pl-[30px] text-xs leading-[1.5] text-ink-faint">
+            <p className="mt-3 pl-[30px] text-sm leading-[1.5] text-ink-faint">
               Mittlinjen är riksgenomsnittet för samma program. Elever och lägsta poäng
               färgas neutralt — högre är varken bra eller dåligt.
             </p>
@@ -300,7 +314,7 @@ function ProgramDeviation({ cell }: { cell: ProgramMetricCell }) {
       </span>
 
       <span className="flex items-baseline justify-end gap-2 whitespace-nowrap">
-        <span className="font-mono text-mono text-ink-faint">
+        <span className="font-mono text-micro text-ink-faint">
           riket {cell.riksText ?? DASH}
         </span>
         <span className={`font-mono text-sm ${valueTone[cell.riktning]}`}>

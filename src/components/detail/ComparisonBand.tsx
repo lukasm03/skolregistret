@@ -23,8 +23,14 @@ interface Props {
   height?: number;
 }
 
-/** Kommunens tick: dashed, so it reads as the softer of the two references. */
-const DASHED =
+/**
+ * Kommunens tick: dashed, so it reads as the softer of the two references.
+ *
+ * Exported because the mark is drawn in three places — the band itself, the
+ * legend that names it, and the per-card figure line in `NyckeltalCards` —
+ * and a second copy of the gradient is a second thing to keep in step.
+ */
+export const DASHED =
   "repeating-linear-gradient(var(--line-control) 0 3px, transparent 3px 6px)";
 
 export function ComparisonBand({
@@ -82,7 +88,7 @@ export function ComparisonBand({
  */
 export function BandLegend({ enheten = "enheten" }: { enheten?: string }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-ink-muted">
+    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-sm text-ink-muted">
       <span className="flex items-center gap-1.5">
         <span aria-hidden className="h-[13px] w-[4px] rounded-[2px] bg-ink" />
         {enheten}

@@ -30,14 +30,14 @@ function EnkatCard({ g }: { g: EnkätJämförelse }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1.5 rounded-t-md border-b border-line-row bg-surface-subtle px-3.5 py-2.5">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
           <h2 className="text-base font-semibold">{g.grupp}</h2>
-          <span className="font-mono text-mono text-ink-faint">
+          <span className="font-mono text-micro text-ink-faint">
             {g.antalSvar} svar
             {g.svarsfrekvens && ` · ${g.svarsfrekvens} svarsfrekvens`}
             {g.läsår !== DASH && ` · ${g.läsår}`}
           </span>
         </div>
         <span
-          className={`rounded-xl border px-2.5 py-[2px] text-xs font-medium ${
+          className={`rounded-xl border px-2.5 py-[2px] text-sm font-medium ${
             g.osäkert
               ? "border-warn-line bg-warn-bg text-warn"
               : "border-ok-line bg-ok-bg text-ok"
@@ -51,7 +51,7 @@ function EnkatCard({ g }: { g: EnkätJämförelse }) {
         {g.dimensioner.map((d) => (
           <EnkatRad key={d.label} d={d} />
         ))}
-        <p className="mt-2.5 text-xs leading-[1.5] text-ink-muted">{g.sammanfattning}</p>
+        <p className="mt-2.5 text-sm leading-[1.5] text-ink-muted">{g.sammanfattning}</p>
       </div>
     </section>
   );
@@ -80,7 +80,7 @@ function EnkatRad({ d }: { d: EnkätDimension }) {
           height={20}
         />
       </span>
-      <span className="order-4 col-span-2 text-right font-mono text-mono text-ink-faint sm:col-span-1">
+      <span className="order-4 col-span-2 text-right font-mono text-micro text-ink-faint sm:col-span-1">
         kommun {d.kommun} · riket {d.riks}{" "}
         <span className={valueTone[d.riktning]}>{signed(d.diff)}</span>
       </span>

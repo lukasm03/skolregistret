@@ -16,6 +16,8 @@ import {
   FactList,
   KoncernPill,
   Note,
+  Stat,
+  StatGrid,
   StatusPill,
 } from "@/components/ui/primitives";
 import { site } from "@/config/site";
@@ -274,8 +276,10 @@ export default async function HuvudmanDetailPage({
               </Link>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-            <span translate="no" className="font-mono text-xs text-ink-subtle">
+          {/* What the huvudman is, rather than how big it is — the counts
+              moved to the tiles below. */}
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pt-0.5">
+            <span translate="no" className="font-mono text-sm text-ink-subtle">
               Org.nr {h.organisationsnummer}
             </span>
             <Dot />
@@ -284,44 +288,35 @@ export default async function HuvudmanDetailPage({
                 ? "Kommunal huvudman"
                 : `Fristående huvudman${h.bolagsform ? ` · ${h.bolagsform}` : ""}`}
             </span>
+            {h.skolformer.length > 0 && (
+              <>
+                <Dot />
+                <span className="text-base text-ink-muted">
+                  {h.skolformer.join(" · ")}
+                </span>
+              </>
+            )}
+            <span className="hidden flex-1 sm:block" />
+            <Link
+              href={`/skolor?huvudman=${encodeURIComponent(slug)}`}
+              className="text-base text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+            >
+              Visa enheterna i träfflistan
+            </Link>
           </div>
         </header>
 
-        <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 border-b border-line-soft bg-surface-subtle px-4 py-2.5 sm:px-6">
-          <span className="text-base text-ink-muted">
-            <span className="font-mono text-md font-medium text-ink">
-              {num(h.antalEnheter)}
-            </span>{" "}
-            skolenheter
-          </span>
-          <Dot />
-          <span className="text-base text-ink-muted">
-            <span className="font-mono text-md font-medium text-ink">
-              {num(h.antalElever)}
-            </span>{" "}
-            elever
-          </span>
-          <Dot />
-          <span className="text-base text-ink-muted">
-            <span className="font-mono text-md font-medium text-ink">
-              {num(h.kommuner.length)}
-            </span>{" "}
-            {plural(h.kommuner.length, "kommun", "kommuner")}
-          </span>
-          {h.skolformer.length > 0 && (
-            <>
-              <Dot />
-              <span className="text-base text-ink-muted">{h.skolformer.join(" · ")}</span>
-            </>
-          )}
-          <div className="flex-1" />
-          <Link
-            href={`/skolor?huvudman=${encodeURIComponent(slug)}`}
-            className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-          >
-            Visa enheterna i träfflistan
-          </Link>
-        </div>
+        {/* The koncern page's tiles, for the same reason the skolenhet page
+            now has them — see the note there. */}
+        <StatGrid>
+          <Stat label="Skolenheter" value={num(h.antalEnheter)} />
+          <Stat label="Elever" value={num(h.antalElever)} note="summa av avrundade tal" />
+          <Stat
+            label="Kommuner"
+            value={num(h.kommuner.length)}
+            note={h.kommuner.slice(0, 3).join(", ") || undefined}
+          />
+        </StatGrid>
 
         <div className="flex flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
           <Tabs tabs={tabs} defaultTab="skolenheter" />

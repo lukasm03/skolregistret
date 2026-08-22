@@ -20,7 +20,7 @@ export const nyckeltalColumns: Column<NyckeltalJämförelse>[] = [
     cell: (r) => (
       <span className="flex items-baseline gap-2">
         {r.label}
-        {r.saknas && <span className="text-xs text-ink-faint">{r.saknas}</span>}
+        {r.saknas && <span className="text-sm text-ink-faint">{r.saknas}</span>}
       </span>
     ),
   },

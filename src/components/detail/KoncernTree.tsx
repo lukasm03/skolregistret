@@ -39,7 +39,7 @@ function KoncernTreeNode({ nod, depth }: { nod: TrädNod; depth: number }) {
         )}
         <span className="min-w-0 truncate">{nod.namn ?? nod.orgnr}</span>
         {nod.land && nod.land !== "SE" && (
-          <span className="flex-none text-xs text-ink-faint">({nod.land})</span>
+          <span className="flex-none text-sm text-ink-faint">({nod.land})</span>
         )}
         {statusLabel && (
           <span className="flex-none rounded-md border border-line-softer bg-surface-subtle px-1.5 py-[1px] text-micro text-ink-muted">

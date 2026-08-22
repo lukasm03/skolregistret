@@ -15,10 +15,11 @@ import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import { compareValues } from "@/lib/sort-rows";
 import { SortArrow } from "./icons";
+import { TableScroller } from "./TableScroller";
 import {
-  TableScroller,
   cellClass,
   headerClass,
+  headerSpacerClass,
   tableMinWidth,
   type Column,
 } from "./DataTable";
@@ -187,7 +188,7 @@ export function DataGrid<T extends RowData>({
             })}
             {/* Trailing spacer so the last column isn't flush against the
               scroll edge. */}
-            <th aria-hidden className="w-6 border-b border-line" />
+            <th aria-hidden className={headerSpacerClass} />
           </tr>
         </thead>
         <tbody>

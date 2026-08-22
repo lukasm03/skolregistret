@@ -71,7 +71,7 @@ export function CheckboxControl({
         {label}
       </span>
       {count != null && (
-        <span className="ml-auto font-mono text-mono text-ink-faint">{count}</span>
+        <span className="ml-auto font-mono text-micro text-ink-faint">{count}</span>
       )}
     </label>
   );
@@ -113,7 +113,7 @@ export function RadioControl({
         {label}
       </span>
       {count != null && (
-        <span className="ml-auto font-mono text-mono text-ink-faint">{count}</span>
+        <span className="ml-auto font-mono text-micro text-ink-faint">{count}</span>
       )}
     </label>
   );
@@ -133,7 +133,7 @@ export function Chip({
       type="button"
       aria-pressed={active}
       onClick={onToggle}
-      className={`rounded-sm border px-2 py-1 font-mono text-xs ${
+      className={`rounded-sm border px-2 py-1 font-mono text-sm ${
         active
           ? "border-accent bg-accent-bg font-medium text-accent"
           : "border-line bg-surface text-ink-muted hover:border-ink-faint"
@@ -252,7 +252,7 @@ export function RangeField({
   maxLabel: string;
 }) {
   const field =
-    "h-[28px] w-full rounded-md border border-line bg-surface px-2 font-mono text-[16px] sm:text-xs";
+    "h-[28px] w-full rounded-md border border-line bg-surface px-2 font-mono text-[16px] sm:text-sm";
   return (
     <div className="flex items-center gap-[7px]">
       <input
@@ -308,10 +308,16 @@ export function MultiSelectDropdown({
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // The rail scrolls on its own once the filters outrun the viewport, and
+    // this panel opens downwards inside it — far enough down the list and it
+    // would open below the fold of its own container. `nearest` moves the
+    // least that reveals it, and does nothing at all when it already fits.
+    panelRef.current?.scrollIntoView({ block: "nearest" });
     const onPointerDown = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -363,6 +369,7 @@ export function MultiSelectDropdown({
         // A listbox's members are options, and these are checkboxes — the
         // roles have to agree with what is actually in the panel.
         <div
+          ref={panelRef}
           id={panelId}
           role="group"
           aria-label={label}
@@ -387,7 +394,7 @@ export function MultiSelectDropdown({
 
 export function SidebarFootnote({ children }: { children: ReactNode }) {
   return (
-    <p className="col-span-full mt-auto border-t border-line-soft pt-4 text-xs leading-[1.5] text-ink-subtle">
+    <p className="col-span-full mt-auto border-t border-line-soft pt-4 text-sm leading-[1.5] text-ink-subtle">
       {children}
     </p>
   );
@@ -436,11 +443,21 @@ export function Sidebar({
         </button>
       </div>
 
+      {/*
+        Two elements rather than one, and the split is what lets the rail
+        pin. The `<aside>` is the bordered column and stays stretched to the
+        row, so the rule down its right edge still runs the whole height of
+        the table beside it; the panel inside is what sticks, scrolls on its
+        own when the filters outrun the viewport, and stays put while a
+        hundred rows go past it.
+      */}
       <aside
         id={panelId}
-        className={`${open ? "grid" : "hidden"} w-full grid-cols-2 gap-x-4 gap-y-5 border-b border-line-soft bg-surface-panel px-4 pt-4 pb-5 sm:grid-cols-3 lg:flex lg:w-[236px] lg:flex-none lg:flex-col lg:gap-5 lg:border-r lg:border-b-0`}
+        className={`${open ? "block" : "hidden"} w-full border-b border-line-soft bg-surface-panel lg:block lg:w-[236px] lg:flex-none lg:border-r lg:border-b-0`}
       >
-        {children}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-4 pt-4 pb-5 sm:grid-cols-3 lg:sticky lg:top-[var(--stuck-top)] lg:flex lg:max-h-[calc(100svh-var(--stuck-top))] lg:flex-col lg:gap-5 lg:overflow-y-auto lg:overscroll-contain lg:py-5">
+          {children}
+        </div>
       </aside>
     </>
   );

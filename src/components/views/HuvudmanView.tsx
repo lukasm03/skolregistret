@@ -74,6 +74,22 @@ export function HuvudmanView({
 
   const total = list.rows.length;
 
+  /*
+   * What the bars in the "Andel elever" column are drawn against.
+   *
+   * Not 100. Market share here is long-tailed — a handful of kommuner carry
+   * percent, and most huvudmän carry hundredths of one — so a bar scaled to
+   * the whole is a bar that is empty for almost every row. Scaled to the
+   * largest share in the current selection it answers the question the
+   * column is actually there for: how this one compares to the rest of what
+   * you are looking at. It moves when the filter moves, which is the point,
+   * and the footer note says so.
+   */
+  const maxAndel = useMemo(
+    () => Math.max(0, ...list.rows.map((r) => r.andel ?? 0)),
+    [list.rows],
+  );
+
   const kommun = query.kommun ? (kommunName(query.kommun) ?? query.kommun) : undefined;
 
   const filters = useMemo(
@@ -132,10 +148,33 @@ export function HuvudmanView({
       {
         key: "andel",
         header: "Andel elever",
-        width: 96,
+        width: 132,
         align: "right",
         mono: true,
-        cell: (r) => (r.andel != null ? `${dec(r.andel)}%` : DASH),
+        cell: (r) =>
+          r.andel == null ? (
+            DASH
+          ) : (
+            <span className="flex items-center justify-end gap-2">
+              {/*
+                Decoration, and only that — the figure it stands on is right
+                beside it. It drops below `sm`, where the column is narrow
+                enough that the bar would be taking room from the number.
+              */}
+              <span
+                aria-hidden
+                className="relative hidden h-[4px] w-[34px] flex-none overflow-hidden rounded-full bg-line-row sm:block"
+              >
+                <span
+                  className="absolute inset-y-0 left-0 rounded-full bg-accent"
+                  style={{
+                    width: `${maxAndel > 0 ? (r.andel / maxAndel) * 100 : 0}%`,
+                  }}
+                />
+              </span>
+              <span>{dec(r.andel)}%</span>
+            </span>
+          ),
         sortValue: (r) => huvudmanSortValue(r, "andel"),
         descFirst: true,
       },
@@ -146,7 +185,9 @@ export function HuvudmanView({
        * cut in half. The huvudman detail page carries the figures instead.
        */
     ],
-    [],
+    // Rebuilt when the largest share moves, since the bars are drawn against
+    // it — once per settled filter change, the same beat as `list` itself.
+    [maxAndel],
   );
 
   return (
@@ -218,7 +259,7 @@ export function HuvudmanView({
             footerNote={
               <span className="text-sm text-ink-subtle">
                 Andel av {kommun ? "kommunens" : "rikets"} {num(list.kommunElever)} elever
-                i urvalet
+                i urvalet · staplarna mot den största i urvalet
               </span>
             }
           />

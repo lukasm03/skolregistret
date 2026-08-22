@@ -25,7 +25,7 @@ export function ArsredovisningList({
           className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 border-b border-line-row px-3.5 py-3 last:border-b-0"
         >
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="flex-none rounded-xl border border-ok-line bg-ok-bg px-2.5 py-[2px] text-mono font-medium text-ok">
+            <span className="flex-none rounded-xl border border-ok-line bg-ok-bg px-2.5 py-[2px] text-micro font-medium text-ok">
               {p.etikett}
             </span>
             {/*
@@ -55,7 +55,7 @@ export function ArsredovisningList({
               </a>
             )}
           </div>
-          <div className="flex flex-none items-center gap-3.5 font-mono text-mono text-ink-faint">
+          <div className="flex flex-none items-center gap-3.5 font-mono text-micro text-ink-faint">
             <span>t.o.m. {p.räkenskapsårSlut}</span>
             <span>{bytes(p.storlekBytes)}</span>
           </div>
@@ -67,7 +67,7 @@ export function ArsredovisningList({
 
 export function ArsredovisningKälla() {
   return (
-    <p className="text-xs leading-[1.55] text-ink-faint">
+    <p className="text-sm leading-[1.55] text-ink-faint">
       Källa: årsredovisningar inlämnade till Bolagsverket, visade som de lämnades in.
       Kommunala huvudmän lämnar ingen årsredovisning per skolverksamhet — deras
       redovisning ingår i kommunens.

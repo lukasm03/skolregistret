@@ -21,7 +21,7 @@ export function SectionTitle({
   return (
     <div className="flex items-baseline gap-2.5">
       <h2 className="text-base font-semibold">{children}</h2>
-      {note && <span className="text-xs text-ink-subtle">{note}</span>}
+      {note && <span className="text-sm text-ink-subtle">{note}</span>}
     </div>
   );
 }
@@ -59,7 +59,7 @@ export function Stat({
         </span>
         {unit && <span className="text-sm text-ink-faint">{unit}</span>}
       </div>
-      {note && <div className="text-xs leading-[1.45] text-ink-faint">{note}</div>}
+      {note && <div className="text-sm leading-[1.45] text-ink-faint">{note}</div>}
     </div>
   );
 }
@@ -97,7 +97,7 @@ export function StatusPill({ children }: { children: ReactNode }) {
   return (
     <span className="flex items-center gap-1.5 rounded-xl border border-ok-line bg-ok-bg px-2.5 py-[3px]">
       <span className="size-[5px] rounded-full bg-ok" />
-      <span className="text-xs font-medium text-ok">{children}</span>
+      <span className="text-sm font-medium text-ok">{children}</span>
     </span>
   );
 }
@@ -106,7 +106,7 @@ export function KoncernPill({ children }: { children: ReactNode }) {
   return (
     // Hover firms up the border rather than fading the pill: dimming a whole
     // token, label and all, reads as disabled instead of interactive.
-    <span className="rounded-xl border border-warn-line bg-warn-bg px-2.5 py-[3px] text-xs font-medium text-warn transition-colors group-hover:border-warn">
+    <span className="rounded-xl border border-warn-line bg-warn-bg px-2.5 py-[3px] text-sm font-medium text-warn transition-colors group-hover:border-warn">
       {children}
     </span>
   );
@@ -163,7 +163,7 @@ export function RailSection({
 }
 
 export function Note({ children }: { children: ReactNode }) {
-  return <p className="text-xs leading-[1.55] text-ink-muted">{children}</p>;
+  return <p className="text-sm leading-[1.55] text-ink-muted">{children}</p>;
 }
 
 export function EmptyBox({ children }: { children: ReactNode }) {

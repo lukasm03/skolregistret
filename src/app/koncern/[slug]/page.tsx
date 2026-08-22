@@ -117,7 +117,7 @@ export default async function KoncernPage({
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="text-base text-ink-muted">Koncern</span>
               <Dot />
-              <span translate="no" className="font-mono text-xs text-ink-subtle">
+              <span translate="no" className="font-mono text-sm text-ink-subtle">
                 Org.nr {group.orgNr}
               </span>
               <Dot />

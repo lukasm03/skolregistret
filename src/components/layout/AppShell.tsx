@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { site } from "@/config/site";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   /** Which top-level section is active — matches `site.nav[].match`. */
@@ -73,7 +74,16 @@ export function AppShell({
         >
           Hoppa till innehållet
         </a>
-        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft bg-surface-subtle px-3 py-2.5 sm:h-[52px] sm:flex-nowrap sm:gap-[18px] sm:px-[18px] sm:py-0">
+        {/*
+          Pinned from `sm` up, where it is a known 52px and `--stuck-top` in
+          globals.css is set to match — everything else that pins itself (the
+          tab strip, a table's column headers) stacks under that figure.
+
+          Not on a phone. There it wraps to two rows of roughly 88px, and
+          giving away an eighth of the viewport permanently, on the device
+          with the least of it, buys less than the rows it would cover.
+        */}
+        <header className="z-40 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft bg-surface-subtle px-3 py-2.5 sm:sticky sm:top-0 sm:h-[52px] sm:flex-nowrap sm:gap-[18px] sm:px-[18px] sm:py-0">
           <Link
             href="/skolor"
             className="flex items-center gap-[9px] transition-opacity hover:opacity-75"
@@ -109,6 +119,8 @@ export function AppShell({
               );
             })}
           </nav>
+
+          <ThemeToggle />
 
           {onSearchChange ? (
             <div className={searchClass}>{searchField}</div>

@@ -6,6 +6,7 @@ import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
@@ -72,6 +73,28 @@ export function Tabs({
   const [view, setView] = useState(fallbackView);
   const base = useId();
   const stripRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * The strip pins itself, so everything inside the panel that also pins — a
+   * table's column headers — has to start below it rather than under it.
+   * `--stuck-top` is the running total of what is already spoken for at the
+   * top of the viewport, and this is the one place that adds to it.
+   *
+   * Measured rather than assumed: the strip is one row of tabs on a wide
+   * screen and two once the "Vy" switch wraps below them, and a school with
+   * five tabs reaches that point at a different width than one with two.
+   */
+  const [barHeight, setBarHeight] = useState(0);
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const measure = () => setBarHeight(el.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const sync = () => {
@@ -147,7 +170,16 @@ export function Tabs({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1 border-b border-line-soft">
+      {/*
+        Pinned under the app header. Which tab you are on is the one control
+        a long panel keeps needing — a gymnasium's programtabell runs well
+        past a screen, and switching to Enkät used to mean scrolling back up
+        to find out how.
+      */}
+      <div
+        ref={barRef}
+        className="sticky top-[var(--stuck-top)] z-30 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 border-b border-line-soft bg-surface"
+      >
         <div ref={stripRef} role="tablist" onKeyDown={onKeyDown} className="flex">
           {tabs.map((tab) => {
             const selected = tab.id === current?.id;
@@ -204,7 +236,7 @@ export function Tabs({
                     title={v.hint}
                     aria-describedby={`${base}-hint-${v.id}`}
                     aria-pressed={selected}
-                    className={`rounded-xs px-2.5 py-[3px] text-xs font-medium transition-colors ${
+                    className={`rounded-xs px-2.5 py-[3px] text-sm font-medium transition-colors ${
                       selected
                         ? "bg-surface text-ink shadow-raised"
                         : "text-ink-muted hover:text-ink"
@@ -231,6 +263,11 @@ export function Tabs({
           aria-labelledby={tabId(current.id)}
           // Not focusable itself: the content inside is its own scroll region
           // and already a tab stop, and two in a row is one too many.
+          style={
+            {
+              "--stuck-top": `calc(var(--app-top) + ${barHeight}px)`,
+            } as CSSProperties
+          }
         >
           {currentView.content}
         </div>

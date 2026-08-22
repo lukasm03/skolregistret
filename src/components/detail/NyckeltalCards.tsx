@@ -1,7 +1,7 @@
 import { CaretRight } from "@/components/ui/icons";
 import { DASH, signed } from "@/lib/format";
 import type { NyckeltalJämförelse } from "@/lib/nyckeltal-compare";
-import { ComparisonBand } from "./ComparisonBand";
+import { ComparisonBand, DASHED } from "./ComparisonBand";
 import { pillTone, valueTone } from "./tone";
 
 /**
@@ -39,7 +39,7 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-[3px]">
           <h2 className="text-base leading-[1.3] font-medium">{r.label}</h2>
-          <p className="text-xs text-ink-faint">
+          <p className="text-sm text-ink-faint">
             {r.läsår !== DASH ? `läsår ${r.läsår} · ` : ""}
             {r.riktningsText}
           </p>
@@ -57,7 +57,7 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
       </div>
 
       {r.saknas ? (
-        <p className="text-xs leading-[1.5] text-ink-muted">{r.saknas}</p>
+        <p className="text-sm leading-[1.5] text-ink-muted">{r.saknas}</p>
       ) : null}
 
       {(r.egenPct != null || r.kommunPct != null || r.riksPct != null) && (
@@ -73,10 +73,7 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
               <span
                 aria-hidden
                 className="h-[11px] w-[2px]"
-                style={{
-                  background:
-                    "repeating-linear-gradient(var(--line-control) 0 3px, transparent 3px 6px)",
-                }}
+                style={{ background: DASHED }}
               />
               kommun {r.kommun}
             </span>
@@ -95,13 +92,13 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
       {r.tal != null && (
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`rounded-xl border px-2.5 py-[2px] text-xs font-medium ${pillTone[r.riktning]}`}
+            className={`rounded-xl border px-2.5 py-[2px] text-sm font-medium ${pillTone[r.riktning]}`}
           >
             {r.omdöme}
           </span>
           {r.placering !== DASH && (
             <>
-              <span className="text-xs text-ink-muted">{r.placering} i kommunen</span>
+              <span className="text-sm text-ink-muted">{r.placering} i kommunen</span>
               {r.rankPct != null && (
                 <span
                   aria-hidden
@@ -124,20 +121,20 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
           `list-none` for Chrome and Firefox, `marker:content-none` for the
           spec'd pseudo, and the webkit one for Safari, which honours neither.
         */}
-        <summary className="flex cursor-pointer list-none items-center gap-[7px] border-t border-line-row pt-2.5 text-xs text-accent marker:content-none [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-[7px] border-t border-line-row pt-2.5 text-sm text-accent marker:content-none [&::-webkit-details-marker]:hidden">
           <CaretRight size={11} className="transition-transform group-open:rotate-90" />
           Varifrån kommer talet?
         </summary>
         <div className="mt-2 flex animate-[reveal_150ms_ease-out] flex-col gap-1.5 rounded-md border border-line-row bg-surface-subtle px-3 py-2.5">
           <dl className="flex flex-col gap-1.5">
             {r.källa.map((k) => (
-              <div key={k.k} className="flex justify-between gap-3.5 text-xs">
+              <div key={k.k} className="flex justify-between gap-3.5 text-sm">
                 <dt className="text-ink-muted">{k.k}</dt>
                 <dd className="m-0 text-right">{k.v}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-0.5 text-xs leading-[1.5] text-ink-muted">{r.förklaring}</p>
+          <p className="mt-0.5 text-sm leading-[1.5] text-ink-muted">{r.förklaring}</p>
         </div>
       </details>
     </article>
@@ -147,7 +144,7 @@ function NyckeltalCard({ r }: { r: NyckeltalJämförelse }) {
 /** Read out under both views — the caveat applies to the figures, not the layout. */
 export function NyckeltalKälla({ beräknat }: { beräknat: boolean }) {
   return (
-    <p className="text-xs leading-[1.55] text-ink-faint">
+    <p className="text-sm leading-[1.55] text-ink-faint">
       Källa: Skolverkets statistik-API. Kommunsnitt och placering är räknade av oss över
       kommunens egna enheter.
       {beräknat &&

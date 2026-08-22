@@ -32,7 +32,7 @@ function DokumentRad({ d }: { d: DokumentVy }) {
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 border-b border-line-row px-3.5 py-3 last:border-b-0">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <span
-          className={`flex-none rounded-xl border px-2.5 py-[2px] text-mono font-medium ${
+          className={`flex-none rounded-xl border px-2.5 py-[2px] text-micro font-medium ${
             d.ton === "ok"
               ? "border-ok-line bg-ok-bg text-ok"
               : "border-warn-line bg-warn-bg text-warn"
@@ -49,7 +49,7 @@ function DokumentRad({ d }: { d: DokumentVy }) {
           {d.titel}
         </a>
       </div>
-      <div className="flex flex-none items-center gap-3.5 font-mono text-mono text-ink-faint">
+      <div className="flex flex-none items-center gap-3.5 font-mono text-micro text-ink-faint">
         {d.period && <span>{d.period}</span>}
         <span>PDF · {d.storlek}</span>
       </div>
@@ -59,7 +59,7 @@ function DokumentRad({ d }: { d: DokumentVy }) {
 
 export function DokumentKälla() {
   return (
-    <p className="text-xs leading-[1.55] text-ink-faint">
+    <p className="text-sm leading-[1.55] text-ink-faint">
       Källa: Skolinspektionens dokument-API. Ett beslut säger vad myndigheten granskat och
       vad den kräver — det är inte ett omdöme om skolans resultat.
     </p>

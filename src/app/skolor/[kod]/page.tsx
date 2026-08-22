@@ -4,7 +4,14 @@ import { notFound } from "next/navigation";
 import { site } from "@/config/site";
 import { AppShell } from "@/components/layout/AppShell";
 import { DataTable } from "@/components/ui/DataTable";
-import { BackLink, Dot, FactList, StatusPill } from "@/components/ui/primitives";
+import {
+  BackLink,
+  Dot,
+  FactList,
+  Stat,
+  StatGrid,
+  StatusPill,
+} from "@/components/ui/primitives";
 import { Disclosure } from "@/components/detail/Disclosure";
 import { Tabs, type TabDef } from "@/components/ui/Tabs";
 import { BandLegend } from "@/components/detail/ComparisonBand";
@@ -172,7 +179,7 @@ export default async function SkolaPage({
                 content: (
                   <section className="flex flex-col gap-3">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-2">
-                      <p className="text-xs text-ink-subtle">
+                      <p className="text-sm text-ink-subtle">
                         Skolenkäten, skala 1–10 · högre är bättre
                       </p>
                       <BandLegend enheten="gruppens svar" />
@@ -194,7 +201,7 @@ export default async function SkolaPage({
                       rowHeight={46}
                       label="Enkätsvar"
                     />
-                    <p className="text-xs leading-[1.55] text-ink-faint">
+                    <p className="text-sm leading-[1.55] text-ink-faint">
                       Talet under varje värde är gruppens avvikelse mot riksgenomsnittet
                       för samma grupp.
                     </p>
@@ -424,47 +431,55 @@ export default async function SkolaPage({
             </h1>
             <StatusPill>{school.status}</StatusPill>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+          {/*
+            What the unit *is* — the things that identify it rather than
+            measure it. The figures moved out to the tiles below; these did
+            not, because "Grundskola · Fritidshem" set at 24px in a 176px
+            tile is a headline nobody asked for.
+          */}
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pt-0.5">
             <span className="text-base text-ink-muted">{school.kommun ?? DASH}</span>
             <Dot />
             <span className="text-base text-ink-muted">{school.huvudmannatyp}</span>
             <Dot />
-            <span translate="no" className="font-mono text-xs text-ink-subtle">
+            <span className="text-base text-ink-muted">
+              {school.skolformer.join(" · ") || site.allaSkolformer}
+            </span>
+            <Dot />
+            <span translate="no" className="font-mono text-sm text-ink-subtle">
               Skolenhetskod {school.skolenhetskod}
+            </span>
+            <span className="hidden flex-1 sm:block" />
+            {/* Named rather than "Visa huvudmannen": who runs the school is
+                the answer, and the link may as well be it. */}
+            <span className="text-base text-ink-muted">
+              Huvudman{" "}
+              <Link
+                href={`/huvudman/${huvudmanSlug}`}
+                className="font-medium text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+              >
+                {school.huvudman}
+              </Link>
             </span>
           </div>
         </header>
 
-        <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 border-b border-line-soft bg-surface-subtle px-4 py-2.5 sm:px-6">
-          <span className="text-base text-ink-muted">
-            <span className="font-mono text-md font-medium text-ink">
-              {elevantal != null ? num(elevantal) : DASH}
-            </span>{" "}
-            elever
-          </span>
-          <Dot />
-          <span className="text-base text-ink-muted">
-            {school.skolformer.join(" · ") || site.allaSkolformer}
-          </span>
-          <Dot />
-          <span className="text-base text-ink-muted">
-            Åk{" "}
-            <span className="font-mono text-md text-ink">
-              {formatYears(school.årskurser) || DASH}
-            </span>
-          </span>
-          <Dot />
-          <span className="text-base text-ink-muted">
-            {statistikLäsår === DASH ? DASH : `läsår ${statistikLäsår}`}
-          </span>
-          <div className="flex-1" />
-          <Link
-            href={`/huvudman/${huvudmanSlug}`}
-            className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-          >
-            Visa huvudmannen
-          </Link>
-        </div>
+        {/*
+          The same tiles the koncern page has always used, instead of the
+          dot-separated run this was. That run set its figures at 13px and
+          their labels at 12.5px — half a pixel apart, so nothing stood out —
+          and on a phone it wrapped into two or three lines with the
+          separators stranded at the ends of them.
+        */}
+        <StatGrid min={176}>
+          <Stat label="Elever" value={elevantal != null ? num(elevantal) : DASH} />
+          <Stat
+            label="Elever per lärare"
+            value={eleverPerLärare}
+            note={statistikLäsår === DASH ? undefined : `läsår ${statistikLäsår}`}
+          />
+          <Stat label="Årskurser" value={formatYears(school.årskurser) || DASH} />
+        </StatGrid>
 
         <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
           <Tabs tabs={tabs} defaultTab={hasProgramStats ? "program" : "nyckeltal"} />
