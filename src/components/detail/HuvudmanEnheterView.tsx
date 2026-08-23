@@ -9,6 +9,7 @@ import { site } from "@/config/site";
 import { skolform, skolformer } from "@/config/skolformer";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
 import type { ListSchool } from "@/lib/school-fields";
+import { matches, needle as foldNeedle } from "@/lib/search";
 import { plural } from "@/lib/format";
 import type { SkolformCode } from "@/lib/types";
 
@@ -47,9 +48,11 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
   }, [units]);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    // Folded, so this field tolerates the same missing å/ä/ö the list pages
+    // do — see `lib/search.ts`.
+    const needle = foldNeedle(q);
     return units.filter((u) => {
-      if (needle && !u.name.toLowerCase().includes(needle)) return false;
+      if (needle && !matches(u.name, needle)) return false;
       if (kommun && u.kommun !== kommun) return false;
       if (form && !u.forms.includes(form)) return false;
       return true;

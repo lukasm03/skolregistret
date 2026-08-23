@@ -364,3 +364,26 @@ export function searchString(params: RawParams): string {
 export function paramsFromSearch(search: string): RawParams {
   return Object.fromEntries(new URLSearchParams(search).entries());
 }
+
+/**
+ * Whether two sets of params say the same thing, regardless of the order they
+ * happen to be written in.
+ *
+ * `useQueryParams` asks this once on mount. The list routes read the query
+ * string on the server now, so the usual answer is yes and there is nothing
+ * to re-render for — which matters, because a needless `setParams` re-runs
+ * the whole selection over every row in the register.
+ */
+export function sameParams(a: RawParams, b: RawParams): boolean {
+  return canonical(a) === canonical(b);
+}
+
+function canonical(params: RawParams): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    const s = one(v);
+    if (s !== undefined) sp.set(k, s);
+  }
+  sp.sort();
+  return sp.toString();
+}

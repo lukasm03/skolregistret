@@ -20,6 +20,8 @@ import {
   cellClass,
   headerClass,
   headerSpacerClass,
+  rowClass,
+  rowLinkClass,
   tableMinWidth,
   type Column,
 } from "./DataTable";
@@ -203,28 +205,22 @@ export function DataGrid<T extends RowData>({
             <tr
               key={row.id}
               style={{ height: rowHeight }}
-              className={`border-b border-line-row ${
-                rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
-              }`}
+              className={rowClass(rowHref != null)}
             >
               {row.getAllCells().map((cell, i) => {
                 const col = columns[i];
+                // One link per row, in the first cell, stretched over the
+                // rest — see `rowLinkClass`. Every other cell stays a plain
+                // table cell, which is what makes the figures readable.
+                const linked = rowHref != null && i === 0;
                 return (
-                  <td key={cell.id} className={cellClass(col)}>
-                    {rowHref ? (
-                      // Every cell links to the row target so the whole row is
-                      // clickable, but only the first one is a tab stop — the
-                      // rest are hidden from assistive tech to avoid repeated
-                      // links.
+                  <td key={cell.id} className={cellClass(col, linked)}>
+                    {linked ? (
                       <Link
                         href={rowHref(row.original)}
-                        tabIndex={i === 0 ? undefined : -1}
-                        aria-hidden={i === 0 ? undefined : true}
-                        aria-label={i === 0 ? rowLabel?.(row.original) : undefined}
+                        aria-label={rowLabel?.(row.original)}
                         style={{ height: rowHeight }}
-                        className={`flex items-center outline-offset-[-2px] ${
-                          col.align === "right" ? "justify-end" : ""
-                        }`}
+                        className={rowLinkClass}
                       >
                         {col.truncate ? (
                           <span className="min-w-0 truncate">

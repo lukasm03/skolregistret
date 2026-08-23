@@ -21,7 +21,9 @@ bun run format     # prettier
 ```
 
 **Never run `bun run build`.** The user has explicitly forbidden it — it
-generates ~7700 static pages and runs far too long. `bun run check` is the
+generates ~7700 static pages and runs far too long. (The three list routes
+are _not_ among them: `/skolor`, `/huvudman` and `/koncern` read
+`searchParams`, so they render per request. The detail pages are the bulk.) `bun run check` is the
 verification gate; let the user build in their own terminal if they want to.
 It reads `data/allt.json`, which is **not committed** — see below — so a
 fresh clone needs its own copy before any build (or `bun dev`) produces
@@ -172,8 +174,19 @@ container. `HuvudmanEnheterView`'s frame says so where it does it.
 
 ## Testing
 
-`bun test`. Tests sit next to the code as `*.test.ts`. Fixtures are plain
-literals in the test file — there is no factory layer and no network access.
+`bun test`. Tests sit next to the code as `*.test.ts`, or `*.test.tsx` where
+a component is being rendered. Fixtures are plain literals in the test file —
+there is no factory layer and no network access.
+
+Most of the suite is `src/lib/`, which is where most of the decisions are.
+A component gets a test where the thing worth asserting is the **markup**
+rather than the behaviour: `rows.test.tsx` renders both table components with
+`renderToStaticMarkup` from `react-dom/server` — no DOM, no new dependency —
+and pins the shape of a clickable row, because that row once hid every cell
+but the first from assistive technology and nothing in a type or a lint rule
+noticed. Where two components hold duplicate markup, as `DataTable` and
+`DataGrid` do, run the same cases against both: the invariant is that they
+agree.
 Keep a shared fixture internally consistent with itself: `api-normalize.ts`
 reconciles fields the register maintains separately, so a `skola()` whose
 `skolformer` disagrees with its `årskurserPerSkolform` puts every test in the

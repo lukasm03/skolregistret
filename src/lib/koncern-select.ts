@@ -1,6 +1,7 @@
 import { skolformer } from "@/config/skolformer";
 import type { KoncernQuery } from "./query";
 import type { KoncernGroup } from "@/lib/skolregister";
+import { matches, needle as foldNeedle } from "./search";
 import { sortRows } from "./sort-rows";
 import type { SkolformCode } from "./types";
 
@@ -111,13 +112,11 @@ export function selectKoncern(
   if (query.maxElever != null) {
     filtered = filtered.filter((r) => r.elever <= query.maxElever!);
   }
-  // Trimmed and folded once — see `selectSchools` for why the term arrives
-  // untrimmed.
-  const needle = query.q.trim().toLowerCase();
+  // Folded once — see `selectSchools` for why the term arrives untrimmed.
+  const needle = foldNeedle(query.q);
   if (needle) {
     filtered = filtered.filter(
-      (r) =>
-        r.group.namn.toLowerCase().includes(needle) || r.group.orgNr.includes(needle),
+      (r) => matches(r.group.namn, needle) || r.group.orgNr.includes(needle),
     );
   }
 

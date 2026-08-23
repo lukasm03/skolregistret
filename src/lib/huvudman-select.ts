@@ -1,6 +1,7 @@
 import { kommunName } from "@/data/kommuner";
 import type { HuvudmanQuery } from "./query";
 import { studentsOf, type ListSchool } from "./school-fields";
+import { matches, needle as foldNeedle } from "./search";
 import { sortRows } from "./sort-rows";
 import type { KommunOption } from "./school-select";
 import {
@@ -189,14 +190,11 @@ export function selectHuvudman(
   // units in that form is not a result, it is an empty row.
   if (form) filtered = filtered.filter((r) => r.enheter > 0);
   if (query.koncernOnly) filtered = filtered.filter((r) => r.huvudman.koncern);
-  // Trimmed and folded once — see `selectSchools` for why the term arrives
-  // untrimmed.
-  const needle = query.q.trim().toLowerCase();
+  // Folded once — see `selectSchools` for why the term arrives untrimmed.
+  const needle = foldNeedle(query.q);
   if (needle) {
     filtered = filtered.filter(
-      (r) =>
-        r.huvudman.name.toLowerCase().includes(needle) ||
-        (r.huvudman.org ?? "").includes(needle),
+      (r) => matches(r.huvudman.name, needle) || (r.huvudman.org ?? "").includes(needle),
     );
   }
 

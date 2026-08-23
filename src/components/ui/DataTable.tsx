@@ -23,17 +23,48 @@ export interface Column<T> {
   descFirst?: boolean;
 }
 
-export function cellClass<T>(col: Column<T>): string {
+/**
+ * `linked` is the one cell of a clickable row that holds the row's link — see
+ * `rowLinkClass`. It leaves out `truncate`, because that is `overflow: hidden`
+ * and would clip the link's stretched hit area back to this one column; the
+ * span inside the link truncates instead.
+ */
+export function cellClass<T>(col: Column<T>, linked = false): string {
   return [
     "px-2 align-middle",
     col.align === "right" ? "text-right" : "text-left",
     col.mono ? "font-mono text-sm" : col.muted ? "text-sm" : "text-base",
     col.muted ? "text-ink-muted" : "",
     col.strong ? "font-medium" : "",
-    col.truncate ? "truncate" : "",
+    col.truncate && !linked ? "truncate" : "",
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+/**
+ * A clickable row: one real link, in the first cell, stretched over the whole
+ * row by a pseudo-element against the `relative` on the `<tr>`.
+ *
+ * Every cell used to hold its own copy of the link, with all but the first
+ * `aria-hidden` to stop a screen reader reading six links per row. That did
+ * stop the repetition, and it also took the cells' contents with it: the
+ * `<td>`s stayed, but everything inside them was hidden, so a row announced
+ * its name and then five empty cells. Kommun, huvudman, status, skolform,
+ * elevantal — the figures this whole site exists to publish — reached nobody
+ * using assistive technology.
+ *
+ * One link keeps the single tab stop and the row-wide hit area, and the other
+ * cells go back to being plain readable table cells.
+ */
+export const rowLinkClass =
+  "flex items-center outline-offset-[-2px] after:absolute after:inset-0";
+
+/** The `<tr>` classes a clickable row needs, including the link's anchor. */
+export function rowClass(clickable: boolean): string {
+  return `border-b border-line-row ${
+    clickable ? "relative hover:bg-row-hover focus-within:bg-row-hover" : ""
+  }`;
 }
 
 /**
@@ -133,37 +164,31 @@ export function DataTable<T>({
             <tr
               key={rowKey(row)}
               style={{ height: rowHeight }}
-              className={`border-b border-line-row ${
-                rowHref ? "hover:bg-row-hover focus-within:bg-row-hover" : ""
-              }`}
+              className={rowClass(rowHref != null)}
             >
-              {columns.map((col, i) => (
-                <td key={col.key} className={cellClass(col)}>
-                  {rowHref ? (
-                    // Every cell links to the row target so the whole row is
-                    // clickable, but only the first one is a tab stop — the rest
-                    // are hidden from assistive tech to avoid repeated links.
-                    <Link
-                      href={rowHref(row)}
-                      tabIndex={i === 0 ? undefined : -1}
-                      aria-hidden={i === 0 ? undefined : true}
-                      aria-label={i === 0 ? rowLabel?.(row) : undefined}
-                      style={{ height: rowHeight }}
-                      className={`flex items-center outline-offset-[-2px] ${
-                        col.align === "right" ? "justify-end" : ""
-                      }`}
-                    >
-                      {col.truncate ? (
-                        <span className="min-w-0 truncate">{col.cell(row)}</span>
-                      ) : (
-                        col.cell(row)
-                      )}
-                    </Link>
-                  ) : (
-                    col.cell(row)
-                  )}
-                </td>
-              ))}
+              {columns.map((col, i) => {
+                const linked = rowHref != null && i === 0;
+                return (
+                  <td key={col.key} className={cellClass(col, linked)}>
+                    {linked ? (
+                      <Link
+                        href={rowHref(row)}
+                        aria-label={rowLabel?.(row)}
+                        style={{ height: rowHeight }}
+                        className={rowLinkClass}
+                      >
+                        {col.truncate ? (
+                          <span className="min-w-0 truncate">{col.cell(row)}</span>
+                        ) : (
+                          col.cell(row)
+                        )}
+                      </Link>
+                    ) : (
+                      col.cell(row)
+                    )}
+                  </td>
+                );
+              })}
               <td aria-hidden />
             </tr>
           ))}
