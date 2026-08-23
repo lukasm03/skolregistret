@@ -101,8 +101,53 @@ export function gradeFilterFor(form: SkolformDef | undefined): string[] {
   return form ? form.gradeFilter : [];
 }
 
-export interface SchoolQuery {
+/**
+ * What the three list queries have in common: a search term, an order, and a
+ * place in it. `SchoolQuery`, `HuvudmanQuery` and `KoncernQuery` each extend
+ * this with the filters only they have.
+ *
+ * Having it as a type of its own is what lets one hook wire the paging and
+ * sorting half of `ListPane` for all three — see `useUrlListPane`.
+ */
+export interface ListQuery {
+  /** The search term, exactly as typed. */
   q: string;
+  /** A column id, already validated against the list's own sort options. */
+  sort: string;
+  /** Direction the sort runs in. Clicking a column header sets this. */
+  desc: boolean;
+  page: number;
+  perPage: number;
+}
+
+/**
+ * The five params every list carries, parsed the one way they are all parsed.
+ *
+ * Each of the three parsers below had its own copy of this, down to the cast
+ * around `perPageOptions` — five lines that have to agree about what a page
+ * is, in three places where nothing made them. The parts that genuinely
+ * differ per list are the sort options, which arrive already resolved.
+ */
+function parseListQuery(params: RawParams, sort: SortOption): ListQuery {
+  const dir = one(params.dir);
+  const perPage = int(params.perPage);
+  return {
+    // Kept exactly as typed, including a trailing space — see the note on
+    // `parseSchoolQuery`.
+    q: one(params.q) ?? "",
+    sort: sort.key,
+    // An explicit `?dir=` wins over the sort's own natural direction, which
+    // is what a header click writes.
+    desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
+    page: Math.max(1, int(params.page) ?? 1),
+    perPage:
+      perPage && (site.pagination.perPageOptions as readonly number[]).includes(perPage)
+        ? perPage
+        : site.pagination.perPage,
+  };
+}
+
+export interface SchoolQuery extends ListQuery {
   /** Huvudman slug the list is filtered to. */
   huvudman?: string;
   /** Kommunkod the list is filtered to; undefined means hela riket. */
@@ -123,10 +168,6 @@ export interface SchoolQuery {
   maxElever?: number;
   /** Validated against the selected skolform — see `resolveSchoolSort`. */
   sort: string;
-  /** Direction the sort runs in. Clicking a column header sets this. */
-  desc: boolean;
-  page: number;
-  perPage: number;
 }
 
 /**
@@ -165,12 +206,9 @@ export function parseSchoolQuery(params: RawParams): SchoolQuery {
   const rawForm = one(params.skolform)?.toUpperCase();
   const form = rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined;
   const def = form ? skolform(form) : undefined;
-  const perPage = int(params.perPage);
-  const sort = resolveSchoolSort(one(params.sort), def);
-  const dir = one(params.dir);
 
   return {
-    q: one(params.q) ?? "",
+    ...parseListQuery(params, resolveSchoolSort(one(params.sort), def)),
     huvudman: one(params.huvudman),
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
     typ,
@@ -182,18 +220,10 @@ export function parseSchoolQuery(params: RawParams): SchoolQuery {
     status: parseStatus(params),
     minElever: int(params.min),
     maxElever: int(params.max),
-    sort: sort.key,
-    desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
-    page: Math.max(1, int(params.page) ?? 1),
-    perPage:
-      perPage && (site.pagination.perPageOptions as readonly number[]).includes(perPage)
-        ? perPage
-        : site.pagination.perPage,
   };
 }
 
-export interface HuvudmanQuery {
-  q: string;
+export interface HuvudmanQuery extends ListQuery {
   /** Kommunkod the aggregation is restricted to; undefined means hela riket. */
   kommun?: string;
   typ: HuvudmanTyp[];
@@ -203,9 +233,6 @@ export interface HuvudmanQuery {
   koncernOnly: boolean;
   /** A column id: one of `baseHuvudmanSorts` or any sortable column header. */
   sort: string;
-  desc: boolean;
-  page: number;
-  perPage: number;
 }
 
 /** Columns sortable by header click but absent from the toolbar's menu. */
@@ -224,30 +251,17 @@ function resolveHuvudmanSort(sort: string | undefined): SortOption {
 }
 
 export function parseHuvudmanQuery(params: RawParams): HuvudmanQuery {
-  const typ = parseTyp(params);
   const rawForm = one(params.skolform)?.toUpperCase();
-  const sort = resolveHuvudmanSort(one(params.sort));
-  const dir = one(params.dir);
-  const perPage = int(params.perPage);
   return {
-    // Raw, as in `parseSchoolQuery`.
-    q: one(params.q) ?? "",
+    ...parseListQuery(params, resolveHuvudmanSort(one(params.sort))),
     kommun: normalizeKommunkod(one(params.kommun)) ?? undefined,
-    typ,
+    typ: parseTyp(params),
     skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
     koncernOnly: one(params.koncern) === "1",
-    sort: sort.key,
-    desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
-    page: Math.max(1, int(params.page) ?? 1),
-    perPage:
-      perPage && (site.pagination.perPageOptions as readonly number[]).includes(perPage)
-        ? perPage
-        : site.pagination.perPage,
   };
 }
 
-export interface KoncernQuery {
-  q: string;
+export interface KoncernQuery extends ListQuery {
   /** Restricts the list to koncerner with at least one huvudman in this skolform. */
   skolform?: SkolformCode;
   minEnheter?: number;
@@ -256,9 +270,6 @@ export interface KoncernQuery {
   maxElever?: number;
   /** A column id: one of `baseKoncernSorts` or any sortable column header. */
   sort: string;
-  desc: boolean;
-  page: number;
-  perPage: number;
 }
 
 /** Columns sortable by header click but absent from the toolbar's menu. */
@@ -277,23 +288,13 @@ function resolveKoncernSort(sort: string | undefined): SortOption {
 
 export function parseKoncernQuery(params: RawParams): KoncernQuery {
   const rawForm = one(params.skolform)?.toUpperCase();
-  const sort = resolveKoncernSort(one(params.sort));
-  const dir = one(params.dir);
-  const perPage = int(params.perPage);
   return {
-    q: one(params.q) ?? "",
+    ...parseListQuery(params, resolveKoncernSort(one(params.sort))),
     skolform: rawForm && isSkolformCode(rawForm) ? (rawForm as SkolformCode) : undefined,
     minEnheter: int(params.minEnheter),
     maxEnheter: int(params.maxEnheter),
     minElever: int(params.minElever),
     maxElever: int(params.maxElever),
-    sort: sort.key,
-    desc: dir === "asc" ? false : dir === "desc" ? true : sort.desc,
-    page: Math.max(1, int(params.page) ?? 1),
-    perPage:
-      perPage && (site.pagination.perPageOptions as readonly number[]).includes(perPage)
-        ? perPage
-        : site.pagination.perPage,
   };
 }
 

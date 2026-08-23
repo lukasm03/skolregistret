@@ -95,6 +95,13 @@ function aggregateHuvudman(
 /**
  * What a huvudman column sorts on. `undefined` means the figure is not
  * reported, and those rows sort last whichever way the column points.
+ *
+ * Every key the list can actually be sorted by has a case. The default is a
+ * guard, not a fallback: `resolveHuvudmanSort` in `query.ts` has already
+ * rejected anything it does not recognise, so an unknown key here means a
+ * column was added without being registered as sortable there. Returning
+ * `undefined` sends every row to the same place, which reads as a sort that
+ * did nothing — the old `return r.elever` read as a sort that worked.
  */
 export function huvudmanSortValue(
   r: HuvudmanAggregate,
@@ -111,8 +118,10 @@ export function huvudmanSortValue(
       return r.enheter;
     case "andel":
       return r.andel ?? undefined;
-    default:
+    case "elever":
       return r.elever;
+    default:
+      return undefined;
   }
 }
 

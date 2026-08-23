@@ -147,6 +147,7 @@ describe("huvudmanSortValue", () => {
     expect(huvudmanSortValue(row, "name")).toBe("A");
     expect(huvudmanSortValue(row, "typ")).toBe("Kommunal");
     expect(huvudmanSortValue(row, "enheter")).toBe(2);
+    expect(huvudmanSortValue(row, "elever")).toBe(100);
   });
 
   test("missing figures are undefined so they sort last, not first", () => {
@@ -154,8 +155,13 @@ describe("huvudmanSortValue", () => {
     expect(huvudmanSortValue(row, "andel")).toBeUndefined();
   });
 
-  test("an unknown key falls back to elever", () => {
-    expect(huvudmanSortValue(row, "whatever")).toBe(100);
+  test("an unknown key sorts nothing rather than quietly sorting by elever", () => {
+    // `resolveHuvudmanSort` in `query.ts` has already rejected any key the
+    // list does not offer, so reaching this means a column was made sortable
+    // without being registered there. `undefined` sends every row to the same
+    // place, which looks like a sort that did nothing; the old fallback to
+    // elever looked like a sort that worked.
+    expect(huvudmanSortValue(row, "whatever")).toBeUndefined();
   });
 });
 

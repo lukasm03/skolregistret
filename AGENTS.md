@@ -92,7 +92,7 @@ messages are in English; domain nouns stay Swedish.
 | Directory                 | Rule                                                                                                        |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `src/lib/`                | Must stay server-safe and free of React. `skolregister/client.ts` reads the filesystem.                     |
-| `src/hooks/`              | Anything `"use client"`. The one hook lives here, not in `lib/`.                                            |
+| `src/hooks/`              | Anything `"use client"`. The hooks live here, not in `lib/`.                                                |
 | `src/config/`             | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
 | `src/components/tables/`  | Column definitions. Route files should not declare columns.                                                 |
 | `src/components/detail/`  | Detail-page panels — nyckeltalskort, enkätkort, dokumentlista, comparison band, årsredovisningslista.       |
@@ -156,9 +156,12 @@ container. `HuvudmanEnheterView`'s frame says so where it does it.
 
 ## Deliberately left as-is
 
-- **`src/components/filters/controls.tsx` (373 lines, 11 exports)** and
-  **`src/lib/query.ts` (336)** are large but cohesive. Not worth splitting
-  unless you are already changing them.
+- **`src/components/filters/controls.tsx` (464 lines, 10 exports)** and
+  **`src/lib/query.ts` (366)** are large but cohesive. Not worth splitting
+  unless you are already changing them. What controls.tsx holds is _generic_
+  controls, which know nothing about the register; the two filter groups all
+  three list pages ask the same question with live next door in `groups.tsx`,
+  and domain questions belong there rather than here.
 - **`src/lib/arsredovisning/paket.ts` has no tests**, for the same reason as
   `client.ts` below: it is filesystem I/O over zips. The pure part —
   filenames in, period labels out — is `format.ts`, and that is tested.

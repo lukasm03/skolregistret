@@ -19,14 +19,10 @@ import {
   type KoncernAggregate,
 } from "@/lib/koncern-select";
 import { DASH, num, plural } from "@/lib/format";
-import {
-  parseKoncernQuery,
-  patchParams,
-  searchString,
-  type RawParams,
-} from "@/lib/query";
+import { parseKoncernQuery, type RawParams } from "@/lib/query";
 import type { KoncernGroup } from "@/lib/skolregister";
 import { useQueryParams } from "@/hooks/use-query-params";
+import { useUrlListPane } from "@/hooks/use-url-list-pane";
 
 const PATH = "/koncern";
 
@@ -45,6 +41,7 @@ export function KoncernView({
 }) {
   const [params, patch] = useQueryParams(initialParams);
   const query = useMemo(() => parseKoncernQuery(params), [params]);
+  const pane = useUrlListPane(query, params, patch, PATH);
   const form = query.skolform ? skolform(query.skolform) : undefined;
 
   const selection = useMemo(() => selectKoncern(groups, query), [groups, query]);
@@ -165,13 +162,7 @@ export function KoncernView({
               />
             }
             label="Koncerner"
-            sort={{ id: query.sort, desc: query.desc }}
-            onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
-            page={query.page}
-            perPage={query.perPage}
-            onPageChange={(p) => patch({ page: p })}
-            onPerPageChange={(perPage) => patch({ perPage, page: null })}
-            pageHref={(p) => searchString(patchParams(params, { page: p })) || PATH}
+            {...pane}
           />
         </div>
       </div>

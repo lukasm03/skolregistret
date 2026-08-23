@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { site } from "@/config/site";
+import { SearchFieldContents, searchBoxClass } from "@/components/ui/SearchField";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
@@ -29,40 +30,16 @@ export function AppShell({
   children,
 }: Props) {
   const searchField = (
-    <>
-      <span
-        aria-hidden
-        className="size-[11px] flex-none rounded-full border-[1.5px] border-ink-faint"
-      />
-      <input
-        type="search"
-        name="q"
-        autoComplete="off"
-        spellCheck={false}
-        {...(onSearchChange
-          ? {
-              value: searchValue ?? "",
-              onChange: (e) => onSearchChange(e.target.value),
-            }
-          : { defaultValue: searchValue })}
-        placeholder={searchPlaceholder}
-        aria-label={searchPlaceholder}
-        // 16px until sm: iOS Safari zooms the page when a focused field is
-        // set smaller than that, and coming back out of the zoom is manual.
-        className="w-full min-w-0 bg-transparent text-[16px] outline-none sm:text-base"
-      />
-    </>
+    <SearchFieldContents
+      placeholder={searchPlaceholder}
+      {...(onSearchChange
+        ? { value: searchValue, onChange: onSearchChange }
+        : { defaultValue: searchValue })}
+    />
   );
   // Below sm the field takes a line of its own — brand, nav and a 300px
   // search do not fit across a phone.
-  //
-  // The input drops its own outline so the ring sits on the whole field
-  // rather than inside its border, and the wrapper draws it back: the border
-  // firms up for any focus, and `has-[:focus-visible]` repeats the global
-  // 2px accent outline for the keyboard only — the same rule globals.css
-  // applies everywhere else, which a bare border-colour swap did not meet.
-  const searchClass =
-    "flex h-[30px] w-full flex-1 basis-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-accent sm:w-auto sm:max-w-[300px] sm:basis-auto";
+  const searchClass = `${searchBoxClass} w-full flex-1 basis-full sm:w-auto sm:max-w-[300px] sm:basis-auto`;
 
   return (
     <div className="flex min-h-screen justify-center">

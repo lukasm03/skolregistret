@@ -26,13 +26,9 @@ import {
   selectHuvudman,
   type HuvudmanAggregate,
 } from "@/lib/huvudman-select";
-import {
-  parseHuvudmanQuery,
-  patchParams,
-  searchString,
-  type RawParams,
-} from "@/lib/query";
+import { parseHuvudmanQuery, searchString, type RawParams } from "@/lib/query";
 import { useQueryParams } from "@/hooks/use-query-params";
+import { useUrlListPane } from "@/hooks/use-url-list-pane";
 
 const PATH = "/huvudman";
 
@@ -54,6 +50,7 @@ export function HuvudmanView({
 }) {
   const [params, patch] = useQueryParams(initialParams);
   const query = useMemo(() => parseHuvudmanQuery(params), [params]);
+  const pane = useUrlListPane(query, params, patch, PATH);
   const form = query.skolform ? skolform(query.skolform) : undefined;
 
   const normalizedHuvudman = useMemo(
@@ -248,13 +245,7 @@ export function HuvudmanView({
               />
             }
             label="Huvudmän"
-            sort={{ id: query.sort, desc: query.desc }}
-            onSortChange={(s) => patch({ sort: s.id, dir: s.desc ? "desc" : "asc" })}
-            page={query.page}
-            perPage={query.perPage}
-            onPageChange={(p) => patch({ page: p })}
-            onPerPageChange={(perPage) => patch({ perPage, page: null })}
-            pageHref={(p) => searchString(patchParams(params, { page: p })) || PATH}
+            {...pane}
             stale={stale}
             footerNote={
               <span className="text-sm text-ink-subtle">

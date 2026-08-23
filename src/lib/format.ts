@@ -38,11 +38,6 @@ export function isoDate(value: string | null | undefined): string {
   return Number.isNaN(parsed.getTime()) ? value : dateFormat.format(parsed);
 }
 
-function pct(n: number | null | undefined): string {
-  if (n == null) return DASH;
-  return `${dec(n)}%`;
-}
-
 const UNIT_SUFFIX: Record<MetricUnit, string> = {
   index: "",
   percent: "%",
@@ -61,12 +56,6 @@ export function metric(
 ): string {
   if (!v || v.missing != null || !v.raw) return DASH;
   return `${v.raw}${UNIT_SUFFIX[unit]}`;
-}
-
-/** Same as `metric`, for a plain number that did not come from the register. */
-export function metricNumber(n: number | null, unit: MetricUnit): string {
-  if (n == null) return DASH;
-  return unit === "percent" ? pct(n) : dec(n);
 }
 
 /** A byte count rendered compactly: "512 B", "128 kB", "2,4 MB" — the value

@@ -9,9 +9,6 @@
  * span for display.
  */
 
-/** Förskoleklass is year "0" in the register's own lists. */
-export const FÖRSKOLEKLASS = "0";
-
 /** How förskoleklass is written in a span, since "0" would read as a year zero. */
 const FÖRSKOLEKLASS_LABEL = "F";
 

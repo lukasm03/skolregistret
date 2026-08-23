@@ -1,20 +1,12 @@
 "use client";
 
 import { site } from "@/config/site";
-import { skolformer } from "@/config/skolformer";
 import { toggleInList, type HuvudmanQuery } from "@/lib/query";
 import type { KommunOption } from "@/lib/school-select";
-import { HUVUDMANTYP_ORDER, type HuvudmanTyp, type SkolformCode } from "@/lib/types";
+import type { HuvudmanTyp, SkolformCode } from "@/lib/types";
 import type { Patch } from "@/hooks/use-query-params";
-import {
-  CheckboxControl,
-  FilterGroup,
-  RadioControl,
-  SelectField,
-  Sidebar,
-  SidebarFootnote,
-  Toggle,
-} from "./controls";
+import { FilterGroup, SelectField, Sidebar, SidebarFootnote, Toggle } from "./controls";
+import { HuvudmannatypCheckboxes, SkolformRadios } from "./groups";
 
 export function HuvudmanFilters({
   query,
@@ -48,46 +40,19 @@ export function HuvudmanFilters({
         />
       </FilterGroup>
 
-      <FilterGroup label="Skolform">
-        {/* Native radios sharing one name are already a group to the
-            platform; the role names it for a screen reader. */}
-        <div role="radiogroup" aria-label="Skolform" className="flex flex-col gap-[7px]">
-          <RadioControl
-            name="skolform"
-            label={site.allaSkolformer}
-            checked={!query.skolform}
-            onSelect={() => selectForm(null)}
-          />
-          {skolformer
-            .filter((f) => formCounts.has(f.code) || query.skolform === f.code)
-            .map((f) => (
-              <RadioControl
-                key={f.code}
-                name="skolform"
-                label={f.label}
-                count={formCounts.get(f.code) ?? 0}
-                checked={query.skolform === f.code}
-                onSelect={() => selectForm(f.code)}
-              />
-            ))}
-        </div>
-      </FilterGroup>
+      <SkolformRadios
+        label="Skolform"
+        counts={formCounts}
+        selected={query.skolform}
+        onSelect={selectForm}
+      />
 
-      <FilterGroup label="Typ">
-        <div className="flex flex-col gap-[7px]">
-          {HUVUDMANTYP_ORDER.filter((t) => counts[t] > 0 || query.typ.includes(t)).map(
-            (t) => (
-              <CheckboxControl
-                key={t}
-                label={t}
-                count={counts[t]}
-                checked={query.typ.includes(t)}
-                onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
-              />
-            ),
-          )}
-        </div>
-      </FilterGroup>
+      <HuvudmannatypCheckboxes
+        label="Typ"
+        counts={counts}
+        selected={query.typ}
+        onToggle={(t) => onChange({ typ: toggleInList(query.typ, t, true) })}
+      />
 
       <FilterGroup label="Koncerntillhörighet">
         <Toggle

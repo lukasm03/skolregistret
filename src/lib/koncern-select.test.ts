@@ -130,10 +130,16 @@ describe("koncernSortValue", () => {
     expect(koncernSortValue(row, "enheter")).toBe(2);
     expect(koncernSortValue(row, "huvudman")).toBe(1);
     expect(koncernSortValue(row, "kommuner")).toBe(1);
+    expect(koncernSortValue(row, "elever")).toBe(100);
   });
 
-  test("an unknown key falls back to elever", () => {
-    expect(koncernSortValue(row, "whatever")).toBe(100);
+  test("an unknown key sorts nothing rather than quietly sorting by elever", () => {
+    // `resolveKoncernSort` in `query.ts` has already rejected any key the
+    // list does not offer, so reaching this means a column was made sortable
+    // without being registered there. `undefined` sends every row to the same
+    // place, which looks like a sort that did nothing; the old fallback to
+    // elever looked like a sort that worked.
+    expect(koncernSortValue(row, "whatever")).toBeUndefined();
   });
 });
 

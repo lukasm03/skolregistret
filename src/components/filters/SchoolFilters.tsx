@@ -1,7 +1,7 @@
 "use client";
 
 import { site } from "@/config/site";
-import { skolformer, type SkolformDef } from "@/config/skolformer";
+import type { SkolformDef } from "@/config/skolformer";
 import {
   gradeFilterFor,
   toggleInList,
@@ -10,23 +10,18 @@ import {
 } from "@/lib/query";
 import type { KommunOption, ProgramOption } from "@/lib/school-select";
 import type { Patch } from "@/hooks/use-query-params";
-import {
-  HUVUDMANTYP_ORDER,
-  type HuvudmanTyp,
-  type SkolformCode,
-  type SkolStatus,
-} from "@/lib/types";
+import type { HuvudmanTyp, SkolformCode, SkolStatus } from "@/lib/types";
 import {
   CheckboxControl,
   Chip,
   FilterGroup,
   MultiSelectDropdown,
-  RadioControl,
   RangeField,
   SelectField,
   Sidebar,
   SidebarFootnote,
 } from "./controls";
+import { HuvudmannatypCheckboxes, SkolformRadios } from "./groups";
 
 export function SchoolFilters({
   query,
@@ -87,46 +82,19 @@ export function SchoolFilters({
 
       {/* One skolform at a time: meritvärde and betygspoäng are not the same
           column, and a median across both would not mean anything. */}
-      <FilterGroup label="Skolform">
-        {/* Native radios sharing one name are already a group to the
-            platform; the role names it for a screen reader. */}
-        <div role="radiogroup" aria-label="Skolform" className="flex flex-col gap-[7px]">
-          <RadioControl
-            name="skolform"
-            label={site.allaSkolformer}
-            checked={!query.skolform}
-            onSelect={() => selectForm(null)}
-          />
-          {skolformer
-            .filter((f) => formCounts.has(f.code) || query.skolform === f.code)
-            .map((f) => (
-              <RadioControl
-                key={f.code}
-                name="skolform"
-                label={f.label}
-                count={formCounts.get(f.code) ?? 0}
-                checked={query.skolform === f.code}
-                onSelect={() => selectForm(f.code)}
-              />
-            ))}
-        </div>
-      </FilterGroup>
+      <SkolformRadios
+        label="Skolform"
+        counts={formCounts}
+        selected={query.skolform}
+        onSelect={selectForm}
+      />
 
-      <FilterGroup label="Huvudmannatyp">
-        <div className="flex flex-col gap-[7px]">
-          {HUVUDMANTYP_ORDER.filter((t) => counts[t] > 0 || query.typ.includes(t)).map(
-            (t) => (
-              <CheckboxControl
-                key={t}
-                label={t}
-                count={counts[t]}
-                checked={query.typ.includes(t)}
-                onToggle={() => onChange({ typ: toggleInList(query.typ, t, true) })}
-              />
-            ),
-          )}
-        </div>
-      </FilterGroup>
+      <HuvudmannatypCheckboxes
+        label="Huvudmannatyp"
+        counts={counts}
+        selected={query.typ}
+        onToggle={(t) => onChange({ typ: toggleInList(query.typ, t, true) })}
+      />
 
       {grades.length > 0 && (
         <FilterGroup label="Årskurser">

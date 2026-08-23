@@ -22,7 +22,15 @@ export type KoncernAggregate = {
   skolformer: string[];
 };
 
-function aggregateKoncern(group: KoncernGroup): KoncernAggregate {
+/**
+ * What a koncern adds up to over the huvudmän the register knows about.
+ *
+ * Exported because the detail page needs the same four figures, in its stat
+ * tiles and again in its metadata description — and had its own copy of this
+ * arithmetic in both places, identical down to the `localeCompare` locale.
+ * Three copies of "what a koncern's elever are" is three chances to disagree.
+ */
+export function aggregateKoncern(group: KoncernGroup): KoncernAggregate {
   const enheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
   const elever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
   const kommuner = [...new Set(group.dotterbolag.flatMap((d) => d.kommuner))].sort(
@@ -35,6 +43,13 @@ function aggregateKoncern(group: KoncernGroup): KoncernAggregate {
 /**
  * What a koncern column sorts on. `undefined` means the figure is not
  * reported, and those rows sort last whichever way the column points.
+ *
+ * Every key the list can actually be sorted by has a case. The default is a
+ * guard, not a fallback: `resolveKoncernSort` in `query.ts` has already
+ * rejected anything it does not recognise, so an unknown key here means a
+ * column was added without being registered as sortable there. Returning
+ * `undefined` sends every row to the same place, which reads as a sort that
+ * did nothing — the old `return r.elever` read as a sort that worked.
  */
 export function koncernSortValue(
   r: KoncernAggregate,
@@ -49,8 +64,10 @@ export function koncernSortValue(
       return r.group.dotterbolag.length;
     case "kommuner":
       return r.kommuner.length;
-    default:
+    case "elever":
       return r.elever;
+    default:
+      return undefined;
   }
 }
 

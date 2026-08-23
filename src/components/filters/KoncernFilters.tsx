@@ -1,17 +1,11 @@
 "use client";
 
 import { site } from "@/config/site";
-import { skolformer } from "@/config/skolformer";
 import type { KoncernQuery } from "@/lib/query";
 import type { SkolformCode } from "@/lib/types";
 import type { Patch } from "@/hooks/use-query-params";
-import {
-  FilterGroup,
-  RadioControl,
-  RangeField,
-  Sidebar,
-  SidebarFootnote,
-} from "./controls";
+import { FilterGroup, RangeField, Sidebar, SidebarFootnote } from "./controls";
+import { SkolformRadios } from "./groups";
 
 export function KoncernFilters({
   query,
@@ -30,30 +24,12 @@ export function KoncernFilters({
 
   return (
     <Sidebar activeCount={activeCount}>
-      <FilterGroup label="Skolformer i koncernen">
-        {/* Native radios sharing one name are already a group to the
-            platform; the role names it for a screen reader. */}
-        <div role="radiogroup" aria-label="Skolform" className="flex flex-col gap-[7px]">
-          <RadioControl
-            name="skolform"
-            label={site.allaSkolformer}
-            checked={!query.skolform}
-            onSelect={() => selectForm(null)}
-          />
-          {skolformer
-            .filter((f) => formCounts.has(f.code) || query.skolform === f.code)
-            .map((f) => (
-              <RadioControl
-                key={f.code}
-                name="skolform"
-                label={f.label}
-                count={formCounts.get(f.code) ?? 0}
-                checked={query.skolform === f.code}
-                onSelect={() => selectForm(f.code)}
-              />
-            ))}
-        </div>
-      </FilterGroup>
+      <SkolformRadios
+        label="Skolformer i koncernen"
+        counts={formCounts}
+        selected={query.skolform}
+        onSelect={selectForm}
+      />
 
       <FilterGroup label="Antal skolenheter">
         <RangeField

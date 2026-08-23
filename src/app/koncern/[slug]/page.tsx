@@ -16,6 +16,7 @@ import {
 import { site } from "@/config/site";
 import { DASH, isoDate, num, plural, slugify } from "@/lib/format";
 import { huvudmanSlugar } from "@/lib/huvudman-slugs";
+import { aggregateKoncern } from "@/lib/koncern-select";
 import { buildKoncernGroups, getKoncernBySlug, listHuvudman } from "@/lib/skolregister";
 import type { HuvudmanRad } from "@/lib/skolregister";
 
@@ -68,8 +69,7 @@ export async function generateMetadata({
   const group = await getKoncernBySlug(slug);
   if (!group) return { title: "Koncernen finns inte" };
 
-  const enheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
-  const elever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
+  const { enheter, elever } = aggregateKoncern(group);
 
   return {
     title: `${group.namn} · koncern`,
@@ -92,12 +92,14 @@ export default async function KoncernPage({
   // slug alike — only the full list knows which of them took the suffix.
   const huvudmanSlugFörNamn = huvudmanSlugar(await listHuvudman());
 
-  const antalEnheter = group.dotterbolag.reduce((sum, d) => sum + d.antalEnheter, 0);
-  const antalElever = group.dotterbolag.reduce((sum, d) => sum + d.antalElever, 0);
-  const kommuner = [...new Set(group.dotterbolag.flatMap((d) => d.kommuner))].sort(
-    (a, b) => a.localeCompare(b, "sv"),
-  );
-  const skolformer = [...new Set(group.dotterbolag.flatMap((d) => d.skolformer))];
+  // The same summation the koncern list rows are built from, so the tiles here
+  // and the figures in the table there can never drift apart.
+  const {
+    enheter: antalEnheter,
+    elever: antalElever,
+    kommuner,
+    skolformer,
+  } = aggregateKoncern(group);
   const restForetag =
     group.antalFöretag != null ? group.antalFöretag - group.dotterbolag.length : null;
 

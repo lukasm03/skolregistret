@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { FilterSummary, ListPane, NoMatches } from "@/components/list/ListChrome";
 import { schoolColumns } from "@/components/tables/schoolColumns";
 import { SelectField } from "@/components/filters/controls";
+import { SearchFieldContents, searchBoxClass } from "@/components/ui/SearchField";
 import { site } from "@/config/site";
 import { skolform, skolformer } from "@/config/skolformer";
 import type { ActiveFilter, ClearPatch } from "@/lib/active-filters";
@@ -101,24 +102,14 @@ export function HuvudmanEnheterView({ units }: { units: ListSchool[] }) {
   return (
     <section className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-[30px] max-w-[280px] min-w-[200px] flex-1 items-center gap-2 rounded-md border border-line bg-surface px-2.5 focus-within:border-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-accent">
-          <span
-            aria-hidden
-            className="size-[11px] flex-none rounded-full border-[1.5px] border-ink-faint"
-          />
-          <input
-            type="search"
-            name="q"
-            autoComplete="off"
-            spellCheck={false}
+        <div className={`${searchBoxClass} max-w-[280px] min-w-[200px] flex-1`}>
+          <SearchFieldContents
+            placeholder="Sök skolenhet…"
             value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
+            onChange={(next) => {
+              setQ(next);
               setPageIndex(0);
             }}
-            placeholder="Sök skolenhet…"
-            aria-label="Sök skolenhet"
-            className="w-full min-w-0 bg-transparent text-[16px] outline-none sm:text-base"
           />
         </div>
         <div className="w-[170px]">
