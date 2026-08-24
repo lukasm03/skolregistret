@@ -118,25 +118,21 @@ export function DetailSkeleton({
             </div>
 
             {section === "/skolor" ? (
-              // Nyckeltalskort — the same auto-fit grid `NyckeltalCards` lays
-              // itself out on, so the first paint does not re-flow into it.
-              <div
-                className="grid gap-3"
-                style={{
-                  ...beat(3),
-                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 330px), 1fr))",
-                }}
-              >
-                {Array.from({ length: 4 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col gap-3 rounded-lg border border-line-soft p-3.5"
-                  >
-                    <div className={`${block} h-[15px] w-[140px]`} />
-                    <div className={`${block} h-[24px] w-full`} />
-                    <div className={`${block} h-[11px] w-[70%]`} />
-                  </div>
-                ))}
+              // The nyckeltal table, framed the way `DataTable` frames itself,
+              // so the first paint does not re-flow into it.
+              <div style={beat(3)} className="flex flex-col gap-2.5">
+                <div className="overflow-clip rounded-lg border border-line-soft">
+                  <div className={`${block} h-[30px] w-full rounded-none`} />
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="border-b border-line-row px-2 py-[9px] last:border-b-0"
+                    >
+                      <div className={`${block} h-[14px] w-full`} />
+                    </div>
+                  ))}
+                </div>
+                <div className={`${block} h-[11px] w-[60%]`} />
               </div>
             ) : (
               // The huvudman page opens on its enheter table, framed.

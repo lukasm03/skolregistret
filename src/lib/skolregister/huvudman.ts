@@ -44,6 +44,7 @@ export function buildHuvudmanRows(): Promise<HuvudmanRad[]> {
         const första = medlemmar[0]!;
         const orgnr = första.huvudmannaOrgnr;
         const bolag = orgnr ? file.bolag[orgnr] : undefined;
+        const koncern = orgnr ? (koncernIndex.get(orgnr) ?? null) : null;
 
         rows.push({
           organisationsnummer: orgnr ?? key,
@@ -53,7 +54,7 @@ export function buildHuvudmanRows(): Promise<HuvudmanRad[]> {
           // real legal form — the actual one lives in Bolagsverket's data,
           // when we have it.
           bolagsform: bolag?.organisation?.juridiskForm ?? null,
-          koncern: orgnr ? (koncernIndex.get(orgnr) ?? null) : null,
+          koncern,
           kommuner: [
             ...new Set(
               medlemmar.map((s) => s.kommun).filter((k): k is string => k != null),
@@ -62,6 +63,13 @@ export function buildHuvudmanRows(): Promise<HuvudmanRad[]> {
           skolformer: [...new Set(medlemmar.flatMap((s) => s.skolformer))],
           antalEnheter: medlemmar.length,
           antalElever: medlemmar.reduce((sum, s) => sum + (s.antalElever ?? 0), 0),
+          // The collector's own addresses, straight through — see
+          // `HuvudmanKällhänvisning` for why only the first is ever a link.
+          källor: {
+            koncern: koncern?.källa ?? null,
+            bolagsuppgifter: bolag?.kallor.organisation ?? null,
+            årsredovisningar: bolag?.kallor.dokumentlista ?? null,
+          },
         });
       }
       return rows;

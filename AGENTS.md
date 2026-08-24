@@ -73,10 +73,26 @@ without a reason the filings themselves give you.
 The two sources share no join beyond organisationsnummer, and nothing in
 `src/lib/skolregister/` knows this one exists.
 
+`allt.json` also records where each of its own figures came from — see
+"Never build a source URL by hand" below.
+
 `allt.json` carries no bulk official riksgenomsnitt outside five
 gymnasieprogram measures, so nearly every nyckeltal card reads "(beräknat)"
 — self-computed by `getBeräknatRiksGenomsnitt` from every unit's own
 reported figures. That's expected, not a bug to chase.
+
+Gymnasieskolan reports no skolform-level statistics at all — `statistik.gy.matt`
+is empty in every record, the figures live one level down under
+`statistik.gy.program[]`. So the two unit-level nyckeltal that come off `matt`,
+andelen behöriga lärare and elever per lärare, are averaged back up out of the
+programmes by `programsnitt` (`normalize.ts`), weighted by each programme's
+elevantal. Those figures carry `härlett` all the way to the screen, where the
+row says "snitt av programmen": a figure the page colours has to say it is ours
+and not Skolverkets, the same rule `RiksNyckeltal.beräknat` follows. The
+fallback is deliberately limited to units whose _primary_ skolform is "gy" —
+another form's unit is compared against that form's riksgenomsnitt, and a
+gy-derived figure held up against förskoleklassens snitt would say less than
+the dash it replaced.
 
 ## Language
 
@@ -91,16 +107,16 @@ messages are in English; domain nouns stay Swedish.
 
 ## Layout rules
 
-| Directory                 | Rule                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `src/lib/`                | Must stay server-safe and free of React. `skolregister/client.ts` reads the filesystem.                     |
-| `src/hooks/`              | Anything `"use client"`. The hooks live here, not in `lib/`.                                                |
-| `src/config/`             | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code. |
-| `src/components/tables/`  | Column definitions. Route files should not declare columns.                                                 |
-| `src/components/detail/`  | Detail-page panels — nyckeltalskort, enkätkort, dokumentlista, comparison band, årsredovisningslista.       |
-| `src/lib/skolregister/`   | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                  |
-| `data/`                   | `allt.json` and `arsredovisningar/`, both gitignored — the app's data, not committed.                       |
-| `src/lib/arsredovisning/` | Reads `data/arsredovisningar/`. Import from the barrel (`@/lib/arsredovisning`).                            |
+| Directory                 | Rule                                                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `src/lib/`                | Must stay server-safe and free of React. `skolregister/client.ts` reads the filesystem.                        |
+| `src/hooks/`              | Anything `"use client"`. The hooks live here, not in `lib/`.                                                   |
+| `src/config/`             | Tunables — scope, läsår, pagination, and the skolform registry. Change behaviour here before changing code.    |
+| `src/components/tables/`  | Column definitions. Route files should not declare columns.                                                    |
+| `src/components/detail/`  | Detail-page panels — dokumentlista, koncernträd, enheterna under en huvudman, årsredovisningslista, källnoter. |
+| `src/lib/skolregister/`   | Import from the barrel (`@/lib/skolregister`), not the individual modules.                                     |
+| `data/`                   | `allt.json` and `arsredovisningar/`, both gitignored — the app's data, not committed.                          |
+| `src/lib/arsredovisning/` | Reads `data/arsredovisningar/`. Import from the barrel (`@/lib/arsredovisning`).                               |
 
 `src/config/skolformer.ts` is the registry that makes the app work for more
 than grundskolan — filter chips, columns, stat tiles, sort options and the
@@ -109,13 +125,34 @@ entry there, not writing new components.
 
 Its two siblings do the same job for the skolenhet page's own measures:
 `nyckeltalmetriker.ts` (the four unit-level nyckeltal) and `programmetriker.ts`
-(the six gymnasieprogram measures). Both declare the scale a comparison band is
-drawn on, which direction counts as better, and — for nyckeltal — the prose
-behind "Varifrån kommer talet?". **A figure the page colours must be able to
-say where it came from**: `RiksNyckeltal.beräknat` carries whether a
-riksgenomsnitt is Skolverket's own or one we averaged ourselves, and the card
-prints "(beräknat)" when it is. Don't collapse the two into a bare number on
-the way to the screen.
+(the six gymnasieprogram measures). Both declare the scale a deviation is
+measured on and which direction counts as better; `nyckeltalmetriker.ts` also
+carries the prose behind "Varifrån kommer talet?", which nothing renders since
+the explained cards were removed — it is kept because the figures still need it
+if that reading ever comes back.
+
+Every tab on the two detail pages is now the same table. `DataTable` plus a
+column file under `src/components/tables/` renders the nyckeltal, SALSA, the
+enkät and the gymnasieprogram alike: one row per subject, the figure in the
+cell and its distance from riket under it, with the source prose collected in
+the page's Källor section rather than repeated below each table. The
+programtabell was the last one with a shape of its own — grouped spanning
+headers, a pinned name column, sortable headers and a row that unfolded into
+deviation bars — and it lost all four in the swap, sorting included. Anything
+new that shows figures per subject on a detail page is a column file, not a
+component.
+
+**A figure the page colours must be able to say where it came from**:
+`RiksNyckeltal.beräknat` carries whether a riksgenomsnitt is Skolverket's own
+or one we averaged ourselves, and the nyckeltal table prints "(ber.)" beside
+the riksvärde when it is. Don't collapse the two into a bare number on the way
+to the screen. The Källor section answers the same question for the page as a
+whole, and answers it about _this_ subject: where an authority publishes the
+unit's or the huvudman's own record at a stable address, `site.källor` builds
+it (`enhet`/`huvudman`) and the row links there rather than at the source's
+front door. Only add a builder for an address you have actually resolved — a
+guessed deep link that 404s is worse than the front door it replaced, and the
+three sources without one are commented in `site.ts` with the reason.
 
 **Every `gradeFilter` chip must be backed by data the register actually
 reports for that form.** Years arrive keyed by skolformsnyckel — `fsk`, `gr`,
@@ -158,6 +195,13 @@ container. `HuvudmanEnheterView`'s frame says so where it does it.
 
 ## Deliberately left as-is
 
+- **There is no manual light/dark switch.** Appearance follows
+  `prefers-color-scheme` only — `color-scheme: light dark` on `:root` in
+  `globals.css` is the whole mechanism, every token resolves through
+  `light-dark()`, and `lib/theme.ts` is left holding only `THEME_CANVAS`, the
+  pair of canvas colours the `theme-color` meta tags in `layout.tsx` need.
+  A toggle (`ThemeToggle.tsx`, a stored choice, a `data-theme` attribute) used
+  to sit here and was removed on request; don't re-add one without asking.
 - **`src/components/filters/controls.tsx` (464 lines, 10 exports)** and
   **`src/lib/query.ts` (366)** are large but cohesive. Not worth splitting
   unless you are already changing them. What controls.tsx holds is _generic_

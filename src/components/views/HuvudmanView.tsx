@@ -209,16 +209,7 @@ export function HuvudmanView({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ListToolbar
-            count={plural(total, "huvudman", "huvudmän")}
-            // Replaced by the tokens as soon as there are any — see
-            // `SchoolsView` for why the two are not shown together.
-            scope={
-              filters.length
-                ? undefined
-                : `${site.riket} · ${site.allaSkolformer.toLowerCase()}`
-            }
-          >
+          <ListToolbar count={plural(total, "huvudman", "huvudmän")}>
             <FilterSummary
               filters={filters}
               onClear={(p) => patch(p)}

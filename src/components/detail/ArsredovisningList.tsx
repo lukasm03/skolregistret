@@ -64,13 +64,3 @@ export function ArsredovisningList({
     </ul>
   );
 }
-
-export function ArsredovisningKälla() {
-  return (
-    <p className="text-sm leading-[1.55] text-ink-faint">
-      Källa: årsredovisningar inlämnade till Bolagsverket, visade som de lämnades in.
-      Kommunala huvudmän lämnar ingen årsredovisning per skolverksamhet — deras
-      redovisning ingår i kommunens.
-    </p>
-  );
-}

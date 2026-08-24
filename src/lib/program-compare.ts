@@ -44,8 +44,6 @@ export interface ProgramMetricCell {
   t: number | null;
   /** Which side of riket the figure falls on, or `none` for an undirected measure. */
   riktning: Direction;
-  /** First column of its header group — the table draws a rule to its left. */
-  nyGrupp: boolean;
 }
 
 export interface ProgramComparison {
@@ -61,11 +59,14 @@ export interface ProgramComparison {
    * normal case for introduktionsprogram.
    */
   score: number | null;
-  /** One sentence on how the row stands, opening the expanded detail. */
+  /**
+   * One sentence on how the row stands. Nothing renders it since the rows
+   * stopped expanding, and it is kept for the same reason `EnkätJämförelse`
+   * keeps its own: the sentence is the model's answer to "how does this one
+   * stand", and the figures still need it if a per-row reading comes back.
+   */
   sammanfattning: string;
 }
-
-export type ProgramSort = { key: ProgramNyckeltalKey; dir: "asc" | "desc" } | null;
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -93,7 +94,6 @@ function riksOf(
 
 function cell(
   metrik: ProgramMetrik,
-  index: number,
   skola: NyckeltalVärde | undefined,
   riks: { text: string | null; tal: number | null },
 ): ProgramMetricCell {
@@ -101,7 +101,6 @@ function cell(
   const diff = tal != null && riks.tal != null ? tal - riks.tal : null;
   const [min, max] = metrik.domain;
   const span = (max - min) * DEVIATION_SPAN;
-  const föregående = programmetriker[index - 1];
   return {
     metrik,
     text: skola?.status === "finns" ? skola.text : DASH,
@@ -111,7 +110,6 @@ function cell(
     diff,
     t: diff != null && span > 0 ? clamp(diff / span, -1, 1) : null,
     riktning: direction(diff, metrik.higherIsBetter),
-    nyGrupp: index > 0 && föregående?.grupp !== metrik.grupp,
   };
 }
 
@@ -160,10 +158,9 @@ export function buildProgramComparisons(
   beräknatProgram: Map<string, Partial<Record<ProgramNyckeltalKey, number>>>,
 ): ProgramComparison[] {
   const rows = program.map((p) => {
-    const cells = programmetriker.map((metrik, i) =>
+    const cells = programmetriker.map((metrik) =>
       cell(
         metrik,
-        i,
         värde(p, metrik.key),
         riksOf(
           riksByKod.get(p.kod)?.nyckeltal[metrik.key],
@@ -185,56 +182,30 @@ export function buildProgramComparisons(
     };
   });
 
-  return sortProgramComparisons(rows, null);
+  return sortProgramComparisons(rows);
 }
 
 /**
- * `null` sorts by how the programme stands against riket, strongest first —
- * the order the table opens in. Otherwise by one metric's own figure.
+ * The order the table opens in — and the only one it has: by how the
+ * programme stands against riket, strongest first.
  *
- * A programme with nothing to compare goes last either way: a missing figure
- * is not a low one, and the same rule governs the lists elsewhere in the app.
+ * The table used to let a header sort it by one metric. That went with the
+ * expandable rows and the grouped headers when the tab became an ordinary
+ * `DataTable` like the nyckeltal and enkät tabs beside it, none of which
+ * sort either.
+ *
+ * A programme with nothing to compare goes last rather than first: a missing
+ * figure is not a low one, and the same rule governs the lists elsewhere in
+ * the app.
  */
-export function sortProgramComparisons(
-  rows: ProgramComparison[],
-  sort: ProgramSort,
-): ProgramComparison[] {
+export function sortProgramComparisons(rows: ProgramComparison[]): ProgramComparison[] {
   const byName = (a: ProgramComparison, b: ProgramComparison) =>
     a.namn.localeCompare(b.namn, "sv");
 
-  if (!sort) {
-    return [...rows].sort((a, b) => {
-      if (a.score == null && b.score == null) return byName(a, b);
-      if (a.score == null) return 1;
-      if (b.score == null) return -1;
-      return b.score - a.score || byName(a, b);
-    });
-  }
-
-  const index = programmetriker.findIndex((m) => m.key === sort.key);
-  const valueOf = (r: ProgramComparison) =>
-    index < 0 ? null : (r.cells[index]?.tal ?? null);
-
   return [...rows].sort((a, b) => {
-    const av = valueOf(a);
-    const bv = valueOf(b);
-    if (av == null && bv == null) return byName(a, b);
-    if (av == null) return 1;
-    if (bv == null) return -1;
-    return (sort.dir === "desc" ? bv - av : av - bv) || byName(a, b);
+    if (a.score == null && b.score == null) return byName(a, b);
+    if (a.score == null) return 1;
+    if (b.score == null) return -1;
+    return b.score - a.score || byName(a, b);
   });
-}
-
-/**
- * Clicking a header cycles descending → ascending → back to the default
- * order. Highest-first comes first because that is the question a reader
- * usually has of a column of figures.
- */
-export function nextProgramSort(
-  current: ProgramSort,
-  key: ProgramNyckeltalKey,
-): ProgramSort {
-  if (current?.key !== key) return { key, dir: "desc" };
-  if (current.dir === "desc") return { key, dir: "asc" };
-  return null;
 }

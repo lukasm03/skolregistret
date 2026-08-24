@@ -7,7 +7,7 @@
  * particular quirks.
  */
 
-import type { Matvarde } from "./types";
+import type { Matvarde, Statistik } from "./types";
 
 /**
  * The newest `Matvarde` in a time series. Read by `period`, not array
@@ -41,6 +41,72 @@ export function talAv(m: Matvarde | null): number | null {
 /** Convenience: newest value's `tal`, straight from a time series. */
 export function nyastaTal(serie: Matvarde[] | undefined): number | null {
   return talAv(nyastaMatvärde(serie));
+}
+
+/** One measure averaged across a unit's gymnasieprogram — see `programsnitt`. */
+export interface Programsnitt {
+  /** The average itself, rounded to the one decimal the register's own figures carry. */
+  tal: number;
+  /** The period the averaged figures were reported for — the newest, where they disagree. */
+  period: string | null;
+  /** How many programmes carried a figure at all. */
+  antalProgram: number;
+  /**
+   * Whether every contributing programme also reported an elevantal, in which
+   * case the average is weighted by them. When one of them does not, the mean
+   * is unweighted rather than computed off a partial set of weights — dropping
+   * a programme for missing an elevantal would silently change *which*
+   * programmes the figure describes.
+   */
+  elevviktat: boolean;
+}
+
+/**
+ * One `Statistik.program[]` measure averaged into a single figure for the
+ * whole unit, weighted by each programme's elevantal.
+ *
+ * Gymnasieskolans skolform-level `matt` is always empty — Skolverket
+ * publishes andelen behöriga lärare and elever per lärare per program only
+ * (see `Statistik.program`) — so a gymnasieskola had no figure at all for the
+ * two unit-level nyckeltal that come off `matt`. This is what `resources.ts`
+ * fills them in from.
+ *
+ * In today's export every programme at a unit repeats the *same* pair of
+ * lärartal (checked across all 1 240 units with a gy-block: not one of them
+ * varies within a unit), so the average is the unit's own figure rather than
+ * a blend of different ones. The elevviktningen is what keeps it honest if
+ * that ever stops being true — and the rounding is what keeps an average of
+ * identical figures from printing as 61,300000000000004.
+ */
+export function programsnitt(
+  program: Statistik["program"],
+  mattnyckel: string,
+): Programsnitt | null {
+  const bidrag = program.flatMap((p) => {
+    const m = nyastaMatvärde(p.matt[mattnyckel]);
+    if (!finns(m)) return [];
+    return [
+      { tal: m.tal, period: m.period, elever: nyastaTal(p.matt.totalNumberOfPupils) },
+    ];
+  });
+  if (bidrag.length === 0) return null;
+
+  const elevviktat = bidrag.every((b) => b.elever != null && b.elever > 0);
+  const vikt = (b: (typeof bidrag)[number]) => (elevviktat ? b.elever! : 1);
+  const summaVikt = bidrag.reduce((sum, b) => sum + vikt(b), 0);
+  const tal = bidrag.reduce((sum, b) => sum + b.tal * vikt(b), 0) / summaVikt;
+
+  const perioder = bidrag
+    .map((b) => b.period)
+    .filter((period): period is string => period != null)
+    .sort();
+
+  return {
+    tal: Math.round(tal * 10) / 10,
+    period: perioder.at(-1) ?? null,
+    antalProgram: bidrag.length,
+    elevviktat,
+  };
 }
 
 /**

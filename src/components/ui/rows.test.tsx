@@ -81,8 +81,21 @@ const renderers: [string, (clickable: boolean) => string][] = [
 
 for (const [name, render] of renderers) {
   describe(`${name}: a clickable row`, () => {
-    test("carries exactly one link, however many columns it has", () => {
-      expect(render(true).match(/<a\b/g) ?? []).toHaveLength(1);
+    test("reaches the accessibility tree as exactly one link", () => {
+      // Not one anchor: the row's hit area is one empty anchor per cell,
+      // because Safari will not position a `<tr>` and the pseudo-element that
+      // used to stretch over the row escaped it. What has to stay singular is
+      // what a reader hears, which is the anchors that are not `aria-hidden`.
+      const anchors = render(true).match(/<a\b[^>]*>/g) ?? [];
+      expect(anchors.filter((a) => !a.includes("aria-hidden"))).toHaveLength(1);
+    });
+
+    test("puts a piece of the hit area over every cell", () => {
+      const html = render(true);
+      // Three columns and the trailing spacer: the real link covers the first,
+      // an overlay covers the other three. A gap here is a dead stripe in a
+      // row that highlights as though all of it were clickable.
+      expect(html.match(/<a\b[^>]*aria-hidden/g) ?? []).toHaveLength(3);
     });
 
     test("names that link with the row's subject", () => {
@@ -92,25 +105,58 @@ for (const [name, render] of renderers) {
     test("leaves every other cell readable", () => {
       const html = render(true);
       // The figures are the point of the table. A cell that only ever appears
-      // inside an `aria-hidden` link is a cell nobody on a screen reader has.
-      expect(html).toContain(">Nacka</td>");
-      expect(html).toContain(">412</td>");
+      // inside an `aria-hidden` link is a cell nobody on a screen reader has,
+      // so each one has to open directly on its own text — the overlay anchor
+      // is a sibling that follows it, never a wrapper around it.
+      expect(html).toMatch(/<td[^>]*>Nacka</);
+      expect(html).toMatch(/<td[^>]*>412</);
     });
 
     test("hides nothing that has content in it", () => {
       const html = render(true);
-      // The only `aria-hidden` cell in a row is the trailing spacer, which is
-      // empty by construction.
-      expect(/<td[^>]*aria-hidden[^>]*>(?!<\/td>)/.test(html)).toBe(false);
-      expect(html).not.toMatch(/<a[^>]*aria-hidden/);
+      // This is the regression the whole file exists for: an `aria-hidden`
+      // anchor is fine, an `aria-hidden` anchor with something inside it is a
+      // figure nobody can read. Every overlay has to close immediately.
+      expect(html).not.toMatch(/<a\b[^>]*aria-hidden[^>]*>(?!<\/a>)/);
+      // The trailing spacer holds an overlay and nothing else — no text of its
+      // own ever goes into an `aria-hidden` cell.
+      expect(html).not.toMatch(/<td[^>]*aria-hidden[^>]*>[^<]/);
     });
 
-    test("anchors the stretched hit area on the row", () => {
+    test("anchors every piece of the hit area on a cell, never on the row", () => {
       const html = render(true);
-      // `relative` on the `<tr>` is what the link's `after:inset-0` resolves
-      // against; without it the hit area collapses to the first cell.
-      expect(html).toMatch(/<tr[^>]*class="[^"]*\brelative\b/);
+      // The bug this replaced: `relative` was on the `<tr>`, and Safari does
+      // not position table rows — `getComputedStyle(tr).position` reads
+      // `static` there whatever the rule says. The overlays resolved against
+      // `TableScroller`'s wrapper instead, each became the size of the whole
+      // table, and the last row of the page collected every click in it.
+      //
+      // So the row must not be what anything is anchored on, and each cell
+      // must be positioned. `relative` as a class of its own, not as the tail
+      // of `[&>td]:relative` — which is the one that has to be there.
+      expect(html).not.toMatch(/<tr[^>]*class="[^"]*\srelative[\s"]/);
+      expect(html).toMatch(/<tr[^>]*class="[^"]*\[&amp;&gt;td\]:relative/);
       expect(html).toContain("after:absolute after:inset-0");
+    });
+
+    test("keeps the table in the border model those cells can be anchored in", () => {
+      // Under `border-collapse: collapse` a cell's borders belong to the table
+      // rather than to the cell, which is not a box to hang a hit area off.
+      //
+      // What can be asserted here is the class that produces the geometry,
+      // never the geometry — `renderToStaticMarkup` has no layout. Clicking
+      // the first row of `/skolor` and landing on it is the real check.
+      expect(render(true)).toMatch(/<table[^>]*class="[^"]*\bborder-separate\b/);
+    });
+
+    test("draws the row's rule on its cells, where the model can see it", () => {
+      // The separated model ignores `border` on rows (CSS 2.1 §17.6.1), so a
+      // `border-b` on the `<tr>` would paint nothing and every row separator
+      // in the app would quietly vanish.
+      //
+      // Matched in its escaped form: the class is `[&>td]:border-b`, and both
+      // of those characters are written as entities inside an attribute.
+      expect(render(true)).toMatch(/<tr[^>]*class="[^"]*\[&amp;&gt;td\]:border-b/);
     });
 
     test("does not clip that hit area with the name column's truncation", () => {
@@ -124,6 +170,7 @@ for (const [name, render] of renderers) {
 
   describe(`${name}: a row with nowhere to go`, () => {
     test("has no link at all", () => {
+      // Including no overlays: a row with no `rowHref` has nothing to cover.
       expect(render(false)).not.toContain("<a ");
     });
 

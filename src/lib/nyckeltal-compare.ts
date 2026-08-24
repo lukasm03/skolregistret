@@ -1,7 +1,12 @@
 import { nyckeltalmetriker, type NyckeltalMetrik } from "@/config/nyckeltalmetriker";
 import { DASH, dec } from "./format";
 import { direction, omdöme, positionPct, round2, type Direction } from "./compare";
-import type { KommunNyckeltalStat, Nyckeltal, NyckeltalVärde } from "./skolregister";
+import type {
+  KommunNyckeltalStat,
+  Nyckeltal,
+  NyckeltalHärledning,
+  NyckeltalVärde,
+} from "./skolregister";
 
 /**
  * One comparison per nyckeltal: the unit's own figure, the kommunsnitt and the
@@ -45,6 +50,14 @@ export interface NyckeltalJämförelse {
   tal: number | null;
   /** The register's reason for having no figure; `null` when it has one. */
   saknas: string | null;
+  /**
+   * Set when the figure is not the register's own for this unit but a snitt we
+   * computed from its gymnasieprogram — `null` for every figure the register
+   * reports itself. Kept beside the number instead of folded into it for the
+   * same reason `beräknatRiks` is: a figure the page colours has to be able to
+   * say where it came from.
+   */
+  härlett: NyckeltalHärledning | null;
   kommun: string;
   kommunTal: number | null;
   riks: string;
@@ -102,6 +115,14 @@ function källrader(
       ? `Skolverkets statistik-API (${riks.skolform})`
       : "Skolverkets statistik-API",
   });
+  if (v.status === "finns" && v.härlett) {
+    rader.push({
+      k: "Enhetens tal",
+      v:
+        `${v.härlett.elevviktat ? "elevviktat snitt" : "snitt"} av enhetens ` +
+        `${v.härlett.antalProgram} gymnasieprogram`,
+    });
+  }
   if (riks?.tal != null) {
     rader.push({
       k: "Riksgenomsnitt",
@@ -146,6 +167,7 @@ export function buildNyckeltalComparisons(
       value: v.status === "finns" ? `${v.text}${metrik.suffix}` : DASH,
       tal,
       saknas: v.status === "finns" ? null : v.förklaring,
+      härlett: v.status === "finns" ? (v.härlett ?? null) : null,
       kommun: talText(kommunTal, metrik),
       kommunTal,
       riks: talText(riksTal, metrik),
@@ -169,6 +191,10 @@ export function buildNyckeltalComparisons(
       källa: källrader(metrik, v, stat, riks),
       förklaring:
         metrik.förklaring +
+        (v.status === "finns" && v.härlett
+          ? " Gymnasieskolans lärartal redovisas bara per program, så enhetens " +
+            "eget tal är räknat av oss som ett snitt av programmens."
+          : "") +
         (riks?.beräknat
           ? " Skolverket publicerar inget officiellt rikstal för den här " +
             "kombinationen av skolform och mått, så snittet är räknat av oss " +

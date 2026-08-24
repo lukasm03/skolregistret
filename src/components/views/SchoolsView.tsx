@@ -120,17 +120,7 @@ export function SchoolsView({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ListToolbar
-            count={plural(total, "skolenhet", "skolenheter")}
-            // The scope line describes an unfiltered list. Once there are
-            // tokens they say the same thing more precisely, and repeating
-            // "Hela riket" beside a kommun token would contradict them.
-            scope={
-              filters.length
-                ? undefined
-                : `${site.riket} · ${site.allaSkolformer.toLowerCase()}`
-            }
-          >
+          <ListToolbar count={plural(total, "skolenhet", "skolenheter")}>
             <FilterSummary
               filters={filters}
               onClear={(p) => patch(p)}

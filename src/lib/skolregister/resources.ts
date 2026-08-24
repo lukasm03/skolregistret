@@ -13,6 +13,7 @@ import {
   nyastaMatvärde,
   nyastaTal,
   parseAndelString,
+  programsnitt,
   skolformLabel,
   talAv,
 } from "./normalize";
@@ -26,6 +27,7 @@ import type {
   Nyckeltal,
   NyckeltalVärde,
   SkolaDetalj,
+  SkolaKällhänvisning,
   SkolaProgram,
   Skolenkät,
   Skolform,
@@ -34,6 +36,7 @@ import type {
   SkolinspektionDokument,
   SkolinspektionDokumentgrupp,
   SkolorRad,
+  Statistik,
   Vårdnadshavarenkät,
 } from "./types";
 
@@ -123,6 +126,44 @@ function primärSkolform(info: Skolinfo): Skolform | null {
   return primärStatistikskolform(info.skolformer.map(skolformLabel));
 }
 
+/** One decimal, Swedish comma — the shape the register writes its own lärartal in. */
+const enDecimal = new Intl.NumberFormat("sv-SE", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+/**
+ * A skolform-level nyckeltal averaged out of the unit's gymnasieprogram.
+ *
+ * Only ever reached for "gy": that skolform's own `matt` is empty in every
+ * record the register serves — the figures live per program — so andelen
+ * behöriga lärare and elever per lärare were "saknas" on every gymnasieskola
+ * in the app, 1 131 of the 1 240 units with a gy-block, while the numbers sat
+ * one level down the same response. `programsnitt` does the averaging and
+ * documents what it is safe to average; this only dresses the result as the
+ * `NyckeltalVärde` the rest of the app reads, marked `härlett` so the page
+ * can say the figure is ours.
+ *
+ * `text` is written here rather than taken from the register, which is the
+ * one place in this file that happens: an average has no register string to
+ * quote.
+ */
+function programhärlettVärde(stat: Statistik, matt: string): NyckeltalVärde | null {
+  const snitt = programsnitt(stat.program, matt);
+  if (!snitt) return null;
+  return {
+    status: "finns",
+    text: enDecimal.format(snitt.tal),
+    tal: snitt.tal,
+    läsår: snitt.period,
+    härlett: {
+      från: "gymnasieprogram",
+      antalProgram: snitt.antalProgram,
+      elevviktat: snitt.elevviktat,
+    },
+  };
+}
+
 function byggNyckeltal(info: Skolinfo): Nyckeltal {
   const primär = primärSkolform(info);
   const värde = (key: keyof Nyckeltal): NyckeltalVärde => {
@@ -136,13 +177,43 @@ function byggNyckeltal(info: Skolinfo): Nyckeltal {
       };
     }
     const stat = info.statistik[skolform];
-    return nyckeltalVärdeAv(stat ? nyastaMatvärde(stat.matt[def.matt]) : null);
+    const eget = nyckeltalVärdeAv(stat ? nyastaMatvärde(stat.matt[def.matt]) : null);
+    if (eget.status === "finns" || !stat || skolform !== "gy") return eget;
+    // Gymnasiet only. A unit whose primary skolform is something else is
+    // compared against *that* form's riksgenomsnitt (see `riksFör` in
+    // `lib/skola-detalj.ts`), and a gy-derived figure held up against
+    // förskoleklassens snitt would be a worse answer than the dash it
+    // replaced.
+    return programhärlettVärde(stat, def.matt) ?? eget;
   };
   return {
     meritvärdeÅrskurs9: värde("meritvärdeÅrskurs9"),
     andelGodkändaÅrskurs9: värde("andelGodkändaÅrskurs9"),
     andelBehörigaLärare: värde("andelBehörigaLärare"),
     eleverPerLärare: värde("eleverPerLärare"),
+  };
+}
+
+/**
+ * The collector's own address for each block the skolenhet page shows.
+ *
+ * `info.kallor` is keyed the way the collector fetched — `statistik/gr`,
+ * `enkat/pupilsgy` — and this is the only place those keys are taken apart.
+ * The statistics and enkät blocks are per skolform, so both resolve through
+ * `primärSkolform`, which is the same block `byggNyckeltal` reads its figures
+ * from; a unit with two of either would otherwise cite whichever came first
+ * in the object.
+ */
+function byggKällor(info: Skolinfo): SkolaKällhänvisning {
+  const primär = primärSkolform(info);
+  const enkätNyckel = primär === "gy" ? "enkat/pupilsgy" : "enkat/pupilsgr";
+  const enkäter = Object.keys(info.kallor).filter((k) => k.startsWith("enkat/"));
+  return {
+    registeruppgifter: info.kallor.grund ?? null,
+    nyckeltal: primär ? (info.kallor[`statistik/${primär}`] ?? null) : null,
+    salsa: info.kallor.salsa ?? null,
+    enkät: info.kallor[enkätNyckel] ?? (enkäter[0] ? info.kallor[enkäter[0]]! : null),
+    dokument: info.kallor.dokument ?? null,
   };
 }
 
@@ -342,6 +413,7 @@ async function byggSkola(kod: string): Promise<SkolaDetalj | null> {
     program: byggProgram(info),
     nyckeltal: byggNyckeltal(info),
     salsa: info.salsa,
+    källor: byggKällor(info),
   };
 }
 

@@ -15,12 +15,9 @@ import { ChevronDown, ChevronLeft, ChevronRight, Close } from "@/components/ui/i
 
 export function ListToolbar({
   count,
-  scope,
   children,
 }: {
   count: ReactNode;
-  /** The unfiltered description of the list — left out once tokens say it. */
-  scope?: ReactNode;
   children?: ReactNode;
 }) {
   return (
@@ -34,7 +31,6 @@ export function ListToolbar({
       <span aria-live="polite" aria-atomic className="text-base font-medium">
         {count}
       </span>
-      {scope && <span className="text-base text-ink-subtle">{scope}</span>}
       {children}
     </div>
   );

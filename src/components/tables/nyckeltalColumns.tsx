@@ -1,11 +1,11 @@
 /**
- * The nyckeltal in grid form — the "Tabell" view, for a reader who wants the
- * figures without the reading.
+ * The nyckeltal, and the whole of what the skolenhet page says about them.
  *
- * It shows the same comparison the cards do, laid out as columns instead of
- * bands: the unit's own figure, kommunsnittet, riksgenomsnittet, the signed
- * difference and the placing. Nothing here is data the explained view lacks,
- * and nothing the explained view shows is missing here except the prose.
+ * The comparison the page used to draw as bands on cards is these columns:
+ * the unit's own figure, kommunsnittet, riksgenomsnittet, the signed
+ * difference and the placing. The "(beräknat)" caveat the cards used to carry
+ * each is stated once, in the page's Källor section (`SkolaKällor`); the
+ * riksvärde itself still prints "(ber.)" beside it here.
  */
 
 import type { Column } from "@/components/ui/DataTable";
@@ -21,6 +21,10 @@ export const nyckeltalColumns: Column<NyckeltalJämförelse>[] = [
       <span className="flex items-baseline gap-2">
         {r.label}
         {r.saknas && <span className="text-sm text-ink-faint">{r.saknas}</span>}
+        {/* Gymnasiet reports these two per program only, so the unit's own
+            figure is an average we computed — said here rather than left to
+            the Källor section alone, because this is the row that shows it. */}
+        {r.härlett && <span className="text-sm text-ink-faint">snitt av programmen</span>}
       </span>
     ),
   },

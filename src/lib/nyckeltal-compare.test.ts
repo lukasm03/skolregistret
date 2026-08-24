@@ -165,6 +165,36 @@ describe("buildNyckeltalComparisons", () => {
     expect(r.rankPct).toBeNull();
   });
 
+  test("a figure averaged from the programmes says so, and says how many", () => {
+    // A gymnasieskola's lärartal: the register reports it per program only,
+    // so the unit's own figure is ours. It has to reach the page marked as
+    // such — the row colours it like any other.
+    const r = rad(
+      "andelBehörigaLärare",
+      nyckeltal({
+        andelBehörigaLärare: {
+          status: "finns",
+          text: "61,3",
+          tal: 61.3,
+          läsår: "2025/26",
+          härlett: { från: "gymnasieprogram", antalProgram: 3, elevviktat: true },
+        },
+      }),
+    );
+    expect(r.härlett?.antalProgram).toBe(3);
+    expect(r.källa).toContainEqual({
+      k: "Enhetens tal",
+      v: "elevviktat snitt av enhetens 3 gymnasieprogram",
+    });
+    expect(r.förklaring).toContain("bara per program");
+  });
+
+  test("a figure the register reports itself is not marked as ours", () => {
+    const r = rad("andelBehörigaLärare", nyckeltal({ andelBehörigaLärare: finns(76.6) }));
+    expect(r.härlett).toBeNull();
+    expect(r.källa.map((k) => k.k)).not.toContain("Enhetens tal");
+  });
+
   test("the kommunsnitt row appears only when some unit in the kommun reports the metric", () => {
     const utan = rad("meritvärdeÅrskurs9", nyckeltal({ meritvärdeÅrskurs9: finns(240) }));
     const med = rad("meritvärdeÅrskurs9", nyckeltal({ meritvärdeÅrskurs9: finns(240) }), [

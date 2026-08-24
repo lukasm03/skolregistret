@@ -51,6 +51,13 @@ export interface SkolaDetaljVy {
   nyckeltal: NyckeltalJämförelse[];
   /** Whether any row compares against a self-computed riksgenomsnitt. */
   harBeräknatRiks: boolean;
+  /**
+   * Whether any row's *own* figure is one we averaged from the unit's
+   * gymnasieprogram rather than one the register reports for the unit — see
+   * `NyckeltalHärledning`. Separate from `harBeräknatRiks`, which is about the
+   * figure being compared against.
+   */
+  harProgramsnitt: boolean;
   program: ProgramComparison[];
   harProgram: boolean;
   enkät: EnkätJämförelse[];
@@ -62,6 +69,14 @@ export interface SkolaDetaljVy {
   /** The latest läsår across the shown nyckeltal / enkät groups. */
   statistikLäsår: string;
   enkätLäsår: string;
+  /**
+   * SALSA's own läsår. Unlike `statistik.matt`, which is a time series whose
+   * every value carries its own period, a unit's `salsa` block is a single
+   * läsår — so this is read off it rather than picked as the latest of
+   * several. Every unit in the register that has SALSA at all reports the
+   * same one, but it is the file's to state, not ours.
+   */
+  salsaLäsår: string;
   /** The eleverPerLärare figure as the register spells it, for the fact list. */
   eleverPerLärare: string;
   huvudmanSlug: string;
@@ -189,6 +204,7 @@ export function buildSkolaDetaljVy(
   return {
     nyckeltal,
     harBeräknatRiks: nyckeltal.some((rad) => rad.beräknatRiks),
+    harProgramsnitt: nyckeltal.some((rad) => rad.härlett != null),
     program,
     harProgram,
     enkät,
@@ -199,6 +215,7 @@ export function buildSkolaDetaljVy(
     harSalsa: salsa.length > 0,
     statistikLäsår: senasteLäsår(nyckeltal.map((rad) => rad.läsår)),
     enkätLäsår: senasteLäsår(enkät.map((grupp) => grupp.läsår)),
+    salsaLäsår: school.salsa?.period ?? DASH,
     eleverPerLärare:
       nyckeltal.find((rad) => rad.key === "eleverPerLärare")?.value ?? DASH,
     huvudmanSlug:

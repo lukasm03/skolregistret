@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { DASH } from "./format";
 import { buildSkolaDetaljVy, type SkolaDetaljIndata } from "./skola-detalj";
 import type {
   HuvudmanKoncern,
@@ -54,6 +55,15 @@ function skola(overrides: Partial<SkolaDetalj> = {}): SkolaDetalj {
       eleverPerLärare: finns(12),
     },
     salsa: null,
+    // A hand-written fixture cites nothing; the tests that care about the
+    // Källor rows override this.
+    källor: {
+      registeruppgifter: null,
+      nyckeltal: null,
+      salsa: null,
+      enkät: null,
+      dokument: null,
+    },
     ...overrides,
   };
 }
@@ -251,6 +261,22 @@ describe("buildSkolaDetaljVy — läsår och faktarader", () => {
     );
     expect(med.harSalsa).toBe(true);
   });
+
+  test("salsaLäsår is read off the unit's own salsa block, not the nyckeltal", () => {
+    // SALSA carries one period rather than a time series, and it runs behind
+    // the rest of the statistics — so the Källor row must not borrow
+    // `statistikLäsår`.
+    const vy = buildSkolaDetaljVy(
+      skola({ salsa: { period: "2023/24", matt: {} } }),
+      indata(),
+    );
+    expect(vy.salsaLäsår).toBe("2023/24");
+    expect(vy.statistikLäsår).toBe("2024/25");
+  });
+
+  test("salsaLäsår falls back to the dash when the unit has no SALSA data", () => {
+    expect(buildSkolaDetaljVy(skola(), indata()).salsaLäsår).toBe(DASH);
+  });
 });
 
 describe("buildSkolaDetaljVy — koncernkedjan", () => {
@@ -261,6 +287,7 @@ describe("buildSkolaDetaljVy — koncernkedjan", () => {
       antalFöretag: 7,
       asof: null,
       inaktuellt: false,
+      källa: null,
       träd: [
         {
           orgnr: "5560001111",

@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { site } from "@/config/site";
 import { SearchFieldContents, searchBoxClass } from "@/components/ui/SearchField";
-import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   /** Which top-level section is active — matches `site.nav[].match`. */
@@ -96,8 +95,6 @@ export function AppShell({
               );
             })}
           </nav>
-
-          <ThemeToggle />
 
           {onSearchChange ? (
             <div className={searchClass}>{searchField}</div>

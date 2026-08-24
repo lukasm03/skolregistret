@@ -13,14 +13,14 @@
 
    Each token carries both appearances in one `light-dark()` pair rather than
    in two blocks a hundred lines apart. That is what lets the appearance be
-   switched by `color-scheme` alone — see `[data-theme]` below — and what
-   stops the two halves of a token drifting out of step.
+   switched by `color-scheme` alone, and what stops the two halves of a token
+   drifting out of step.
 --------------------------------------------------------------------------- */
 :root {
   /* Tells the browser to draw its own furniture — scrollbars, form controls,
      the canvas behind the page — to match, and tells `light-dark()` below
      which half of every pair to resolve to. Both keywords means "follow the
-     system"; `[data-theme]` narrows it to one. */
+     system", which is the only appearance this app offers. */
   color-scheme: light dark;
 
   /* Surfaces */
@@ -85,11 +85,6 @@
      6.49 / 6.93 on the light `--surface`, 8.28 / 6.69 on the dark one. */
   --over: light-dark(#1b6b46, #6cc294);
   --under: light-dark(#a3312b, #e8827a);
-  /* The same pair as a fill, behind the figure rather than on it: the filled
-     part of a comparison band. Held far enough back that the markers drawn on
-     top of it — the unit's own, kommunens, rikets — stay the thing you see. */
-  --over-bg: light-dark(#dcebe3, #1a2c23);
-  --under-bg: light-dark(#f4dedc, #2d1d1c);
 
   /* Status */
   --ok: light-dark(#2f6b4f, #6cc294);
@@ -127,28 +122,12 @@
 }
 
 /* The dark shadows, which `light-dark()` cannot carry: it interpolates
-   colours, and these differ in their geometry too. Both selectors have to be
-   spelled out — a media query and an attribute cannot share a selector list. */
+   colours, and these differ in their geometry too. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     --elevation-overlay: 0 6px 16px rgb(0 0 0 / 0.55);
     --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.5);
   }
-}
-:root[data-theme="dark"] {
-  --elevation-overlay: 0 6px 16px rgb(0 0 0 / 0.55);
-  --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.5);
-}
-
-/* The manual appearance choice. Narrowing `color-scheme` to a single keyword
-   is the whole mechanism: every token above resolves through `light-dark()`,
-   and the browser's own furniture follows the same property. `ThemeToggle`
-   writes the attribute and `layout.tsx` replays it before first paint. */
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
 }
 
 @media (min-width: 40rem) {
@@ -187,8 +166,6 @@
   --color-row-hover: var(--row-hover);
   --color-over: var(--over);
   --color-under: var(--under);
-  --color-over-bg: var(--over-bg);
-  --color-under-bg: var(--under-bg);
 
   /* Named apart from the utilities they feed: `--shadow-*` is Tailwind's own
      namespace, and a token mapping to itself resolves to nothing. */

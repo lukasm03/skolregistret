@@ -56,12 +56,3 @@ function DokumentRad({ d }: { d: DokumentVy }) {
     </li>
   );
 }
-
-export function DokumentKälla() {
-  return (
-    <p className="text-sm leading-[1.55] text-ink-faint">
-      Källa: Skolinspektionens dokument-API. Ett beslut säger vad myndigheten granskat och
-      vad den kräver — det är inte ett omdöme om skolans resultat.
-    </p>
-  );
-}

@@ -1,5 +1,5 @@
 /**
- * Skolenkäten in grid form — the "Tabell" view beside the explained cards.
+ * Skolenkäten in grid form.
  *
  * One row per reporting group, five question columns, and under each figure
  * the group's own distance from the riksgenomsnitt for the same group. Two

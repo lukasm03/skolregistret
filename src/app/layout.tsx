@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import { site } from "@/config/site";
-import { THEME_CANVAS, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { THEME_CANVAS } from "@/lib/theme";
 import "./globals.css";
 
 const sans = Instrument_Sans({
@@ -39,10 +39,8 @@ export const metadata: Metadata = {
 /**
  * Matches the `--canvas` tokens in globals.css, so the browser chrome — the
  * address bar on mobile, the tab strip on desktop — takes the page's own
- * background instead of flashing a default while it loads.
- *
- * These follow the system, which is right until somebody picks an appearance
- * by hand; `applyThemeChoice` rewrites both tags when they do.
+ * background instead of flashing a default while it loads. The appearance
+ * follows the system only, so this is the whole of the mechanism.
  */
 export const viewport: Viewport = {
   themeColor: [
@@ -55,23 +53,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // `suppressHydrationWarning` because the script below writes `data-theme`
-    // onto this element before React ever sees it, and React would otherwise
-    // report the attribute it did not render as a mismatch.
-    <html
-      lang="sv"
-      className={`${sans.variable} ${mono.variable}`}
-      suppressHydrationWarning
-    >
-      <body>
-        {/*
-          First thing in the body and synchronous on purpose: it has to have
-          run before the browser paints, or a reader who chose dark gets a
-          white page first. See `lib/theme.ts`.
-        */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        {children}
-      </body>
+    <html lang="sv" className={`${sans.variable} ${mono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArsredovisningKälla,
-  ArsredovisningList,
-} from "@/components/detail/ArsredovisningList";
+import { ArsredovisningList } from "@/components/detail/ArsredovisningList";
 import { Disclosure } from "@/components/detail/Disclosure";
+import { HuvudmanKällor } from "@/components/detail/Kallor";
 import { HuvudmanEnheterView } from "@/components/detail/HuvudmanEnheterView";
 import { AppShell } from "@/components/layout/AppShell";
 import { Tabs, type TabDef } from "@/components/ui/Tabs";
@@ -15,7 +13,6 @@ import {
   EmptyBox,
   FactList,
   KoncernPill,
-  Note,
   Stat,
   StatGrid,
   StatusPill,
@@ -103,156 +100,112 @@ export default async function HuvudmanDetailPage({
       id: "skolenheter",
       label: "Skolenheter",
       count: units.length,
-      views: [
-        {
-          id: "lista",
-          label: "Lista",
-          hint: "Enheterna under huvudmannen, sökbara och filtrerbara",
-          content: <HuvudmanEnheterView units={units} />,
-        },
-      ],
+      content: <HuvudmanEnheterView units={units} />,
     },
     {
       id: "uppgifter",
       label: "Huvudmannauppgifter",
       count: 3,
-      views: [
-        {
-          id: "lista",
-          label: "Lista",
-          hint: "Registeruppgifter, ägarstruktur och källor",
-          content: (
-            <div className="flex flex-col gap-6">
-              <Disclosure title="Huvudmannauppgifter" count={4} defaultOpen>
-                <FactList
-                  twoColumn
-                  items={[
-                    [
-                      "Org.nr",
-                      // An identifier, not prose — see `/skolor/[kod]`.
-                      <span key="orgnr" translate="no">
-                        {h.organisationsnummer}
-                      </span>,
-                    ],
-                    ["Typ", h.typ],
-                    ["Bolagsform", h.bolagsform ?? DASH],
-                    ["Kommuner", h.kommuner.join(", ") || DASH],
-                  ]}
-                />
-              </Disclosure>
+      content: (
+        <div className="flex flex-col gap-6">
+          <Disclosure title="Huvudmannauppgifter" count={4} defaultOpen>
+            <FactList
+              twoColumn
+              items={[
+                [
+                  "Org.nr",
+                  // An identifier, not prose — see `/skolor/[kod]`.
+                  <span key="orgnr" translate="no">
+                    {h.organisationsnummer}
+                  </span>,
+                ],
+                ["Typ", h.typ],
+                ["Bolagsform", h.bolagsform ?? DASH],
+                ["Kommuner", h.kommuner.join(", ") || DASH],
+              ]}
+            />
+          </Disclosure>
 
-              <Disclosure title="Ägarstruktur" count={h.koncern ? kedja.length : 0}>
-                {kedja.length ? (
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-baseline gap-1.5 text-base">
-                      <span className="text-ink-muted">
-                        {plural(kedja.length, "led", "led")}
+          {/* The count is this section's own facts, not the chain's length —
+              a huvudman outside any koncern read "ÄGARSTRUKTUR 0" before. */}
+          <Disclosure title="Ägarstruktur" count={kedja.length ? 3 : undefined}>
+            {kedja.length ? (
+              <FactList
+                twoColumn
+                items={[
+                  [
+                    "Koncernmoder",
+                    koncernSlug ? (
+                      <Link
+                        key="koncern"
+                        href={`/koncern/${koncernSlug}`}
+                        className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                      >
+                        {h.koncern?.koncernNamn}
+                      </Link>
+                    ) : (
+                      DASH
+                    ),
+                  ],
+                  [
+                    "Koncernens org.nr",
+                    <span key="korgnr" translate="no" className="font-mono text-sm">
+                      {h.koncern?.koncernOrgNr ?? DASH}
+                    </span>,
+                  ],
+                  [
+                    "Bolag i koncernen",
+                    <span key="antal" className="flex items-baseline gap-2">
+                      <span className="font-mono text-sm">
+                        {h.koncern?.antalFöretag != null
+                          ? num(h.koncern.antalFöretag)
+                          : DASH}
                       </span>
-                      {kedja.map((nod, i) => (
-                        <span key={nod.orgnr} className="flex items-center gap-1.5">
-                          {i > 0 && <span className="text-line-control">→</span>}
-                          <span>{nod.namn ?? nod.orgnr}</span>
-                        </span>
-                      ))}
-                    </div>
-                    <FactList
-                      twoColumn
-                      items={[
-                        [
-                          "Koncernmoder",
-                          koncernSlug ? (
-                            <Link
-                              key="koncern"
-                              href={`/koncern/${koncernSlug}`}
-                              className="text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-                            >
-                              {h.koncern?.koncernNamn}
-                            </Link>
-                          ) : (
-                            DASH
-                          ),
-                        ],
-                        [
-                          "Koncernens org.nr",
-                          <span key="korgnr" translate="no" className="font-mono text-sm">
-                            {h.koncern?.koncernOrgNr ?? DASH}
-                          </span>,
-                        ],
-                        [
-                          "Bolag i koncernen",
-                          <span key="antal" className="flex items-baseline gap-2">
-                            <span className="font-mono text-sm">
-                              {h.koncern?.antalFöretag != null
-                                ? num(h.koncern.antalFöretag)
-                                : DASH}
-                            </span>
-                            {koncernSlug && (
-                              <Link
-                                href={`/koncern/${koncernSlug}`}
-                                className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
-                              >
-                                Visa koncernsidan
-                              </Link>
-                            )}
-                          </span>,
-                        ],
-                      ]}
-                    />
-                  </div>
-                ) : (
-                  <EmptyBox>
-                    {isKommunal
-                      ? "Kommunen är egen huvudman och ingår inte i någon bolagskoncern. Verksamheten styrs av utbildningsnämnden."
-                      : "Bolaget har ingen registrerad ägarkedja i skolregistret."}
-                  </EmptyBox>
-                )}
-              </Disclosure>
+                      {koncernSlug && (
+                        <Link
+                          href={`/koncern/${koncernSlug}`}
+                          className="text-sm text-accent underline decoration-accent-line underline-offset-2 hover:decoration-accent"
+                        >
+                          Visa koncernsidan
+                        </Link>
+                      )}
+                    </span>,
+                  ],
+                ]}
+              />
+            ) : (
+              <EmptyBox>
+                {isKommunal
+                  ? "Kommunen är egen huvudman och ingår inte i någon bolagskoncern. Verksamheten styrs av utbildningsnämnden."
+                  : "Bolaget har ingen registrerad ägarkedja i skolregistret."}
+              </EmptyBox>
+            )}
+          </Disclosure>
 
-              <Disclosure title="Källor" count={2}>
-                <FactList
-                  twoColumn
-                  items={[
-                    ["Enheter, elever, koncern", "Skolregistret"],
-                    ["Årsredovisningar", årsredovisningar.length ? "Bolagsverket" : DASH],
-                  ]}
-                />
-                <Note>
-                  Elevtalen är avrundade per enhet, så summor drar iväg några tiotal.
-                </Note>
-              </Disclosure>
-            </div>
-          ),
-        },
-      ],
+          <HuvudmanKällor
+            källor={h.källor}
+            harÅrsredovisningar={årsredovisningar.length > 0}
+          />
+        </div>
+      ),
     },
     {
       id: "arsredovisningar",
       label: "Årsredovisningar",
       count: årsredovisningar.length,
-      views: [
-        {
-          id: "lista",
-          label: "Lista",
-          hint: "Inlämnade räkenskapsår, senaste först",
-          content: årsredovisningar.length ? (
-            <div className="flex flex-col gap-3">
-              <ArsredovisningList
-                orgnr={h.organisationsnummer}
-                poster={årsredovisningar}
-              />
-              <ArsredovisningKälla />
-            </div>
-          ) : (
-            <EmptyBox>
-              {isKommunal
-                ? "Kommunala huvudmän lämnar ingen egen årsredovisning till Bolagsverket — skolverksamheten redovisas i kommunens årsredovisning."
-                : saknarPaketkatalog
-                  ? "Inga årsredovisningar är hämtade lokalt."
-                  : "Inga inlämnade årsredovisningar är hämtade för det här organisationsnumret."}
-            </EmptyBox>
-          ),
-        },
-      ],
+      content: årsredovisningar.length ? (
+        <div className="flex flex-col gap-3">
+          <ArsredovisningList orgnr={h.organisationsnummer} poster={årsredovisningar} />
+        </div>
+      ) : (
+        <EmptyBox>
+          {isKommunal
+            ? "Kommunala huvudmän lämnar ingen egen årsredovisning till Bolagsverket — skolverksamheten redovisas i kommunens årsredovisning."
+            : saknarPaketkatalog
+              ? "Inga årsredovisningar är hämtade lokalt."
+              : "Inga inlämnade årsredovisningar är hämtade för det här organisationsnumret."}
+        </EmptyBox>
+      ),
     },
   ];
 

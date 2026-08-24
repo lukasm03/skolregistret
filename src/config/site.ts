@@ -62,6 +62,61 @@ export const site = {
   freshness: {
     huvudman: "bolagsdata hämtad 2026-08-05",
   },
+
+  /**
+   * Where every figure on a detail page actually came from.
+   *
+   * The detail pages' "Källor" disclosure is the only place source prose is
+   * allowed to live — the tables under the tabs used to carry a caveat line
+   * each, and the reader met the same three sources three times. A figure the
+   * page colours must be able to say where it came from, so each row there
+   * names its authority *and* links to it.
+   *
+   * What is here is the *name* and the source as a whole. The address of the
+   * exact resource a page was built from is not — `data/allt.json` carries it
+   * per unit and per bolag (`Skolinfo.kallor`, `Bolagsuppslag.kallor`), and
+   * `SkolaKällhänvisning`/`HuvudmanKällhänvisning` bring it up to the Källor
+   * rows, which link there in preference to `url` below. That is why an API
+   * version bump does not touch this file: the collector's own answer travels
+   * with the data.
+   *
+   * `url` is what a row falls back to when the data cites no address it can
+   * open — and the name is what a row shows either way, because the authority
+   * behind a figure is not always the API that serves it: Skolinspektionen
+   * runs skolenkäten and publishes the dokument, and Skolverket's own API is
+   * where both are read from.
+   */
+  källor: {
+    skolenhetsregistret: {
+      namn: "Skolverkets skolenhetsregister",
+      url: "https://api.skolverket.se/skolenhetsregistret/",
+    },
+    skolverketStatistik: {
+      namn: "Skolverkets statistik-API",
+      url: "https://api.skolverket.se/planned-educations/",
+    },
+    salsa: {
+      namn: "Skolverkets SALSA-modell",
+      url: "https://www.skolverket.se/skolutveckling/statistik",
+    },
+    skolenkäten: {
+      namn: "Skolinspektionens skolenkät",
+      url: "https://www.skolinspektionen.se/skolenkaten/",
+    },
+    skolinspektionenDokument: {
+      namn: "Skolinspektionens dokument-API",
+      url: "https://www.skolinspektionen.se/",
+    },
+    bolagsverket: {
+      namn: "Bolagsverket",
+      url: "https://bolagsverket.se/",
+    },
+    /** Where the koncern ownership trees are looked up, company by company. */
+    hitta: {
+      namn: "Hitta.se företagsinformation",
+      url: "https://www.hitta.se/",
+    },
+  },
 } as const;
 
 /** Sorts that apply whatever skolform is selected. Metric sorts are appended

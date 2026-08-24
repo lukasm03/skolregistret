@@ -22,6 +22,7 @@ import {
   headerSpacerClass,
   rowClass,
   rowLinkClass,
+  RowOverlay,
   tableMinWidth,
   type Column,
 } from "./DataTable";
@@ -42,6 +43,7 @@ export const HEADER_HEIGHT = 30;
 interface GridColumnMeta {
   align?: "left" | "right";
   width?: number;
+  hint?: string;
 }
 
 const features = tableFeatures({
@@ -113,7 +115,7 @@ export function DataGrid<T extends RowData>({
         sortDescFirst: col.descFirst ?? false,
         sortUndefined: "last" as const,
         sortFn: (a, b, id) => compareValues(a.getValue(id), b.getValue(id)),
-        meta: { align: col.align, width: col.width },
+        meta: { align: col.align, width: col.width, hint: col.hint },
       })),
     [columns],
   );
@@ -150,7 +152,7 @@ export function DataGrid<T extends RowData>({
 
   return (
     <TableScroller minWidth={tableMinWidth(columns)} label={label}>
-      <table className="w-full table-fixed border-collapse">
+      <table className="w-full table-fixed border-separate border-spacing-0">
         <thead>
           <tr className="bg-surface-head">
             {table.getHeaderGroups()[0]?.headers.map((header) => {
@@ -161,6 +163,7 @@ export function DataGrid<T extends RowData>({
                 <th
                   key={header.id}
                   scope="col"
+                  title={meta?.hint}
                   aria-sort={
                     sorted ? (sorted === "desc" ? "descending" : "ascending") : undefined
                   }
@@ -209,9 +212,10 @@ export function DataGrid<T extends RowData>({
             >
               {row.getAllCells().map((cell, i) => {
                 const col = columns[i];
-                // One link per row, in the first cell, stretched over the
-                // rest — see `rowLinkClass`. Every other cell stays a plain
-                // table cell, which is what makes the figures readable.
+                // One real link per row, in the first cell; every other cell
+                // keeps its content and gets an empty anchor over it — see
+                // `rowLinkClass` and `RowOverlay`. The content staying outside
+                // the anchor is what keeps the figures readable.
                 const linked = rowHref != null && i === 0;
                 return (
                   <td key={cell.id} className={cellClass(col, linked)}>
@@ -231,12 +235,17 @@ export function DataGrid<T extends RowData>({
                         )}
                       </Link>
                     ) : (
-                      <table.FlexRender cell={cell} />
+                      <>
+                        <table.FlexRender cell={cell} />
+                        {rowHref != null && <RowOverlay href={rowHref(row.original)} />}
+                      </>
                     )}
                   </td>
                 );
               })}
-              <td aria-hidden />
+              <td aria-hidden>
+                {rowHref != null && <RowOverlay href={rowHref(row.original)} />}
+              </td>
             </tr>
           ))}
         </tbody>

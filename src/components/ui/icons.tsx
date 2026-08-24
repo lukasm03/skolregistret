@@ -112,35 +112,3 @@ export function SortArrow({ dir, ...props }: IconProps & { dir: "asc" | "desc" |
   );
 }
 
-/**
- * The three appearances. Drawn on the same 16-unit grid as the rest, but
- * these carry meaning on their own rather than sitting beside a word — the
- * toggle is icon-only — so each shape is the conventional one for its job
- * and the button names it in `aria-label` as well.
- */
-export function Sun(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <circle cx="8" cy="8" r="3.25" />
-      <path d="M8 1.2v1.5M8 13.3v1.5M1.2 8h1.5M13.3 8h1.5M3.4 3.4l1.05 1.05M11.55 11.55l1.05 1.05M12.6 3.4l-1.05 1.05M4.45 11.55L3.4 12.6" />
-    </Icon>
-  );
-}
-
-export function Moon(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M13.4 9.9A5.7 5.7 0 0 1 6.1 2.6 5.7 5.7 0 1 0 13.4 9.9Z" />
-    </Icon>
-  );
-}
-
-/** Follow the system — a screen, because that is whose setting it defers to. */
-export function Monitor(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <rect x="1.75" y="2.9" width="12.5" height="8.6" rx="1.6" />
-      <path d="M5.6 14.1h4.8" />
-    </Icon>
-  );
-}

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
   buildProgramComparisons,
-  nextProgramSort,
   sortProgramComparisons,
   sumProgramElever,
   type ProgramComparison,
@@ -200,29 +199,10 @@ describe("the default order", () => {
   });
 });
 
-describe("sorting by a column", () => {
-  const rows = buildProgramComparisons(
-    [
-      program("B", "B", [40, null, null, null, null, null]),
-      program("A", "A", [320, null, null, null, null, null]),
-      program("C", "C", [null, null, null, null, null, null]),
-    ],
-    noRiks,
-    noBeräknat,
-  );
-
-  test("orders by the figure, and never lets a missing one lead", () => {
-    expect(
-      sortProgramComparisons(rows, { key: "antalElever", dir: "desc" }).map(
-        (r) => r.namn,
-      ),
-    ).toEqual(["A", "B", "C"]);
-    expect(
-      sortProgramComparisons(rows, { key: "antalElever", dir: "asc" }).map((r) => r.namn),
-    ).toEqual(["B", "A", "C"]);
-  });
-
+describe("sortProgramComparisons", () => {
   test("breaks ties by name, so the order never wobbles between renders", () => {
+    // Neither programme has a directed measure, so both score null and the
+    // name is all that is left to order them by.
     const tied = buildProgramComparisons(
       [
         program("Ö", "Östra", [100, null, null, null, null, null]),
@@ -231,27 +211,25 @@ describe("sorting by a column", () => {
       noRiks,
       noBeräknat,
     );
-    expect(
-      sortProgramComparisons(tied, { key: "antalElever", dir: "desc" }).map(
-        (r) => r.namn,
+    expect(sortProgramComparisons(tied).map((r) => r.namn)).toEqual(["Alfa", "Östra"]);
+  });
+
+  test("is stable — sorting an already sorted list changes nothing", () => {
+    const rows = buildProgramComparisons(
+      [
+        program("IM", "Introduktionsprogram", [20, null, null, null, null, null]),
+        program("NA", "Naturvetenskap", [null, null, null, null, 16.9, null]),
+        program("SA", "Samhällsvetenskap", [null, null, null, null, 15.2, null]),
+      ],
+      riks(
+        ["NA", { betygspoängMedExamen: finns(16.4) }],
+        ["SA", { betygspoängMedExamen: finns(16.4) }],
       ),
-    ).toEqual(["Alfa", "Östra"]);
-  });
-});
-
-describe("nextProgramSort", () => {
-  test("cycles highest first, then lowest, then back to the default order", () => {
-    const first = nextProgramSort(null, "betygspoängMedExamen");
-    expect(first).toEqual({ key: "betygspoängMedExamen", dir: "desc" });
-    const second = nextProgramSort(first, "betygspoängMedExamen");
-    expect(second).toEqual({ key: "betygspoängMedExamen", dir: "asc" });
-    expect(nextProgramSort(second, "betygspoängMedExamen")).toBeNull();
-  });
-
-  test("a different column starts its own cycle rather than inheriting one", () => {
-    expect(
-      nextProgramSort({ key: "antalElever", dir: "asc" }, "betygspoängMedExamen"),
-    ).toEqual({ key: "betygspoängMedExamen", dir: "desc" });
+      noBeräknat,
+    );
+    expect(sortProgramComparisons(rows).map((r) => r.namn)).toEqual(
+      rows.map((r) => r.namn),
+    );
   });
 });
 

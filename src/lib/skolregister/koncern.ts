@@ -128,6 +128,7 @@ export function koncernForHuvudmanIndex(): Promise<Map<string, HuvudmanKoncern>>
           asof: grupp.asof,
           inaktuellt: validering?.inaktuellt ?? false,
           träd,
+          källa: grupp.trad.kalla ?? null,
         };
         for (const h of grupp.huvudman) index.set(h.organizationNumber, koncern);
       }

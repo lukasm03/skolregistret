@@ -12,6 +12,9 @@ const huvudman = (over: Partial<HuvudmanRad> = {}): HuvudmanRad => ({
   skolformer: ["Grundskola"],
   antalEnheter: 3,
   antalElever: 900,
+  // No collector addresses in a hand-written fixture; the sources these
+  // point at are the Källor section's business, not this file's.
+  källor: { koncern: null, bolagsuppgifter: null, årsredovisningar: null },
   ...over,
 });
 

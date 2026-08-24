@@ -22,6 +22,16 @@
 export interface AlltFile {
   /** ISO, when this run of the collector started. Same value as `karta.kord`. */
   kord: string;
+  /**
+   * Every address the collector read, as templates with named placeholders —
+   * `…/school-units/{skolenhetskod}/statistics/{skolform}`. The register-wide
+   * answer to "where is this from"; the per-subject one is `Skolinfo.kallor`
+   * and `Bolagsuppslag.kallor`, which carry the same addresses filled in.
+   *
+   * `src/config/site.ts` mirrors the ones a Källor row names — keep the two
+   * in step when the collector changes an API version.
+   */
+  kallor: string[];
   karta: Karta | null;
   /** 1307-ish fristående skolenheter. */
   skolinfo: Record<string, SkolinfoUppslag>;
@@ -30,6 +40,8 @@ export interface AlltFile {
   enskilda: EnskildaResultat;
   bolag: Record<string, Bolagsuppslag>;
   validering: Record<string, Valideringsrapport>;
+  /** Empty in every export seen so far; the collector's own consistency checks. */
+  invarianter: unknown[];
   statistik: Record<string, number>;
 }
 
@@ -132,6 +144,18 @@ export interface Skolinfo {
   salsa: Salsa | null;
   saknas: Del[];
   fel: Array<{ del: Del; fel: string }>;
+  /**
+   * Where each block of this unit came from, keyed as the collector fetched
+   * it: `grund`, `dokument`, `lankar`, `salsa`, `utbildningar`, and one
+   * `statistik/<skolformsnyckel>` and `enkat/<enkätnyckel>` per block it
+   * found. Every block that carries data has an entry — all 6 519 units in
+   * today's export, checked — so a missing key means the block is missing,
+   * not that its address is unknown.
+   *
+   * These are the URLs the Källor sections link to. `resources.ts` resolves
+   * them into `SkolaDetalj.källor`, which is the only form the app above
+   * `skolregister/` sees; nothing up there should be splitting these keys.
+   */
   kallor: Record<string, string>;
 }
 
@@ -262,8 +286,11 @@ export interface RåDokument {
 }
 
 /**
- * Alltid läsår 2024/25. `matt` bär ett enskilt `Matvarde` per nyckel, inte en
- * tidsserie — till skillnad från `Statistik.matt`. Kända nycklar:
+ * Ett enda läsår, inte en tidsserie: `period` bär det (2024/25 i varje av de
+ * 1 467 enheter som har ett salsa-block i dagens export), och `matt` bär ett
+ * enskilt `Matvarde` per nyckel — till skillnad från `Statistik.matt`, där
+ * varje mått är en serie och varje värde bär sin egen period. Läs `period`
+ * i stället för att skriva årtalet i vyn. Kända nycklar:
  * `salsaAverageGradesIn9thGrade{Actual,Deviation}`,
  * `salsaRequirementsReached{Actual,Deviation,Calculated}`,
  * `salsaNewlyImmigratedQuota`, `salsaBoysQuota`, `salsaParentsEducation`,
@@ -276,6 +303,11 @@ export interface Salsa {
 
 export interface Bolagsuppslag {
   orgnr: string;
+  /**
+   * Bolagsverkets own endpoints, and the reason they are provenance rather
+   * than links: both sit on `gw.api.bolagsverket.se`, which needs a Bearer
+   * token — the same wall `dokument[].url` below is behind.
+   */
   kallor: { organisation?: string; dokumentlista?: string };
   status: "aktiv" | "avregistrerad" | "okand" | "fel";
   organisation: Organisation | null;
@@ -388,8 +420,35 @@ export type Nyckeltal = {
 };
 
 export type NyckeltalVärde =
-  | { status: "finns"; text: string; tal: number; läsår: string | null }
+  | {
+      status: "finns";
+      text: string;
+      tal: number;
+      läsår: string | null;
+      /** Only set on a figure we derived ourselves — see `NyckeltalHärledning`. */
+      härlett?: NyckeltalHärledning;
+    }
   | { status: "saknas"; förklaring: string; läsår: string | null };
+
+/**
+ * Set on a figure the register does not report for the unit itself but which
+ * we averaged out of its gymnasieprogram: gymnasieskolans lärartal, which
+ * Skolverket publishes per program only (`statistik.gy.matt` is always
+ * empty). See `programsnitt` in `normalize.ts` for how, and `byggNyckeltal`
+ * in `resources.ts` for when.
+ *
+ * Absent on every figure read straight out of the register, so its presence
+ * *is* the provenance: a page that colours such a figure has to be able to
+ * say it is ours and not Skolverkets, the same reason `RiksNyckeltal`
+ * carries `beräknat`.
+ */
+export interface NyckeltalHärledning {
+  från: "gymnasieprogram";
+  /** How many programmes carried a figure of their own. */
+  antalProgram: number;
+  /** Whether the average is weighted by the programmes' elevantal. */
+  elevviktat: boolean;
+}
 
 /** One nationellt gymnasieprogram at a unit, with the programme's own nyckeltal. */
 export interface SkolaProgram {
@@ -406,6 +465,46 @@ export interface SkolaProgram {
   };
 }
 
+/**
+ * Where a skolenhet page's figures were actually fetched from — one address
+ * per block, resolved out of `Skolinfo.kallor` by `resources.ts` so nothing
+ * above this module has to know how the collector keys them.
+ *
+ * `null` where the unit has no such block. A URL here is the exact resource
+ * the figures on the page were read out of, not the API's front door, which
+ * is what lets the Källor section answer "where did this number come from"
+ * about *this* school rather than about the register.
+ */
+export interface SkolaKällhänvisning {
+  /** The unit's own record — namn, adress, huvudman, skolformer. */
+  registeruppgifter: string | null;
+  /**
+   * The statistics resource for the unit's primary skolform. Two of the four
+   * nyckeltal are read from `gr` whatever the unit is (see `byggNyckeltal`),
+   * so a gymnasieskola's meritvärde row is not covered by this address — it
+   * has no figure to cover.
+   */
+  nyckeltal: string | null;
+  /** Skolverkets all-schools SALSA file, which is where every unit's is. */
+  salsa: string | null;
+  /** The nestedsurveys resource for the enkät the page shows. */
+  enkät: string | null;
+  dokument: string | null;
+}
+
+/**
+ * The same for a huvudman. Only `koncern` is a page a reader can open:
+ * Bolagsverkets two endpoints are behind a token, and are carried because
+ * they are the provenance, not because anything links them — `Kallor.tsx`
+ * holds the one rule that decides which of these becomes a link.
+ */
+export interface HuvudmanKällhänvisning {
+  /** hitta.se's företagsinformation page — where the koncern tree was read. */
+  koncern: string | null;
+  bolagsuppgifter: string | null;
+  årsredovisningar: string | null;
+}
+
 export interface SkolaDetalj extends SkolorRad {
   rektor: string | null;
   startdatum: string | null;
@@ -419,6 +518,7 @@ export interface SkolaDetalj extends SkolorRad {
   nyckeltal: Nyckeltal;
   /** `null` for every unit without SALSA-data (roughly 4/5 of the register). */
   salsa: Salsa | null;
+  källor: SkolaKällhänvisning;
 }
 
 /** One row of the app's own huvudman aggregate. */
@@ -432,6 +532,7 @@ export interface HuvudmanRad {
   skolformer: string[];
   antalEnheter: number;
   antalElever: number;
+  källor: HuvudmanKällhänvisning;
 }
 
 export interface HuvudmanKoncern {
@@ -444,6 +545,13 @@ export interface HuvudmanKoncern {
   inaktuellt: boolean;
   /** Den rebyggda (inte platta) trädet — se `buildTrädFrånNoder` i `koncern.ts`. */
   träd: TrädNod[];
+  /**
+   * Where the tree was read: hitta.se's page for whichever huvudman's lookup
+   * produced it. One koncern has one tree, so on a huvudman page this may
+   * name a *sibling* company rather than the one being shown — say "koncernen"
+   * when linking it, never "den här huvudmannen".
+   */
+  källa: string | null;
 }
 
 /** `TradNod` rebuilt into a real nested tree via `djup`, joined against `bolag[orgnr].status`. */

@@ -137,10 +137,7 @@ export function KoncernView({
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <ListToolbar
-            count={plural(total, "koncern", "koncerner")}
-            scope={filters.length ? undefined : `${site.riket} · fristående huvudmän`}
-          >
+          <ListToolbar count={plural(total, "koncern", "koncerner")}>
             <FilterSummary
               filters={filters}
               onClear={(p) => patch(p)}
