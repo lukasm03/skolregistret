@@ -27,6 +27,12 @@ let katalogCache: string | undefined;
  * The directory to read. `SKOLREGISTER_ARSREDOVISNING_DIR` wins when set —
  * the packages are as uncommittable as `allt.json` and may live anywhere.
  * Resolved once per process, like `registerFilePath()`.
+ *
+ * Which is why every path built from it below carries `turbopackIgnore`: the
+ * directory is only known at runtime, so Turbopack's build-time tracing cannot
+ * scope it to a folder and instead traces the whole project into the server
+ * output. There is nothing here to trace — like `allt.json`, these packages
+ * are supplied locally and are never part of a build (see AGENTS.md).
  */
 function årsredovisningKatalog(): string {
   if (katalogCache === undefined) {
@@ -91,11 +97,11 @@ export function listÅrsredovisningar(orgnr: string): Promise<Årsredovisning[]>
 
   const laddning = (async () => {
     if (!/^\d{10}$/.test(orgnr)) return [];
-    const katalog = join(årsredovisningKatalog(), orgnr);
+    const katalog = join(/* turbopackIgnore: true */ årsredovisningKatalog(), orgnr);
 
     let filer: string[];
     try {
-      filer = await readdir(katalog);
+      filer = await readdir(/* turbopackIgnore: true */ katalog);
     } catch {
       return [];
     }
@@ -104,7 +110,9 @@ export function listÅrsredovisningar(orgnr: string): Promise<Årsredovisning[]>
       filer.map(async (filnamn) => {
         const namn = parsePaketNamn(filnamn);
         if (!namn) return null;
-        const poster = läsPoster(new Uint8Array(await readFile(join(katalog, filnamn))));
+        const paketFil = join(/* turbopackIgnore: true */ katalog, filnamn);
+        const zip = await readFile(/* turbopackIgnore: true */ paketFil);
+        const poster = läsPoster(new Uint8Array(zip));
         const huvud = delarsNamn(poster, namn.id, "arsredovisning");
         // A package whose årsredovisning we cannot name is one we cannot
         // link to either — skip it rather than list a dead row.
@@ -148,9 +156,10 @@ export async function läsHandling(
   const paket = (await listÅrsredovisningar(orgnr)).find((p) => p.id === id);
   if (!paket) return null;
 
-  const katalog = join(årsredovisningKatalog(), orgnr);
+  const katalog = join(/* turbopackIgnore: true */ årsredovisningKatalog(), orgnr);
   const filnamn = `${paket.räkenskapsårSlut}-${paket.id}_paket.zip`;
-  const zip = new Uint8Array(await readFile(join(katalog, filnamn)));
+  const paketFil = join(/* turbopackIgnore: true */ katalog, filnamn);
+  const zip = new Uint8Array(await readFile(/* turbopackIgnore: true */ paketFil));
   const post = delarsNamn(läsPoster(zip), paket.id, del);
   if (!post) return null;
 
@@ -165,7 +174,9 @@ export async function läsHandling(
 /** Whether the directory exists at all — used to explain an empty list. */
 export async function harÅrsredovisningskatalog(): Promise<boolean> {
   try {
-    return (await stat(årsredovisningKatalog())).isDirectory();
+    return (
+      await stat(/* turbopackIgnore: true */ årsredovisningKatalog())
+    ).isDirectory();
   } catch {
     return false;
   }
