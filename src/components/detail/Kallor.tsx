@@ -214,8 +214,8 @@ export function SkolaKällor({
             </Note>
           )}
           <Note>
-            Länkarna går till den API-resurs uppgifterna hämtades ur, inte till myndighetens
-            startsida.
+            Länkarna går till den API-resurs uppgifterna hämtades ur, inte till
+            myndighetens startsida.
           </Note>
         </div>
       </div>

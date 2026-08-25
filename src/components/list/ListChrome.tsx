@@ -106,7 +106,7 @@ export function NoMatches({
   );
 }
 
-export function ListFooter({ children }: { children: ReactNode }) {
+function ListFooter({ children }: { children: ReactNode }) {
   return (
     <div className="mt-auto flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-soft bg-surface-subtle px-4 py-2 sm:h-[44px] sm:flex-nowrap sm:py-0">
       {children}
@@ -144,7 +144,7 @@ function pageWindow(page: number, totalPages: number, radius = 2): (number | "ga
   return out;
 }
 
-export function Pagination({
+function Pagination({
   page,
   totalPages,
   onGoTo,
@@ -286,7 +286,7 @@ function PageStep({
 }
 
 /** Opens a small popup listing the configured page sizes to pick from. */
-export function PerPageControl({
+function PerPageControl({
   perPage,
   onChange,
 }: {
@@ -397,7 +397,6 @@ export function ListPane<T extends RowData>({
   onPerPageChange,
   pageHref,
   stale = false,
-  footerNote,
   frameClassName,
 }: {
   /** Filtered rows in tiebreak order — the pane sorts and pages them. */
@@ -421,8 +420,6 @@ export function ListPane<T extends RowData>({
   pageHref?: (page: number) => string;
   /** Fades the table while a deferred query is still catching up. */
   stale?: boolean;
-  /** Extra footer content between the count and the pagination. */
-  footerNote?: ReactNode;
   /**
    * When set, grid and footer are wrapped in one element with these classes —
    * the framed look the huvudman detail tab uses. Unset, the footer sits
@@ -462,7 +459,6 @@ export function ListPane<T extends RowData>({
         Visar {from}–{to} av {total}
       </span>
       <div className="flex-1" />
-      {footerNote}
       <Pagination
         page={currentPage}
         totalPages={totalPages}

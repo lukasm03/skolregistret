@@ -27,7 +27,7 @@ export const GRUNDSKOLA_NYCKELTAL: (keyof Nyckeltal)[] = [
  * `statistics.ts` still buckets it under "gy" and computes one from every
  * gymnasieskola's own reported values.
  */
-export const SKOLFORM_TILL_STATISTIKNYCKEL: Record<string, Skolform> = {
+const SKOLFORM_TILL_STATISTIKNYCKEL: Record<string, Skolform> = {
   Förskoleklass: "fsk",
   Grundskola: "gr",
   "Anpassad grundskola": "gran",

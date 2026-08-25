@@ -23,29 +23,11 @@ export type HuvudmanAggregate = {
   units: ListSchool[];
   enheter: number;
   elever: number;
-  /** Share of the kommun's pupils, in percent. */
-  andel: number | null;
 };
 
 /** Elevtal summed over the units that are running. */
 function sumStudents(units: ListSchool[], form?: SkolformCode): number {
   return units.reduce((sum, s) => sum + (studentsOf(s, form) ?? 0), 0);
-}
-
-function totalStudents(
-  all: ListSchool[],
-  form?: SkolformCode,
-  kommunkod?: string,
-): number {
-  return sumStudents(
-    all.filter(
-      (s) =>
-        s.status === "Aktiv" &&
-        (!form || s.forms.includes(form)) &&
-        (!kommunkod || s.kommunkod === kommunkod),
-    ),
-    form,
-  );
 }
 
 /** Every kommun with units, for the dropdown.
@@ -76,7 +58,6 @@ function listKommunOptions(all: ListSchool[]): KommunOption[] {
 function aggregateHuvudman(
   h: Huvudman,
   namedUnits: ListSchool[],
-  total: number,
   form?: SkolformCode,
 ): HuvudmanAggregate {
   const units = namedUnits.filter(
@@ -89,7 +70,6 @@ function aggregateHuvudman(
     units,
     enheter: units.length,
     elever,
-    andel: elever && total ? (elever / total) * 100 : null,
   };
 }
 
@@ -117,8 +97,6 @@ export function huvudmanSortValue(
       return r.huvudman.koncern ?? undefined;
     case "enheter":
       return r.enheter;
-    case "andel":
-      return r.andel ?? undefined;
     case "elever":
       return r.elever;
     default:
@@ -133,8 +111,6 @@ interface HuvudmanSelection {
   kommuner: KommunOption[];
   /** Huvudmän in scope before the type/koncern/search filters. */
   total: number;
-  /** Elever in the kommun (or riket) within the selected skolform. */
-  kommunElever: number;
 }
 
 export function selectHuvudman(
@@ -155,8 +131,6 @@ export function selectHuvudman(
     ? everyHuvudman.filter((h) => namesInScope.has(h.name))
     : everyHuvudman;
 
-  const kommunElever = totalStudents(everySchool, form, query.kommun);
-
   // Units grouped by huvudman name in one pass. Both consumers below join on
   // that name — the aggregation and the form counts — and without the map
   // each did a full scan of the unit list per huvudman, ~13 M string
@@ -168,9 +142,7 @@ export function selectHuvudman(
     else unitsByName.set(s.huvudman, [s]);
   }
 
-  const rows = all.map((h) =>
-    aggregateHuvudman(h, unitsByName.get(h.name) ?? [], kommunElever, form),
-  );
+  const rows = all.map((h) => aggregateHuvudman(h, unitsByName.get(h.name) ?? [], form));
 
   const counts = Object.fromEntries(
     HUVUDMANTYP_ORDER.map((t) => [t, all.filter((h) => h.typ === t).length]),
@@ -214,6 +186,5 @@ export function selectHuvudman(
     formCounts,
     kommuner: listKommunOptions(everySchool),
     total: all.length,
-    kommunElever,
   };
 }

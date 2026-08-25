@@ -9,7 +9,7 @@
  */
 
 /** Below this the figure reads as level — it rounds to ±0 anyway. */
-export const LEVEL = 0.05;
+const LEVEL = 0.05;
 
 /**
  * `none` is not "no data": it is a measure with no better direction. A large

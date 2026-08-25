@@ -27,7 +27,6 @@
  */
 
 export type * from "./types";
-export { ENKÄT_FRÅGOR } from "./types";
 
 export {
   getRegisterByggd,
@@ -57,9 +56,4 @@ export {
   getRiksEnkätGenomsnitt,
 } from "./statistics";
 
-export {
-  GRUNDSKOLA_NYCKELTAL,
-  SKOLFORM_TILL_STATISTIKNYCKEL,
-  STATISTIKNYCKEL_NAMN,
-  primärStatistikskolform,
-} from "./skolform";
+export { STATISTIKNYCKEL_NAMN, primärStatistikskolform } from "./skolform";

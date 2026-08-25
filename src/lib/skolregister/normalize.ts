@@ -115,7 +115,7 @@ export function programsnitt(
  * the one place that difference gets normalised away — always to gemener,
  * since that's what `skolform.ts` and `Skolinfo` already use.
  */
-export function normaliseraSkolformskod(kod: string): string {
+function normaliseraSkolformskod(kod: string): string {
   return kod.toLowerCase();
 }
 

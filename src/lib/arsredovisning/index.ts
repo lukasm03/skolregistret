@@ -12,18 +12,12 @@
  * Server-only: `paket.ts` reads the filesystem.
  */
 
-export {
-  formateraOrgnr,
-  parsePaketNamn,
-  räkenskapsårEtikett,
-  type PaketNamn,
-} from "./format";
+export { formateraOrgnr, räkenskapsårEtikett } from "./format";
 
 export {
   harÅrsredovisningskatalog,
   listÅrsredovisningar,
   läsHandling,
-  type Handling,
   type Handlingsdel,
   type Årsredovisning,
 } from "./paket";

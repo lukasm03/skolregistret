@@ -111,4 +111,3 @@ export function SortArrow({ dir, ...props }: IconProps & { dir: "asc" | "desc" |
     </Icon>
   );
 }
-

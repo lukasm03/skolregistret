@@ -61,13 +61,6 @@ describe("aggregation", () => {
     )!;
     expect(a.enheter).toBe(2);
   });
-
-  test("andel is the share of pupils in scope, in percent", () => {
-    const rows = selectHuvudman(hs, schools, query()).rows;
-    const a = rows.find((r) => r.huvudman.name === "A")!;
-    // 300 of 600 total.
-    expect(a.andel).toBeCloseTo(50);
-  });
 });
 
 describe("filtering", () => {
@@ -140,7 +133,6 @@ describe("huvudmanSortValue", () => {
     units: [],
     enheter: 2,
     elever: 100,
-    andel: null,
   };
 
   test("maps each column", () => {
@@ -152,7 +144,6 @@ describe("huvudmanSortValue", () => {
 
   test("missing figures are undefined so they sort last, not first", () => {
     expect(huvudmanSortValue(row, "koncern")).toBeUndefined();
-    expect(huvudmanSortValue(row, "andel")).toBeUndefined();
   });
 
   test("an unknown key sorts nothing rather than quietly sorting by elever", () => {
