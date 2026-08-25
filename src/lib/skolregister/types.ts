@@ -36,7 +36,7 @@ export interface AlltFile {
   /** 1307-ish fristående skolenheter. */
   skolinfo: Record<string, SkolinfoUppslag>;
   /** 5200-ish kommunala/kommunalförbund/region/specialskola/sameskola enheter. Disjoint keyset from `skolinfo`. */
-  offentliga: Record<string, SkolinfoUppslag>;
+  offentliga: Record<string, OffentligUppslag>;
   enskilda: EnskildaResultat;
   bolag: Record<string, Bolagsuppslag>;
   validering: Record<string, Valideringsrapport>;
@@ -108,6 +108,80 @@ export interface EnskildTraff {
   skolformer: string[];
   organizationNumber: string;
   huvudmanNamn: string;
+  /**
+   * A second Skolverket-uppslag för samma enhet, `skolenhetsregistret/v2` —
+   * engelska fältnamn rakt av, ingen översättning gjord här till skillnad
+   * från `Grunduppgifter`. Det här är fristående enheters enda väg dit: en
+   * kommunal enhet har ingen `EnskildTraff` alls, men når samma `Registerdetalj`
+   * ändå, top-level på sitt eget `offentliga`-uppslag — se `OffentligUppslag`.
+   * `resources.ts` slår ihop de två vägarna till ett index och läser namn,
+   * adress, kontaktuppgifter och rektor härifrån snarare än ur
+   * `Grunduppgifter`, som den här källan numera är den bättre av de två för.
+   */
+  registerdetalj: Registerdetalj;
+}
+
+export interface Registerdetalj {
+  kalla: string;
+  schoolUnitCode: string;
+  displayName: string;
+  schoolName: string;
+  status: string;
+  municipalityCode: string | null;
+  schoolTypes: string[];
+  huvudman: {
+    kalla: string;
+    organizationNumber: string;
+    displayName: string;
+    organizerType: string;
+  };
+  attributes: RegisterdetaljAttribut;
+}
+
+export interface RegisterdetaljAttribut {
+  displayName: string;
+  status: string;
+  url: string | null;
+  email: string;
+  phoneNumber: string;
+  /** Rektorns namn — enda platsen i källan som har den. Saknas för en enda enhet av 6 518 i dagens export. */
+  headMaster?: string;
+  addresses: Array<{
+    /** T.ex. "BESOKSADRESS", "POSTADRESS", "LEVERANSADRESS" — eller "UTLANDSADRESS" för en utlandsskola, som saknar besöksadress helt. */
+    type: string;
+    streetAddress: string | null;
+    postalCode: string | null;
+    locality: string | null;
+    /** Bara på en del adresser, mestadels BESOKSADRESS. */
+    geoCoordinates?: {
+      coordinateSweRefN: string;
+      coordinateSweRefE: string;
+      latitude: string;
+      longitude: string;
+    };
+  }>;
+  orientationType: string;
+  schoolUnitType: string;
+  schoolName: string;
+  municipalityCode: string | null;
+  schoolTypes: string[];
+  /**
+   * Gemener skolformsnyckel → dess egna properties; formen skiljer sig per
+   * skolform (`grades` för grundskoleliknande, `programmes`/`csnCode` för
+   * "gy", `schoolTypeParts` för "vux").
+   */
+  schoolTypeProperties: Record<
+    string,
+    {
+      grades?: string[];
+      programmes?: string[];
+      csnCode?: string;
+      schoolTypeParts?: string[];
+    }
+  >;
+  specialSupportSchool: boolean;
+  hospitalSchool: boolean;
+  startdate: string | null;
 }
 
 export interface EnskildaResultat {
@@ -124,6 +198,19 @@ export type SkolinfoUppslag =
   /** Registret har ingen sådan enhet. */
   | { typ: "finns-inte" }
   /** Vi lyckades inte fråga — uppgiften kan finnas. */
+  | { typ: "fel"; fel: string };
+
+/**
+ * Samma tre former som `SkolinfoUppslag`, men en "hittad" `offentliga`-post
+ * bär också sitt eget `registerdetalj` top-level — `skolinfo` (fristående)
+ * har inget sådant fält; dess `registerdetalj` nås bara via
+ * `enskilda.traffar[]`. `resources.ts` slår ihop de två vägarna till ett
+ * index i stället för att grena på vilken av de två mängderna en kod kom
+ * ifrån.
+ */
+export type OffentligUppslag =
+  | { typ: "hittad"; info: Skolinfo; registerdetalj: Registerdetalj }
+  | { typ: "finns-inte" }
   | { typ: "fel"; fel: string };
 
 /** Delarna av en `Skolinfo` som kan saknas eller ha gått fel att hämta. */
@@ -467,8 +554,9 @@ export interface SkolaProgram {
 
 /**
  * Where a skolenhet page's figures were actually fetched from — one address
- * per block, resolved out of `Skolinfo.kallor` by `resources.ts` so nothing
- * above this module has to know how the collector keys them.
+ * per block, resolved out of `Skolinfo.kallor` (and, for `registeruppgifter`,
+ * `Registerdetalj.kalla`) by `resources.ts` so nothing above this module has
+ * to know how the collector keys them.
  *
  * `null` where the unit has no such block. A URL here is the exact resource
  * the figures on the page were read out of, not the API's front door, which
@@ -476,7 +564,7 @@ export interface SkolaProgram {
  * about *this* school rather than about the register.
  */
 export interface SkolaKällhänvisning {
-  /** The unit's own record — namn, adress, huvudman, skolformer. */
+  /** The unit's own record — namn, adress, kontaktuppgifter and rektor from `Registerdetalj`, huvudman and skolformer still from `Grunduppgifter`. */
   registeruppgifter: string | null;
   /**
    * The statistics resource for the unit's primary skolform. Two of the four
@@ -506,6 +594,7 @@ export interface HuvudmanKällhänvisning {
 }
 
 export interface SkolaDetalj extends SkolorRad {
+  /** `null` only for the rare unit whose `registerdetalj.attributes` carries no `headMaster` (one of 6 518 in today's export). */
   rektor: string | null;
   startdatum: string | null;
   besöksadress: string | null;
@@ -515,6 +604,19 @@ export interface SkolaDetalj extends SkolorRad {
   koordinater: { latitud: number; longitud: number } | null;
   /** One entry per nationellt program the unit runs; empty for non-gymnasieskolor. */
   program: SkolaProgram[];
+  /**
+   * Raw gymnasieprogram codes off `registerdetalj.attributes.schoolTypeProperties.gy.programmes`
+   * — the register's own list of what a "gy" unit offers, independent of
+   * whether `program` above has statistics for it. Left as codes: this list
+   * is what the page prints in the "Program" row and stat tile, where the
+   * codes are what fits, and `program` above already carries the resolved
+   * names for the programmes that have figures. `resources.ts`'s
+   * `dedupeGyProgramkoder` already collapses each pre-/post-reform pair
+   * (`EK`/`EK25`) onto one code, so this list has at most one entry per real
+   * programme. Empty for every non-gy unit and the rare unit missing a
+   * `registerdetalj`.
+   */
+  programkoder: string[];
   nyckeltal: Nyckeltal;
   /** `null` for every unit without SALSA-data (roughly 4/5 of the register). */
   salsa: Salsa | null;

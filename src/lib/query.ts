@@ -239,7 +239,6 @@ export interface HuvudmanQuery extends ListQuery {
 const EXTRA_HUVUDMAN_SORTS: SortOption[] = [
   { key: "typ", label: "Typ A–Ö", desc: false },
   { key: "koncern", label: "Koncern A–Ö", desc: false },
-  { key: "andel", label: "Andel elever, störst först", desc: true },
 ];
 
 function resolveHuvudmanSort(sort: string | undefined): SortOption {

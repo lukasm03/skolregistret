@@ -48,6 +48,7 @@ function skola(overrides: Partial<SkolaDetalj> = {}): SkolaDetalj {
     epost: null,
     koordinater: null,
     program: [],
+    programkoder: [],
     nyckeltal: {
       meritvärdeÅrskurs9: finns(250),
       andelGodkändaÅrskurs9: finns(95),

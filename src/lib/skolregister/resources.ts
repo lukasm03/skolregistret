@@ -26,6 +26,8 @@ import type {
   Matvarde,
   Nyckeltal,
   NyckeltalVärde,
+  Registerdetalj,
+  RegisterdetaljAttribut,
   SkolaDetalj,
   SkolaKällhänvisning,
   SkolaProgram,
@@ -81,6 +83,105 @@ function skolinfoIndex(): Promise<Map<string, Skolinfo>> {
 async function uppslag(kod: string): Promise<SkolinfoUppslag | null> {
   const file = await alltFile();
   return file.skolinfo[kod] ?? file.offentliga[kod] ?? null;
+}
+
+let registerdetaljIndexCache: Promise<Map<string, Registerdetalj>> | null = null;
+
+/**
+ * skolenhetskod → `registerdetalj`, Skolverkets `skolenhetsregistret/v2`
+ * uppslag for the unit — built from `offentliga[kod].registerdetalj`
+ * directly for kommunala m.fl. enheter and `enskilda.traffar[].registerdetalj`
+ * for fristående, since `skolinfo` carries no such field of its own (see
+ * `OffentligUppslag`). The two paths together cover every kod `skolinfoIndex`
+ * does (6 518 of 6 518 on today's export), so `byggSkola` reads name, address,
+ * contact details and rektor from here rather than the
+ * `planned-educations`-sourced `Grunduppgifter`, which this source supersedes
+ * for those fields.
+ */
+function registerdetaljIndex(): Promise<Map<string, Registerdetalj>> {
+  if (!registerdetaljIndexCache) {
+    registerdetaljIndexCache = alltFile().then((file) => {
+      const index = new Map<string, Registerdetalj>();
+      for (const post of Object.values(file.offentliga)) {
+        if (post.typ === "hittad")
+          index.set(post.registerdetalj.schoolUnitCode, post.registerdetalj);
+      }
+      for (const traff of file.enskilda.traffar) {
+        index.set(traff.schoolUnitCode, traff.registerdetalj);
+      }
+      return index;
+    });
+  }
+  return registerdetaljIndexCache;
+}
+
+let programNamnIndexCache: Promise<Map<string, string>> | null = null;
+
+/**
+ * programkod → studievagsnamn, unioned across every unit's own
+ * `utbildningar` rather than read one unit at a time. `byggProgram` used to
+ * build this map from just the unit it was naming programmes for, which
+ * meant the same programkod displayed as a resolved name ("Samhällsvetenskaps-
+ * programmet") on a unit whose own `utbildningar` happened to carry it and as
+ * the bare code ("SA25") on a unit that hadn't (yet) been sent that entry —
+ * two different filter chips on `/skolor` for what is the same national
+ * programme. Every code observed maps to exactly one name across today's
+ * export (no unit disagrees with another), so first-write-wins here never
+ * has to arbitrate a conflict.
+ */
+function programNamnIndex(): Promise<Map<string, string>> {
+  if (!programNamnIndexCache) {
+    programNamnIndexCache = skolinfoIndex().then((index) => {
+      const namnAv = new Map<string, string>();
+      for (const info of index.values()) {
+        for (const u of info.utbildningar) {
+          if (!namnAv.has(u.studievagskod)) namnAv.set(u.studievagskod, u.studievagsnamn);
+        }
+      }
+      return namnAv;
+    });
+  }
+  return programNamnIndexCache;
+}
+
+function formatAdress(
+  gata: string | null,
+  postnummer: string | null,
+  ort: string | null,
+): string {
+  return [gata, [postnummer, ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+}
+
+/**
+ * `registerdetalj`'s `schoolName` over `displayName`: `displayName` sometimes
+ * disambiguates skolenheter that share a huvudman's name (e.g. "Luleå
+ * gymnasieskola, skolenhet B"), but for 26 of 6 518 units today it's a
+ * data-entry slip that appends the unit's own skolenhetskod instead — e.g.
+ * "Anna Whitlocks gymnasium 54040574" — which `schoolName` doesn't carry.
+ * `Grunduppgifter.namn`, the fallback for the handful of units with no
+ * `registerdetalj`, has the identical typo for those same units, so it still
+ * needs the same trailing-kod strip.
+ */
+function skolNamn(
+  kod: string,
+  grundNamn: string,
+  registerdetalj: Registerdetalj | null,
+): string {
+  const namn = registerdetalj?.schoolName ?? grundNamn;
+  return namn.endsWith(` ${kod}`) ? namn.slice(0, -(kod.length + 1)) : namn;
+}
+
+/**
+ * Prefers `BESOKSADRESS` and falls back to whichever address the unit does
+ * carry — the ~15 utlandsskolor in today's export have only an
+ * `UTLANDSADRESS`, with no street, so there is nothing to prefer it over.
+ */
+function besöksadress(attribut: RegisterdetaljAttribut): string | null {
+  const adress =
+    attribut.addresses.find((a) => a.type === "BESOKSADRESS") ?? attribut.addresses[0];
+  return adress
+    ? formatAdress(adress.streetAddress, adress.postalCode, adress.locality)
+    : null;
 }
 
 const NYCKELTAL_MATT: Record<
@@ -204,12 +305,20 @@ function byggNyckeltal(info: Skolinfo): Nyckeltal {
  * from; a unit with two of either would otherwise cite whichever came first
  * in the object.
  */
-function byggKällor(info: Skolinfo): SkolaKällhänvisning {
+function byggKällor(
+  info: Skolinfo,
+  registerdetalj: Registerdetalj | null,
+): SkolaKällhänvisning {
   const primär = primärSkolform(info);
   const enkätNyckel = primär === "gy" ? "enkat/pupilsgy" : "enkat/pupilsgr";
   const enkäter = Object.keys(info.kallor).filter((k) => k.startsWith("enkat/"));
   return {
-    registeruppgifter: info.kallor.grund ?? null,
+    // `registerdetalj.kalla` is skolenhetsregistret/v2 — the actual source of
+    // namn/adress/kontaktuppgifter/rektor below, and what the Källor row's
+    // "Skolverkets skolenhetsregister" label already claims to link to.
+    // `info.kallor.grund` (planned-educations) is the fallback for the rare
+    // unit missing a `registerdetalj`.
+    registeruppgifter: registerdetalj?.kalla ?? info.kallor.grund ?? null,
     nyckeltal: primär ? (info.kallor[`statistik/${primär}`] ?? null) : null,
     salsa: info.kallor.salsa ?? null,
     enkät: info.kallor[enkätNyckel] ?? (enkäter[0] ? info.kallor[enkäter[0]]! : null),
@@ -226,34 +335,77 @@ const PROGRAM_NYCKELTAL_MATT: Record<keyof SkolaProgram["nyckeltal"], string> = 
 };
 
 /**
- * Programme names: joined from `utbildningar[].studievagskod` (an exact
- * Skolverket-sourced name) where the code matches. Introduktionsprogram
- * variants (IMV/IMY/IMS/IMA) rarely have an exact match — `utbildningar`
- * lists their specific tracks, not the bare code — so those fall back to the
- * bare programkod rather than a guessed name.
+ * `EK` and `EK25` are the same national gymnasieprogram, pre- and post-
+ * GY25-reform — `schoolTypeProperties.gy.programmes` lists both while a unit
+ * still runs classes under the old curriculum (continuing students)
+ * alongside the new one (new intake). Collapse each such pair onto its
+ * pre-reform code so the list reads as programmes rather than curriculum
+ * vintages. A code that only appears in its "25" form — the programme has
+ * already switched over entirely, nobody left on the old one — is left as
+ * is: there's no pre-reform code here to collapse it onto.
  */
-function byggProgram(info: Skolinfo): SkolaProgram[] {
-  const namnAv = new Map(
-    info.utbildningar.map((u) => [u.studievagskod, u.studievagsnamn]),
-  );
+function dedupeGyProgramkoder(koder: string[]): string[] {
+  const utanReform = new Set(koder.filter((k) => !k.endsWith("25")));
+  return koder.filter((k) => !(k.endsWith("25") && utanReform.has(k.slice(0, -2))));
+}
+
+/**
+ * The rest of a programkod's name comes from the register itself
+ * (`programNamnIndex`) — this table exists only for codes that never occur
+ * in any unit's `utbildningar` there, so they'd otherwise show as a bare
+ * code forever. Confirmed by hand against Skolverket's own pages rather than
+ * guessed: the four introduktionsprogram-inriktningar aren't individually
+ * named anywhere in `utbildningar`, which lists their specific tracks
+ * instead, and `HV25` (Hantverksprogrammet) simply isn't reported by name
+ * for any unit in today's export. Extend this only for a code you've
+ * likewise verified against skolverket.se — an unverified guess here is
+ * worse than the bare code it would replace.
+ */
+const KÄNDA_PROGRAMNAMN: Record<string, string> = {
+  HV25: "Hantverksprogrammet",
+  IMA: "Introduktionsprogram, individuellt alternativ",
+  IMS: "Introduktionsprogram, språkintroduktion",
+  IMV: "Introduktionsprogram, programinriktat val",
+  IMY: "Introduktionsprogram, yrkesintroduktion",
+};
+
+/**
+ * Programme names: `namnAv` is the register-wide `programNamnIndex`, not
+ * just this unit's own `utbildningar` — see that function for why a
+ * per-unit map produced two filter chips for the same programme.
+ * `KÄNDA_PROGRAMNAMN` catches the handful of codes the register never names
+ * anywhere; anything past that falls back to the bare programkod rather
+ * than a guessed name.
+ *
+ * `gy.program` gets the same `dedupeGyProgramkoder` pass as `programkoder`
+ * below: no unit in today's export reports statistics under both a
+ * pre-reform code and its GY25 pair, but this list also feeds
+ * `SkolorRad.gymnasieprogram` — and through it the skolor page's programme
+ * filter — so a school that does start reporting both should still offer
+ * one filter chip per programme, not two.
+ */
+function byggProgram(info: Skolinfo, namnAv: Map<string, string>): SkolaProgram[] {
   const gy = info.statistik.gy;
   if (!gy) return [];
-  return gy.program.map((p) => {
-    const värde = (key: keyof SkolaProgram["nyckeltal"]): NyckeltalVärde =>
-      nyckeltalVärdeAv(nyastaMatvärde(p.matt[PROGRAM_NYCKELTAL_MATT[key]]));
-    return {
-      kod: p.programkod,
-      namn: namnAv.get(p.programkod) ?? p.programkod,
-      antalElever: nyckeltalVärdeAv(nyastaMatvärde(p.matt.totalNumberOfPupils)),
-      nyckeltal: {
-        lägstaAntagningspoäng: värde("lägstaAntagningspoäng"),
-        genomsnittligAntagningspoäng: värde("genomsnittligAntagningspoäng"),
-        andelMedExamenInom3År: värde("andelMedExamenInom3År"),
-        betygspoängMedExamen: värde("betygspoängMedExamen"),
-        andelMedHögskolebehörighet: värde("andelMedHögskolebehörighet"),
-      },
-    };
-  });
+  const koder = new Set(dedupeGyProgramkoder(gy.program.map((p) => p.programkod)));
+  return gy.program
+    .filter((p) => koder.has(p.programkod))
+    .map((p) => {
+      const värde = (key: keyof SkolaProgram["nyckeltal"]): NyckeltalVärde =>
+        nyckeltalVärdeAv(nyastaMatvärde(p.matt[PROGRAM_NYCKELTAL_MATT[key]]));
+      return {
+        kod: p.programkod,
+        namn: namnAv.get(p.programkod) ?? KÄNDA_PROGRAMNAMN[p.programkod] ?? p.programkod,
+        antalElever: nyckeltalVärdeAv(nyastaMatvärde(p.matt.totalNumberOfPupils)),
+        nyckeltal: {
+          lägstaAntagningspoäng: värde("lägstaAntagningspoäng"),
+          genomsnittligAntagningspoäng: värde("genomsnittligAntagningspoäng"),
+          andelMedExamenInom3År: värde("andelMedExamenInom3År"),
+          betygspoängMedExamen: värde("betygspoängMedExamen"),
+          andelMedHögskolebehörighet: värde("andelMedHögskolebehörighet"),
+        },
+      };
+    });
 }
 
 /**
@@ -295,18 +447,22 @@ function byggAntalElever(
   };
 }
 
-function byggSkolorRad(info: Skolinfo): SkolorRad {
+function byggSkolorRad(
+  info: Skolinfo,
+  registerdetalj: Registerdetalj | null,
+  programNamnAv: Map<string, string>,
+): SkolorRad {
   const årskurserPerSkolform = info.grund.skolformer
     .filter((f) => f.arskurser.length > 0)
     .map((f) => ({ kod: f.kod, skolform: skolformLabel(f.kod), årskurser: f.arskurser }));
   const årskurser = [...new Set(årskurserPerSkolform.flatMap((f) => f.årskurser))].sort(
     (a, b) => Number(a) - Number(b),
   );
-  const program = byggProgram(info);
+  const program = byggProgram(info, programNamnAv);
 
   return {
     skolenhetskod: info.skolenhetskod,
-    namn: info.grund.namn,
+    namn: skolNamn(info.skolenhetskod, info.grund.namn, registerdetalj),
     // The source has no per-unit driftstatus field — every unit it carries is
     // implicitly active (confirmed: `enskilda.traffar[].status` is "AKTIV"
     // for all 1307 fristående entries, and the source only ever describes
@@ -340,9 +496,17 @@ let skolorCache: Promise<SkolorRad[]> | null = null;
  */
 export function listSkolor(): Promise<SkolorRad[]> {
   if (!skolorCache) {
-    skolorCache = skolinfoIndex().then((index) =>
+    skolorCache = Promise.all([
+      skolinfoIndex(),
+      registerdetaljIndex(),
+      programNamnIndex(),
+    ]).then(([index, registerdetaljer, programNamnAv]) =>
       [...index.values()].map((info) => {
-        const rad = byggSkolorRad(info);
+        const rad = byggSkolorRad(
+          info,
+          registerdetaljer.get(info.skolenhetskod) ?? null,
+          programNamnAv,
+        );
         return { ...rad, kommun: kommunName(rad.kommunkod) };
       }),
     );
@@ -390,30 +554,39 @@ async function byggSkola(kod: string): Promise<SkolaDetalj | null> {
   if (enligtUppslag.typ === "fel") return null;
 
   const info = enligtUppslag.info;
-  const rad = byggSkolorRad(info);
-  const adress = info.grund.adresser[0];
+  const [registerdetaljer, programNamnAv] = await Promise.all([
+    registerdetaljIndex(),
+    programNamnIndex(),
+  ]);
+  const registerdetalj = registerdetaljer.get(kod) ?? null;
+  const rad = byggSkolorRad(info, registerdetalj, programNamnAv);
+  const attribut = registerdetalj?.attributes ?? null;
+  const grundAdress = info.grund.adresser[0];
 
   return {
     ...rad,
     kommun: kommunName(rad.kommunkod),
-    rektor: null, // not present in this source
-    startdatum: info.grund.startdatum,
-    besöksadress: adress
-      ? [adress.gata, [adress.postnummer, adress.ort].filter(Boolean).join(" ")]
-          .filter(Boolean)
-          .join(", ")
-      : null,
-    telefon: info.grund.telefon,
-    webbplats: info.grund.webb,
-    epost: info.grund.epost,
+    rektor: attribut?.headMaster ?? null,
+    startdatum: attribut?.startdate ?? info.grund.startdatum,
+    besöksadress: attribut
+      ? besöksadress(attribut)
+      : grundAdress
+        ? formatAdress(grundAdress.gata, grundAdress.postnummer, grundAdress.ort)
+        : null,
+    telefon: attribut?.phoneNumber ?? info.grund.telefon,
+    webbplats: attribut?.url ?? info.grund.webb,
+    epost: attribut?.email ?? info.grund.epost,
     koordinater:
       info.grund.lat != null && info.grund.long != null
         ? { latitud: info.grund.lat, longitud: info.grund.long }
         : null,
-    program: byggProgram(info),
+    program: byggProgram(info, programNamnAv),
+    programkoder: dedupeGyProgramkoder(
+      attribut?.schoolTypeProperties.gy?.programmes ?? [],
+    ),
     nyckeltal: byggNyckeltal(info),
     salsa: info.salsa,
-    källor: byggKällor(info),
+    källor: byggKällor(info, registerdetalj),
   };
 }
 

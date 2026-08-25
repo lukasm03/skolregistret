@@ -229,7 +229,12 @@ export default async function SkolaPage({
                   </span>,
                 ],
                 ["Skolform", school.skolformer.join(", ") || site.allaSkolformer],
-                ["Årskurser", formatYears(school.årskurser) || DASH],
+                // Gymnasieskolan reports no årskurser of its own — the
+                // register groups it by nationellt program instead — so a
+                // "gy" unit gets its programkoder here rather than a dash.
+                school.programkoder.length > 0
+                  ? ["Program", school.programkoder.join(", ")]
+                  : ["Årskurser", formatYears(school.årskurser) || DASH],
                 ["Status i registret", school.status],
                 ["Rektor", school.rektor ?? DASH],
                 [
@@ -420,7 +425,19 @@ export default async function SkolaPage({
             value={eleverPerLärare}
             note={statistikLäsår === DASH ? undefined : `läsår ${statistikLäsår}`}
           />
-          <Stat label="Årskurser" value={formatYears(school.årskurser) || DASH} />
+          {school.programkoder.length > 0 ? (
+            <Stat
+              label="Program"
+              value={num(school.programkoder.length)}
+              note={
+                school.programkoder.length > 3
+                  ? `${school.programkoder.slice(0, 3).join(", ")} +${school.programkoder.length - 3} fler`
+                  : school.programkoder.join(", ")
+              }
+            />
+          ) : (
+            <Stat label="Årskurser" value={formatYears(school.årskurser) || DASH} />
+          )}
         </StatGrid>
 
         <div className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-5 pb-6 sm:px-6">
