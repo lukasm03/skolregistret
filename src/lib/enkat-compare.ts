@@ -69,7 +69,6 @@ export interface EnkätJämförelse {
   /** Whether that judgement is a caveat or a clean bill. */
   osäkert: boolean;
   dimensioner: EnkätDimension[];
-  sammanfattning: string;
 }
 
 /**
@@ -132,20 +131,6 @@ function tillförlitlighet(
   return { text: "Okänt underlag", osäkert: true };
 }
 
-function sammanfattning(dims: EnkätDimension[], osäkert: boolean): string {
-  const jämförbara = dims.filter((d) => d.diff != null);
-  if (jämförbara.length === 0) {
-    return "Gruppen har inga svar som går att jämföra med riksgenomsnittet för samma grupp.";
-  }
-  const över = jämförbara.filter((d) => d.riktning === "over").length;
-  return (
-    `${över} av ${jämförbara.length} frågor ligger över riksgenomsnittet för samma grupp.` +
-    (osäkert
-      ? " Underlaget är tunt — enskilda tal bör läsas försiktigt."
-      : " Underlaget räcker för att talen ska vara jämförbara.")
-  );
-}
-
 function jämförelse(
   key: string,
   grupp: string,
@@ -165,7 +150,6 @@ function jämförelse(
     tillförlitlighet: text,
     osäkert,
     dimensioner: dims,
-    sammanfattning: sammanfattning(dims, osäkert),
   };
 }
 

@@ -56,4 +56,4 @@ export {
   getRiksEnkätGenomsnitt,
 } from "./statistics";
 
-export { STATISTIKNYCKEL_NAMN, primärStatistikskolform } from "./skolform";
+export { primärStatistikskolform } from "./skolform";

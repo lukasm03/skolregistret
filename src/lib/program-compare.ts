@@ -59,13 +59,6 @@ export interface ProgramComparison {
    * normal case for introduktionsprogram.
    */
   score: number | null;
-  /**
-   * One sentence on how the row stands. Nothing renders it since the rows
-   * stopped expanding, and it is kept for the same reason `EnkätJämförelse`
-   * keeps its own: the sentence is the model's answer to "how does this one
-   * stand", and the figures still need it if a per-row reading comes back.
-   */
-  sammanfattning: string;
 }
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
@@ -113,28 +106,6 @@ function cell(
   };
 }
 
-/**
- * How the programme stands against the same programme nationally — counted
- * over the measures that have a direction *and* figures on both sides, which
- * is the only set the colours on the row mean anything for.
- */
-function sammanfattning(cells: ProgramMetricCell[]): string {
-  const jämförbara = cells.filter((c) => c.riktning !== "none");
-  if (jämförbara.length === 0) {
-    return (
-      "Programmet har inga jämförbara resultatmått — Skolverket redovisar " +
-      "inga rikstal för det här programmet."
-    );
-  }
-  const bättre = jämförbara.filter((c) => c.riktning === "over").length;
-  const sämre = jämförbara.filter((c) => c.riktning === "under").length;
-  return (
-    `${bättre} av ${jämförbara.length} jämförbara mått ligger över ` +
-    `riksgenomsnittet${sämre ? ` och ${sämre} under` : ""}. ` +
-    "Jämförelsen görs mot samma program i hela landet, inte mot skolans övriga program."
-  );
-}
-
 /** Reads one metric off a programme — elevantal sits beside the rest, not in them. */
 function värde(p: SkolaProgram, key: ProgramNyckeltalKey): NyckeltalVärde | undefined {
   return key === "antalElever" ? p.antalElever : p.nyckeltal[key];
@@ -178,7 +149,6 @@ export function buildProgramComparisons(
       score: directed.length
         ? directed.reduce((sum, c) => sum + (c.t ?? 0), 0) / directed.length
         : null,
-      sammanfattning: sammanfattning(cells),
     };
   });
 

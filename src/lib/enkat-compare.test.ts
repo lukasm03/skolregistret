@@ -112,7 +112,6 @@ describe("buildEnkätComparisons", () => {
       "level",
       "under",
     ]);
-    expect(g?.sammanfattning).toStartWith("2 av 5 frågor ligger över riksgenomsnittet");
   });
 
   test("a low svarsfrekvens is carried as a caveat, not as a reason to hide the figures", () => {
@@ -162,16 +161,6 @@ describe("buildEnkätComparisons", () => {
 
     expect(g?.dimensioner[1]?.value).toBe("—");
     expect(g?.dimensioner[1]?.diff).toBeNull();
-    expect(g?.sammanfattning).toStartWith("1 av 1 frågor ligger över");
-  });
-
-  test("with no riksgenomsnitt to compare against, the card says so", () => {
-    const [g] = buildEnkätComparisons(
-      enkät({ elever: [elev({ svar: [8.6, 8.6, 7.0, 7.5, 7.0] })] }),
-      new Map(),
-      new Map(),
-    );
-    expect(g?.sammanfattning).toContain("inga svar som går att jämföra");
   });
 
   test("elevernas grupper come before vårdnadshavarnas", () => {

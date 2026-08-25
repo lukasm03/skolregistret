@@ -21,7 +21,6 @@ export interface SalsaMetrik {
   enhet: string;
   domain: [number, number];
   higherIsBetter: true;
-  förklaring: string;
 }
 
 export const salsametriker: SalsaMetrik[] = [
@@ -32,11 +31,6 @@ export const salsametriker: SalsaMetrik[] = [
     enhet: "meritvärdespoäng",
     domain: [-30, 30],
     higherIsBetter: true,
-    förklaring:
-      "SALSA väger samman föräldrarnas utbildningsnivå, andelen nyinvandrade " +
-      "elever och andelen pojkar till ett förväntat meritvärde för skolans " +
-      "elevgrupp. Avvikelsen är det faktiska meritvärdet minus det förväntade " +
-      "— ett mått på skolans egen insats, inte på elevunderlaget.",
   },
   {
     deviationKey: "salsaRequirementsReachedDeviation",
@@ -45,8 +39,5 @@ export const salsametriker: SalsaMetrik[] = [
     enhet: "procentenheter",
     domain: [-20, 20],
     higherIsBetter: true,
-    förklaring:
-      "Samma modell som meritvärdesavvikelsen, tillämpad på andelen elever " +
-      "som når kunskapskraven i alla ämnen.",
   },
 ];

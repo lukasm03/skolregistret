@@ -37,7 +37,6 @@ export interface SalsaJämförelse {
   /** Position of `tal` on `metrik.domain`, centered at 0. `null` when missing. */
   egenPct: number | null;
   skala: string;
-  förklaring: string;
 }
 
 function skalaText(metrik: SalsaMetrik): string {
@@ -69,7 +68,6 @@ export function buildSalsaComparisons(salsa: Salsa | null): SalsaJämförelse[] 
       omdöme: salsaOmdöme(dir),
       egenPct: tal != null ? positionPct(tal, metrik.domain) : null,
       skala: skalaText(metrik),
-      förklaring: metrik.förklaring,
     };
   });
 }

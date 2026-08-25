@@ -1,12 +1,7 @@
 import { nyckeltalmetriker, type NyckeltalMetrik } from "@/config/nyckeltalmetriker";
 import { DASH, dec } from "./format";
 import { direction, omdöme, positionPct, round2, type Direction } from "./compare";
-import type {
-  KommunNyckeltalStat,
-  Nyckeltal,
-  NyckeltalHärledning,
-  NyckeltalVärde,
-} from "./skolregister";
+import type { KommunNyckeltalStat, Nyckeltal, NyckeltalHärledning } from "./skolregister";
 
 /**
  * One comparison per nyckeltal: the unit's own figure, the kommunsnitt and the
@@ -31,13 +26,6 @@ export interface RiksNyckeltal {
    * rather than hidden — a computed average is not the official one.
    */
   beräknat: boolean;
-  /** The skolform being compared against, written out, e.g. "grundskola". */
-  skolform: string | null;
-}
-
-export interface KällaRad {
-  k: string;
-  v: string;
 }
 
 export interface NyckeltalJämförelse {
@@ -79,17 +67,7 @@ export interface NyckeltalJämförelse {
   placering: string;
   /** Where the unit sits in that ranking, best at 0%. `null` when unranked. */
   rankPct: number | null;
-  /** Provenance, shown behind the "Varifrån kommer talet?" disclosure. */
-  källa: KällaRad[];
-  förklaring: string;
-  /** "högre är bättre" / "lägre brukar tolkas som bättre". */
-  riktningsText: string;
 }
-
-const RIKTNINGSTEXT = {
-  hög: "högre är bättre",
-  låg: "lägre brukar tolkas som bättre",
-} as const;
 
 function talText(tal: number | null, metrik: NyckeltalMetrik): string {
   return tal == null ? DASH : `${dec(tal)}${metrik.suffix}`;
@@ -99,45 +77,6 @@ function talText(tal: number | null, metrik: NyckeltalMetrik): string {
 function skalaText(metrik: NyckeltalMetrik): string {
   const [min, max] = metrik.domain;
   return `${min}–${max}${metrik.suffix}`;
-}
-
-function källrader(
-  metrik: NyckeltalMetrik,
-  v: NyckeltalVärde,
-  stat: KommunNyckeltalStat | undefined,
-  riks: RiksNyckeltal | undefined,
-): KällaRad[] {
-  const rader: KällaRad[] = [{ k: "Mått", v: metrik.mått }];
-  if (v.läsår) rader.push({ k: "Läsår", v: v.läsår });
-  rader.push({
-    k: "Källa",
-    v: riks?.skolform
-      ? `Skolverkets statistik-API (${riks.skolform})`
-      : "Skolverkets statistik-API",
-  });
-  if (v.status === "finns" && v.härlett) {
-    rader.push({
-      k: "Enhetens tal",
-      v:
-        `${v.härlett.elevviktat ? "elevviktat snitt" : "snitt"} av enhetens ` +
-        `${v.härlett.antalProgram} gymnasieprogram`,
-    });
-  }
-  if (riks?.tal != null) {
-    rader.push({
-      k: "Riksgenomsnitt",
-      v: riks.beräknat
-        ? "beräknat av oss ur enheternas egna tal"
-        : "Skolverkets officiella tal",
-    });
-  }
-  if (stat && stat.antalMedVärde > 0) {
-    rader.push({
-      k: "Kommunsnitt",
-      v: `${stat.antalMedVärde} enheter i kommunen redovisar talet`,
-    });
-  }
-  return rader;
 }
 
 export function buildNyckeltalComparisons(
@@ -188,19 +127,6 @@ export function buildNyckeltalComparisons(
         stat?.rank != null && stat.antalRankade > 1
           ? round2(((stat.rank - 1) / (stat.antalRankade - 1)) * 100)
           : null,
-      källa: källrader(metrik, v, stat, riks),
-      förklaring:
-        metrik.förklaring +
-        (v.status === "finns" && v.härlett
-          ? " Gymnasieskolans lärartal redovisas bara per program, så enhetens " +
-            "eget tal är räknat av oss som ett snitt av programmens."
-          : "") +
-        (riks?.beräknat
-          ? " Skolverket publicerar inget officiellt rikstal för den här " +
-            "kombinationen av skolform och mått, så snittet är räknat av oss " +
-            "ur varje enhets egna redovisade tal."
-          : ""),
-      riktningsText: metrik.higherIsBetter ? RIKTNINGSTEXT.hög : RIKTNINGSTEXT.låg,
     };
   });
 }

@@ -20,7 +20,6 @@ import {
   koncernForHuvudmanIndex,
   listHuvudman,
   primärStatistikskolform,
-  STATISTIKNYCKEL_NAMN,
   type BeräknatRiksGenomsnitt,
   type EnkätGrupp,
   type HuvudmanKoncern,
@@ -28,7 +27,6 @@ import {
   type Nyckeltal,
   type SkolaDetalj,
   type Skolenkät,
-  type Skolform,
   type SkolinspektionDokumentgrupp,
   type TrädNod,
 } from "./skolregister";
@@ -127,12 +125,8 @@ function senasteLäsår(läsår: string[]): string {
  * now compares against `getBeräknatRiksGenomsnitt`'s self-computed average
  * — every card is "(beräknat)".
  */
-function riksFör(beräknat: number | undefined, skolform: Skolform | null): RiksNyckeltal {
-  return {
-    tal: beräknat ?? null,
-    beräknat: beräknat != null,
-    skolform: skolform ? STATISTIKNYCKEL_NAMN[skolform] : null,
-  };
+function riksFör(beräknat: number | undefined): RiksNyckeltal {
+  return { tal: beräknat ?? null, beräknat: beräknat != null };
 }
 
 /** The two nyckeltal that describe årskurs 9 specifically. */
@@ -153,10 +147,10 @@ export function buildSkolaDetaljVy(
     ? beräknatRiks.perSkolform.get(primärSkolform)
     : undefined;
   const riksPerKey: Partial<Record<keyof Nyckeltal, RiksNyckeltal>> = {
-    meritvärdeÅrskurs9: riksFör(beräknatGr?.meritvärdeÅrskurs9, "gr"),
-    andelGodkändaÅrskurs9: riksFör(beräknatGr?.andelGodkändaÅrskurs9, "gr"),
-    andelBehörigaLärare: riksFör(beräknatÖvriga?.andelBehörigaLärare, primärSkolform),
-    eleverPerLärare: riksFör(beräknatÖvriga?.eleverPerLärare, primärSkolform),
+    meritvärdeÅrskurs9: riksFör(beräknatGr?.meritvärdeÅrskurs9),
+    andelGodkändaÅrskurs9: riksFör(beräknatGr?.andelGodkändaÅrskurs9),
+    andelBehörigaLärare: riksFör(beräknatÖvriga?.andelBehörigaLärare),
+    eleverPerLärare: riksFör(beräknatÖvriga?.eleverPerLärare),
   };
 
   // `allt.json` carries no bulk official program riksgenomsnitt either —

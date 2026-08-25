@@ -666,34 +666,11 @@ export interface TrädNod {
   barn: TrädNod[];
 }
 
-/** One page of a paged list endpoint — kept for `Sida`-shaped fixtures/tests only; no longer produced by any live path. */
-export interface Sida<T> {
-  rader: T[];
-  totalt: number;
-  sida: number;
-  sidstorlek: number;
-}
-
 /** Statistiknyckeln for an individual skolform, as used by the dokument endpoint. */
 export type Skolform = NationelltGenomsnittSkolform | "gy";
 
 /** The register's own `Statistiknyckel`s that have a national average endpoint — `gy` doesn't, only its programs do. */
 export type NationelltGenomsnittSkolform = "fsk" | "gr" | "gran" | "gyan";
-
-/**
- * The per-skolform riksgenomsnitt, which `allt.json` does not carry — kept
- * because its absence is the thing worth recording. Skolverket publishes a
- * bulk riksgenomsnitt only for five gymnasieprogram measures, which is why
- * `NationelltProgramGenomsnitt` below has readers and this has none, and why
- * nearly every nyckeltal card says "(beräknat)": `getBeräknatRiksGenomsnitt`
- * averages the units' own reported figures instead. Delete this and the next
- * person to look for the official figures has nothing telling them there are
- * none. Same reasoning as `Sida<T>` above.
- */
-export interface NationelltGenomsnitt {
-  skolform: NationelltGenomsnittSkolform;
-  nyckeltal: Nyckeltal;
-}
 
 export interface NationelltProgramGenomsnitt {
   skolform: "gy";

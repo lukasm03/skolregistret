@@ -133,8 +133,6 @@ describe("buildSkolaDetaljVy — riksgenomsnitt-pairing", () => {
     );
     const epl = vy.nyckeltal.find((rad) => rad.key === "eleverPerLärare")!;
     expect(epl.riksTal).toBe(14);
-    // Which skolform the rikstal was read from is stated in the provenance.
-    expect(epl.källa.some((rad) => rad.v.includes("gymnasieskola"))).toBe(true);
   });
 
   test("every paired figure carries beräknat — this source has no official rikstal", () => {

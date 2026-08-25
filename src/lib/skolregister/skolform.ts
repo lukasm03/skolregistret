@@ -35,19 +35,6 @@ const SKOLFORM_TILL_STATISTIKNYCKEL: Record<string, Skolform> = {
   "Anpassad gymnasieskola": "gyan",
 };
 
-/**
- * The same five forms written out, for the sentence that names which skolform
- * a figure was read from — "Skolverkets statistik-API (grundskola)". Lower
- * case: it lands mid-sentence, never as a heading.
- */
-export const STATISTIKNYCKEL_NAMN: Record<Skolform, string> = {
-  fsk: "förskoleklass",
-  gr: "grundskola",
-  gran: "anpassad grundskola",
-  gy: "gymnasieskola",
-  gyan: "anpassad gymnasieskola",
-};
-
 export function primärStatistikskolform(skolformer: string[]): Skolform | null {
   for (const namn of skolformer) {
     const nyckel = SKOLFORM_TILL_STATISTIKNYCKEL[namn];

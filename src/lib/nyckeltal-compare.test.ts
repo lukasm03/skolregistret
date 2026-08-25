@@ -39,11 +39,7 @@ function stat(
   };
 }
 
-const riks = (tal: number | null, beräknat = false): RiksNyckeltal => ({
-  tal,
-  beräknat,
-  skolform: "grundskola",
-});
+const riks = (tal: number | null, beräknat = false): RiksNyckeltal => ({ tal, beräknat });
 
 /** The row for one key, which is all any single assertion here cares about. */
 function rad(
@@ -86,7 +82,6 @@ describe("buildNyckeltalComparisons", () => {
     });
     expect(r.diffRiks).toBeCloseTo(-2.3);
     expect(r.riktning).toBe("over");
-    expect(r.riktningsText).toBe("lägre brukar tolkas som bättre");
   });
 
   test("a difference that rounds to zero is level, not a direction", () => {
@@ -111,16 +106,7 @@ describe("buildNyckeltalComparisons", () => {
     );
 
     expect(officiell.beräknatRiks).toBe(false);
-    expect(officiell.källa).toContainEqual({
-      k: "Riksgenomsnitt",
-      v: "Skolverkets officiella tal",
-    });
     expect(beräknat.beräknatRiks).toBe(true);
-    expect(beräknat.källa).toContainEqual({
-      k: "Riksgenomsnitt",
-      v: "beräknat av oss ur enheternas egna tal",
-    });
-    expect(beräknat.förklaring).toContain("räknat av oss");
   });
 
   test("a missing figure keeps the register's reason and draws no band for itself", () => {
@@ -182,17 +168,12 @@ describe("buildNyckeltalComparisons", () => {
       }),
     );
     expect(r.härlett?.antalProgram).toBe(3);
-    expect(r.källa).toContainEqual({
-      k: "Enhetens tal",
-      v: "elevviktat snitt av enhetens 3 gymnasieprogram",
-    });
-    expect(r.förklaring).toContain("bara per program");
+    expect(r.härlett?.elevviktat).toBe(true);
   });
 
   test("a figure the register reports itself is not marked as ours", () => {
     const r = rad("andelBehörigaLärare", nyckeltal({ andelBehörigaLärare: finns(76.6) }));
     expect(r.härlett).toBeNull();
-    expect(r.källa.map((k) => k.k)).not.toContain("Enhetens tal");
   });
 
   test("the kommunsnitt row appears only when some unit in the kommun reports the metric", () => {
@@ -200,11 +181,7 @@ describe("buildNyckeltalComparisons", () => {
     const med = rad("meritvärdeÅrskurs9", nyckeltal({ meritvärdeÅrskurs9: finns(240) }), [
       stat("meritvärdeÅrskurs9", { genomsnitt: 220.9, antalMedVärde: 15 }),
     ]);
-    expect(utan.källa.map((k) => k.k)).not.toContain("Kommunsnitt");
+    expect(utan.kommun).toBe("—");
     expect(med.kommun).toBe("220,9");
-    expect(med.källa).toContainEqual({
-      k: "Kommunsnitt",
-      v: "15 enheter i kommunen redovisar talet",
-    });
   });
 });

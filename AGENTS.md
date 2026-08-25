@@ -126,10 +126,11 @@ entry there, not writing new components.
 Its two siblings do the same job for the skolenhet page's own measures:
 `nyckeltalmetriker.ts` (the four unit-level nyckeltal) and `programmetriker.ts`
 (the six gymnasieprogram measures). Both declare the scale a deviation is
-measured on and which direction counts as better; `nyckeltalmetriker.ts` also
-carries the prose behind "Varifrån kommer talet?", which nothing renders since
-the explained cards were removed — it is kept because the figures still need it
-if that reading ever comes back.
+measured on and which direction counts as better, and nothing else: the prose
+behind "Varifrån kommer talet?" is gone along with the disclosure it fed, and
+so are the two `sammanfattning` sentences the comparison builders used to
+write. A registry entry earns its place by being rendered; if that reading
+comes back, write the prose then rather than carrying it unread.
 
 Every tab on the two detail pages is now the same table. `DataTable` plus a
 column file under `src/components/tables/` renders the nyckeltal, SALSA, the
@@ -192,6 +193,14 @@ The corollary is that **an `overflow-hidden` wrapper anywhere above a table
 silently kills its pinned header**. Use `overflow-clip` where you only meant
 to round off corners — it clips identically without becoming a scroll
 container. `HuvudmanEnheterView`'s frame says so where it does it.
+
+**Unused code is removed, not annotated.** A comment explaining why an unused
+export is kept is not a reason to keep it: `Sida<T>`, `NationelltGenomsnitt`,
+the prose behind "Varifrån kommer talet?" and the two `sammanfattning`
+sentences each carried one, and each went. Git history is where a deleted
+thing is recorded — the reasoning survives in the commit that removed it.
+This does not apply to code that _is_ used; a surprising behaviour still gets
+the treatment described under Testing.
 
 ## Deliberately left as-is
 
